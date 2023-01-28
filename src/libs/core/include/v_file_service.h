@@ -99,6 +99,8 @@ class INIFILE
     virtual bool ReadString(const char *section_name, const char *key_name, char *buffer, size_t buffer_size,
                             const char *def_string) = 0;
 
+    virtual std::optional<std::string> GetString(const char *section_name, const char *key_name) = 0;
+
     // continue search from key founded in previous call this function or to function ReadString
     // fill buffer with key value if section and key exist, otherwise return false
     virtual bool ReadStringNext(const char *section_name, const char *key_name, char *buffer, size_t buffer_size) = 0;

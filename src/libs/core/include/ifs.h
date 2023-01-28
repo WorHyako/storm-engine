@@ -113,6 +113,7 @@ class IFS : public INIFILE
                                         size_t buffer_size))
     IFS_NOT_IMPLEMENTED(bool ReadString(const char *section_name, const char *key_name, char *buffer,
                                         size_t buffer_size, const char *def_string))
+    IFS_NOT_IMPLEMENTED(std::optional<std::string> GetString(const char *section_name, const char *key_name))
     IFS_NOT_IMPLEMENTED(bool ReadStringNext(const char *section_name, const char *key_name, char *buffer,
                                             size_t buffer_size))
     IFS_NOT_IMPLEMENTED(int32_t GetInt(const char *section_name, const char *key_name))
@@ -155,6 +156,7 @@ class IFS : public INIFILE
                     const char *def_string);
     void ReadString(SEARCH_DATA *sd, const char *section_name, const char *key_name, char *buffer,
                     uint32_t buffer_size); // rise exception on fault
+    std::optional<std::string> GetString(SEARCH_DATA &sd, const char *section_name, const char *key_name);
     bool ReadStringNext(SEARCH_DATA *sd, const char *section_name, const char *key_name, char *buffer,
                         uint32_t buffer_size);
 

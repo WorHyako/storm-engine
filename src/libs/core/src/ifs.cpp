@@ -875,6 +875,31 @@ bool IFS::ReadString(SEARCH_DATA *sd, const char *section_name, const char *key_
     return true;
 }
 
+std::optional<std::string> IFS::GetString(SEARCH_DATA &sd, const char *section_name, const char *key_name)
+{
+    auto *node = FindKey(section_name, key_name);
+    if (node == nullptr)
+    {
+        sd.Key = nullptr;
+        sd.Section = nullptr;
+        return {};
+    }
+    else {
+        sd.Key = node;
+        sd.Section = FindSection(section_name);
+
+        auto *const char_PTR = node->GetValue();
+        if (char_PTR == nullptr)
+        {
+            return {};
+        }
+        else {
+            return std::string(char_PTR);
+        }
+
+    }
+}
+
 bool IFS::ReadStringNext(SEARCH_DATA *sd, const char *section_name, const char *key_name, char *buffer,
                          uint32_t buffer_size)
 {

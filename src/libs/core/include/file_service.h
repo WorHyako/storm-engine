@@ -37,6 +37,9 @@ class INIFILE_T : public INIFILE
     // fill buffer with key value if section and key exist, otherwise fill with def_string and return false
     bool ReadString(const char *section_name, const char *key_name, char *buffer, size_t buffer_size,
                     const char *def_string) override;
+
+    std::optional<std::string> GetString(const char *section_name, const char *key_name) override;
+
     // continue search from key founded in previous call this function or to function ReadString
     // fill buffer with key value if section and key exist, otherwise return false
     bool ReadStringNext(const char *section_name, const char *key_name, char *buffer, size_t buffer_size) override;

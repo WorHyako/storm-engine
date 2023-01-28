@@ -588,6 +588,10 @@ bool INIFILE_T::ReadString(const char *section_name, const char *key_name, char 
     return ifs_PTR->ReadString(&Search, section_name, key_name, buffer, buffer_size, def_string);
 }
 
+std::optional<std::string> INIFILE_T::GetString(const char *section_name, const char *key_name) {
+    return ifs_PTR->GetString(Search, section_name, key_name);
+}
+
 // continue search from key founded in previous call this function or to function ReadString
 // fill buffer with key value if section and key exist, otherwise return false
 bool INIFILE_T::ReadStringNext(const char *section_name, const char *key_name, char *buffer, size_t buffer_size)
