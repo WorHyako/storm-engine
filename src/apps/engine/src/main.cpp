@@ -12,7 +12,9 @@
 #include "steam_api.hpp"
 #include "v_sound_service.h"
 #include "fs.h"
+#include "string_compare.hpp"
 #include "watermark.hpp"
+#include <storm/dx11_renderer/dx11_renderer.hpp>
 
 namespace
 {
@@ -179,6 +181,7 @@ int main(int argc, char *argv[])
     int preferred_display = 0;
     bool fullscreen = false;
     bool show_borders = false;
+    std::optional<std::string> preferredDriver;
 
     if (ini)
     {
@@ -195,6 +198,7 @@ int main(int argc, char *argv[])
         fullscreen = ini->GetInt(nullptr, "full_screen", false);
         show_borders = ini->GetInt(nullptr, "window_borders", false);
         bSteam = ini->GetInt(nullptr, "Steam", 1) != 0;
+        preferredDriver = ini->GetString(nullptr, "driver");
     }
 
     // initialize SteamApi through evaluating its singleton
@@ -214,6 +218,15 @@ int main(int argc, char *argv[])
     window->Subscribe(HandleWindowEvent);
     window->Show();
     core_private->SetWindow(window);
+
+    std::shared_ptr<storm::Renderer> renderer;
+    if (preferredDriver.has_value() && storm::iEquals(preferredDriver.value(), "dx11")) {
+        renderer = std::make_shared<storm::Dx11Renderer>(window);
+    }
+
+    if (renderer) {
+        renderer->Init();
+    }
 
     // Init core
     core_private->InitBase();
