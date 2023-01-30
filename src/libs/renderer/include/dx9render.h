@@ -1,5 +1,7 @@
 #pragma once
 
+#include "storm/renderer/renderer.hpp"
+
 #include <cstdint>
 #include <d3d9.h>
 #ifdef _WIN32
