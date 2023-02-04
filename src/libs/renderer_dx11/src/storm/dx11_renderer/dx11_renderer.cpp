@@ -5,6 +5,18 @@
 namespace storm
 {
 
+namespace {
+
+template<class T>
+void Release(T* resource) {
+    if (resource != nullptr)
+    {
+        resource->Release();
+    }
+}
+
+} // namespace
+
 class Dx11RendererImpl
 {
   public:
@@ -38,9 +50,9 @@ Dx11Renderer::~Dx11Renderer() = default;
 
 Dx11RendererImpl::~Dx11RendererImpl() noexcept
 {
-    swap_chain_->Release();
-    context_->Release();
-    device_->Release();
+    Release(swap_chain_);
+    Release(context_);
+    Release(device_);
 }
 
 void Dx11Renderer::Init()

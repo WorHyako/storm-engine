@@ -21,4 +21,6 @@ public:
     virtual void collectCrashInfo() const = 0;
 
     virtual void SetWindow(std::shared_ptr<storm::OSWindow> window) = 0;
+
+    virtual void CreateRenderer(const std::string_view &type) = 0;
 };

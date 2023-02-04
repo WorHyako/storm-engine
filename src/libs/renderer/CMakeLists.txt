@@ -9,3 +9,5 @@ STORM_SETUP(
     TYPE storm_module
     DEPENDENCIES core directx util ${SYSTEM_DEPS}
 )
+
+target_compile_definitions(renderer PUBLIC "-DSTORM_DIRECTX9_ENABLED")

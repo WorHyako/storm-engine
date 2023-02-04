@@ -13,6 +13,7 @@
 #include "shared/layers.h"
 #include "v_data.h"
 #include "v_file_service.h"
+#include <storm/renderer/renderer.hpp>
 
 struct IFUNCINFO;
 
@@ -70,6 +71,8 @@ class Core
     virtual void Entity_SetAttributePointer(entid_t id_PTR, ATTRIBUTES *pA) = 0;
     virtual uint32_t Entity_AttributeChanged(entid_t id_PTR, ATTRIBUTES *) = 0;
     virtual ATTRIBUTES *Entity_GetAttributePointer(entid_t id_PTR) = 0;
+
+    virtual storm::Renderer &GetRenderer() = 0;
 
     // send message to an object
     virtual uint64_t Send_Message(entid_t Destination, const char *Format, ...) = 0;

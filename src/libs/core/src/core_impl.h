@@ -78,6 +78,9 @@ class CoreImpl final : public CorePrivate
     uint32_t Entity_AttributeChanged(entid_t id_PTR, ATTRIBUTES *) override;
     ATTRIBUTES *Entity_GetAttributePointer(entid_t id_PTR) override;
 
+    storm::Renderer &GetRenderer() override;
+    void CreateRenderer(const std::string_view &type) override;
+
     // messeges system
 
     // send message to an object
@@ -170,6 +173,8 @@ private:
 #ifdef _WIN32 // HINSTANCE
     HINSTANCE hInstance{};
 #endif
+
+    std::shared_ptr<storm::Renderer> renderer_;
 
     char *State_file_name;
 

@@ -9,4 +9,5 @@ if (DirectX11_FOUND)
 
     target_link_libraries(renderer_dx11 PUBLIC ${DirectX11_LIBRARIES})
     target_include_directories(renderer_dx11 PUBLIC ${DirectX11_INCLUDE_DIRS})
+    target_compile_definitions(renderer_dx11 PUBLIC "-DSTORM_DIRECTX11_ENABLED")
 endif ()

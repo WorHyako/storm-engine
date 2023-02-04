@@ -16,12 +16,6 @@ else()
 set(SYSTEM_DEPS "ffi")
 endif()
 
-set(RENDERER_DEPS "")
-
-if (DirectX11_FOUND)
-    list(APPEND RENDERER_DEPS renderer_dx11)
-endif ()
-
 STORM_SETUP(
     TARGET_NAME engine
     TYPE executable
@@ -34,7 +28,6 @@ STORM_SETUP(
     diagnostics
     util
     window
-    ${RENDERER_DEPS}
 
     # external
     mimalloc

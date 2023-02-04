@@ -5,6 +5,10 @@
 #include "fs.h"
 #include "steam_api.hpp"
 
+#ifdef STORM_DIRECTX11_ENABLED
+#include <storm/dx11_renderer/dx11_renderer.hpp>
+#endif
+
 #include <fstream>
 
 #include "string_compare.hpp"
@@ -767,6 +771,29 @@ ATTRIBUTES *CoreImpl::Entity_GetAttributePointer(entid_t id_PTR)
     if (pE == nullptr)
         return nullptr;
     return pE->AttributesPointer;
+}
+
+storm::Renderer &CoreImpl::GetRenderer()
+{
+    return *renderer_;
+}
+
+void CoreImpl::CreateRenderer(const std::string_view &type)
+{
+#ifdef STORM_DIRECTX11_ENABLED
+    if (storm::iEquals(type, "dx11")) {
+        renderer_ = std::make_shared<storm::Dx11Renderer>(window_);
+    } else
+#endif
+#ifdef STORM_DIRECTX9_ENABLED
+    if (storm::iEquals(type, "dx9")) {
+        // renderer_ = std::make_shared<storm::Dx9Renderer>(window_);
+    }
+#endif
+
+    if (renderer_) {
+        renderer_->Init();
+    }
 }
 
 void CoreImpl::EraseEntities()

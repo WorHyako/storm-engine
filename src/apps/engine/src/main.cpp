@@ -14,7 +14,6 @@
 #include "fs.h"
 #include "string_compare.hpp"
 #include "watermark.hpp"
-#include <storm/dx11_renderer/dx11_renderer.hpp>
 
 namespace
 {
@@ -219,14 +218,7 @@ int main(int argc, char *argv[])
     window->Show();
     core_private->SetWindow(window);
 
-    std::shared_ptr<storm::Renderer> renderer;
-    if (preferredDriver.has_value() && storm::iEquals(preferredDriver.value(), "dx11")) {
-        renderer = std::make_shared<storm::Dx11Renderer>(window);
-    }
-
-    if (renderer) {
-        renderer->Init();
-    }
+    core_private->CreateRenderer(preferredDriver.value_or("dx9"));
 
     // Init core
     core_private->InitBase();
