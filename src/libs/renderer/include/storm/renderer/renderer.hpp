@@ -13,6 +13,8 @@ class Renderer
     virtual ~Renderer() = default;
 
     virtual void Init() = 0;
+
+    virtual void Render() = 0;
 };
 
 

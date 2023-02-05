@@ -18,6 +18,8 @@ class Dx11Renderer final : public Renderer
 
     void Init() override;
 
+    void Render() override;
+
   private:
     std::unique_ptr<Dx11RendererImpl> impl_;
 };

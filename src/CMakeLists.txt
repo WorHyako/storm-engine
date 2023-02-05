@@ -18,6 +18,8 @@ if(STORM_ENABLE_SAFE_MODE)
   add_definitions(-DSTORM_ENABLE_SAFE_MODE=1)
 endif()
 
+find_package(DirectX11)
+
 if (MSVC)
     # Ignore warnings about missing pdb
     set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /ignore:4099")

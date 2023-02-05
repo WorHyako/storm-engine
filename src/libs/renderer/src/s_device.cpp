@@ -2686,6 +2686,9 @@ void DX9RENDER::SetGLOWParams(float _fBlurBrushSize, int32_t _GlowIntensity, int
 
 void DX9RENDER::RunStart()
 {
+    auto &renderer = core.GetRenderer();
+    renderer.Render();
+
     auto *pScriptRender = static_cast<VDATA *>(core.GetScriptVariable("Render"));
     ATTRIBUTES *pARender = pScriptRender->GetAClass();
 

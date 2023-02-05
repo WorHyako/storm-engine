@@ -1,6 +1,7 @@
 #include "storm/dx11_renderer/dx11_renderer.hpp"
 
 #include <d3d11.h>
+#include <d3dx9math.h>
 
 namespace storm
 {
@@ -28,6 +29,8 @@ class Dx11RendererImpl
 
     void Init();
 
+    void Render();
+
     [[nodiscard]] HWND GetHwnd() const
     {
         return reinterpret_cast<HWND>(window_->OSHandle());
@@ -38,6 +41,7 @@ class Dx11RendererImpl
 
     ID3D11Device *device_ = nullptr;
     ID3D11DeviceContext *context_ = nullptr;
+    ID3D11RenderTargetView *backBuffer_ = nullptr;
     IDXGISwapChain *swap_chain_ = nullptr;
 };
 
@@ -51,6 +55,7 @@ Dx11Renderer::~Dx11Renderer() = default;
 Dx11RendererImpl::~Dx11RendererImpl() noexcept
 {
     Release(swap_chain_);
+    Release(backBuffer_);
     Release(context_);
     Release(device_);
 }
@@ -72,6 +77,34 @@ void Dx11RendererImpl::Init()
 
     D3D11CreateDeviceAndSwapChain(NULL, D3D_DRIVER_TYPE_HARDWARE, NULL, 0, NULL, 0, D3D11_SDK_VERSION, &swap_chain_desc,
                                   &swap_chain_, &device_, NULL, &context_);
+
+    ID3D11Texture2D *back_buffer = nullptr;
+    swap_chain_->GetBuffer(0, __uuidof(ID3D11Texture2D), reinterpret_cast<void **>(&back_buffer));
+    device_->CreateRenderTargetView(back_buffer, NULL, &backBuffer_);
+    back_buffer->Release();
+
+    context_->OMSetRenderTargets(1, &backBuffer_, NULL);
+
+    D3D11_VIEWPORT viewport = {};
+    viewport.TopLeftX = 0;
+    viewport.TopLeftY = 0;
+    viewport.Width = 800;
+    viewport.Height = 600;
+    context_->RSSetViewports(1, &viewport);
+}
+
+void Dx11Renderer::Render()
+{
+    impl_->Render();
+}
+
+void Dx11RendererImpl::Render()
+{
+    context_->ClearRenderTargetView(backBuffer_, D3DXCOLOR(0.0f, 0.2f, 0.4f, 1.0f));
+
+    // Do actual rendering
+
+    swap_chain_->Present(0, 0);
 }
 
 } // namespace storm

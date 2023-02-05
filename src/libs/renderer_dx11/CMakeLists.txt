@@ -1,5 +1,3 @@
-find_package(DirectX11 REQUIRED)
-
 if (DirectX11_FOUND)
     STORM_SETUP(
             TARGET_NAME renderer_dx11
