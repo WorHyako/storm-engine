@@ -190,7 +190,6 @@ class VDX9RENDER : public SERVICE
     virtual void *GetD3DDevice() = 0; // (very bad function/don't use!!!)
 
     // DX9Render: Render Target/Begin/End/Clear
-    virtual bool DX9Clear(int32_t type) = 0; // D3DCLEAR_STENCIL | D3DCLEAR_TARGET | D3DCLEAR_ZBUFFER
     virtual bool DX9BeginScene() = 0;
     virtual bool DX9EndScene() = 0;
 

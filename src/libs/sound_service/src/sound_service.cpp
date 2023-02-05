@@ -179,20 +179,21 @@ void SoundService::RunStart()
 {
     CreateEntityIfNeed();
 
-    if (rs)
-    {
-        static CVECTOR pos, ang, nose, head;
-        static CMatrix view;
-
-        rs->GetTransform(D3DTS_VIEW, view);
-        view.Transposition();
-        nose = view.Vz();
-        head = view.Vy();
-        pos = view.Pos();
-
-        SetCameraPosition(pos);
-        SetCameraOrientation(nose, head);
-    }
+    // TODO: [dx11] sound service
+//    if (rs)
+//    {
+//        static CVECTOR pos, ang, nose, head;
+//        static CMatrix view;
+//
+//        rs->GetTransform(D3DTS_VIEW, view);
+//        view.Transposition();
+//        nose = view.Vz();
+//        head = view.Vy();
+//        pos = view.Pos();
+//
+//        SetCameraPosition(pos);
+//        SetCameraOrientation(nose, head);
+//    }
 
     ProcessFader(0);
     ProcessFader(1);

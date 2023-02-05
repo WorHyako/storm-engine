@@ -5,6 +5,7 @@
 #include "fs.h"
 #include "steam_api.hpp"
 
+#include <storm/dx9_renderer/dx9_renderer.hpp>
 #ifdef STORM_DIRECTX11_ENABLED
 #include <storm/dx11_renderer/dx11_renderer.hpp>
 #endif
@@ -787,7 +788,7 @@ void CoreImpl::CreateRenderer(const std::string_view &type)
 #endif
 #ifdef STORM_DIRECTX9_ENABLED
     if (storm::iEquals(type, "dx9")) {
-        // renderer_ = std::make_shared<storm::Dx9Renderer>(window_);
+        renderer_ = std::make_shared<storm::Dx9Renderer>(window_);
     }
 #endif
 

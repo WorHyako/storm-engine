@@ -1,6 +1,7 @@
 #include "s_device.h"
 
 #include "core.h"
+#include "storm/dx9_renderer/dx9_renderer.hpp"
 
 #include "entity.h"
 #include "math_inlines.h"
@@ -390,7 +391,7 @@ DX9RENDER::DX9RENDER()
 {
     rectsVBuffer = nullptr;
 
-    bPostProcessEnabled = true;
+    bPostProcessEnabled = false;
     bPostProcessError = false;
     iBlurPasses = 4;
     GlowIntensity = 200;
@@ -408,7 +409,6 @@ DX9RENDER::DX9RENDER()
     pOriginalDepthSurface = nullptr;
 
     pRS = this;
-    d3d = nullptr;
     d3d9 = nullptr;
     aniVBuffer = nullptr;
     numAniVerteces = 0;
@@ -422,7 +422,6 @@ DX9RENDER::DX9RENDER()
     bSeaEffect = false;
     fSeaEffectSize = 0.0f;
     fSeaEffectSpeed = 0.0f;
-    dwBackColor = 0x0;
 
     bTrace = true;
     iSetupPath = 0;
@@ -479,8 +478,12 @@ bool DX9RENDER::Init()
     for (int32_t i = 0; i < MAX_STEXTURES; i++)
         Textures[i].ref = NULL;
 
-    d3d = nullptr;
     d3d9 = nullptr;
+
+    auto *renderer = dynamic_cast<storm::Dx9Renderer*>(&core.GetRenderer());
+    if (!renderer) {
+        return true;
+    }
 
     create_directories(fs::GetScreenshotsPath());
 
@@ -693,235 +696,137 @@ DX9RENDER::~DX9RENDER()
 
 bool DX9RENDER::InitDevice(bool windowed, HWND _hwnd, int32_t width, int32_t height)
 {
-    // GUARD(DX9RENDER::InitDevice)
+    auto *renderer = dynamic_cast<storm::Dx9Renderer*>(&core.GetRenderer());
 
-    aniVBuffer = nullptr;
-    numAniVerteces = 0;
+    if (renderer) {
+        // GUARD(DX9RENDER::InitDevice)
 
-    screen_size.x = width;
-    screen_size.y = height;
-    bWindow = windowed;
+        aniVBuffer = nullptr;
+        numAniVerteces = 0;
 
-    hwnd = _hwnd;
-    core.Trace("Initializing DirectX 9");
-    d3d = Direct3DCreate9(D3D_SDK_VERSION);
-    if (d3d == nullptr)
-    {
-        // MessageBox(hwnd, "Direct3DCreate9 error", "InitDevice::Direct3DCreate9", MB_OK);
-        core.Trace("Direct3DCreate9 error : InitDevice::Direct3DCreate9");
-        return false;
-    }
+        screen_size.x = width;
+        screen_size.y = height;
+        bWindow = windowed;
 
-    d3dpp = {};
-    d3dpp.BackBufferWidth = width;
-    d3dpp.BackBufferHeight = height;
-    d3dpp.BackBufferFormat = screen_bpp;
-    d3dpp.BackBufferCount = 1;
-    d3dpp.hDeviceWindow = hwnd;
-    d3dpp.Windowed = windowed;
-    d3dpp.EnableAutoDepthStencil = TRUE;
-    d3dpp.AutoDepthStencilFormat = stencil_format;
+        d3d9 = renderer->GetDevice();
 
-    if (windowed)
-    {
-        D3DDISPLAYMODE d3ddm;
-        if (FAILED(d3d->GetAdapterDisplayMode(D3DADAPTER_DEFAULT, &d3ddm)))
-            throw std::runtime_error("failed to GetAdapterDisplayMode");
-        d3dpp.BackBufferFormat = d3ddm.Format;
-        if (d3dpp.BackBufferFormat == D3DFMT_R5G6B5)
-            d3dpp.AutoDepthStencilFormat = D3DFMT_D16;
-        else
-            d3dpp.AutoDepthStencilFormat = D3DFMT_D24S8;
-        stencil_format = d3dpp.AutoDepthStencilFormat;
-        if (!bUseLargeBackBuffer)
-            if (d3ddm.Width < static_cast<uint32_t>(width) || d3ddm.Height < static_cast<uint32_t>(height))
-            {
-                d3dpp.BackBufferWidth = d3ddm.Width;
-                d3dpp.BackBufferHeight = d3ddm.Height;
-                width = d3ddm.Width;
-                height = d3ddm.Height;
-            }
-    }
-
-    d3dpp.MultiSampleType = D3DMULTISAMPLE_NONE;
-    for (auto samples = msaa; msaa > D3DMULTISAMPLE_2_SAMPLES; samples--)
-    {
-        if (SUCCEEDED(d3d->CheckDeviceMultiSampleType(D3DADAPTER_DEFAULT, D3DDEVTYPE_HAL, d3dpp.BackBufferFormat, false,
-                                                      static_cast<D3DMULTISAMPLE_TYPE>(samples), nullptr)))
-        {
-            d3dpp.MultiSampleType = static_cast<D3DMULTISAMPLE_TYPE>(samples);
-            break;
-        }
-    }
-
-    if (bBackBufferCanLock)
-        d3dpp.Flags = D3DPRESENTFLAG_LOCKABLE_BACKBUFFER;
-    else
-        d3dpp.Flags = 0;
-    // d3dpp.FullScreen_RefreshRateInHz = D3DPRESENT_RATE_DEFAULT;
-    d3dpp.SwapEffect = D3DSWAPEFFECT_DISCARD;
-    // d3dpp.SwapEffect = D3DSWAPEFFECT_COPY;
-    // if(windowed) d3dpp.SwapEffect = D3DSWAPEFFECT_DISCARD;//FLIP;
-    // else d3dpp.SwapEffect = D3DSWAPEFFECT_FLIP;
-
-    if (vSyncEnabled)
-    {
-        d3dpp.PresentationInterval = D3DPRESENT_INTERVAL_ONE;
-    }
-    else
-    {
-        d3dpp.PresentationInterval = D3DPRESENT_INTERVAL_IMMEDIATE;
-    }
-
-    // Choose desired video adapter
-    auto adapters_num = d3d->GetAdapterCount();
-    if (videoAdapterIndex > adapters_num - 1)
-        videoAdapterIndex = 0U;
-
-    spdlog::info("Querying available DirectX 9 adapters... detected {}:", adapters_num);
-    for (UINT i = 0; i != adapters_num; ++i)
-    {
-        D3DCAPS9 caps;
-        d3d->GetDeviceCaps(i, D3DDEVTYPE_HAL, &caps);
-        if (caps.DeviceType == D3DDEVTYPE_HAL)
-        {
-            D3DADAPTER_IDENTIFIER9 id;
-            d3d->GetAdapterIdentifier(i, 0, &id);
-            spdlog::info("{}: {} ({}) ", i, id.Description, id.DeviceName);
-        }
-    }
-    spdlog::info("Using adapter with index {} (configurable by setting adapter=<index> inside engine.ini)",
-             videoAdapterIndex);
-
-    // Create device
-    if (CHECKD3DERR(d3d->CreateDevice(videoAdapterIndex, D3DDEVTYPE_HAL, hwnd, D3DCREATE_HARDWARE_VERTEXPROCESSING,
-                                      &d3dpp, &d3d9)))
-    {
-        if (CHECKD3DERR(d3d->CreateDevice(videoAdapterIndex, D3DDEVTYPE_HAL, hwnd, D3DCREATE_MIXED_VERTEXPROCESSING,
-                                          &d3dpp, &d3d9)))
-        {
-            if (CHECKD3DERR(d3d->CreateDevice(videoAdapterIndex, D3DDEVTYPE_HAL, hwnd,
-                                              D3DCREATE_SOFTWARE_VERTEXPROCESSING, &d3dpp, &d3d9)))
-            {
-                return false;
-            }
-        }
-    }
+        hwnd = _hwnd;
 #ifdef _WIN32 // Effects
-    effects_.setDevice(d3d9);
+        effects_.setDevice(d3d9);
 #endif
 
-    // Create render targets for POST PROCESS effects
-    d3d9->GetRenderTarget(0, &pOriginalScreenSurface);
-    d3d9->GetDepthStencilSurface(&pOriginalDepthSurface);
+        // Create render targets for POST PROCESS effects
+        d3d9->GetRenderTarget(0, &pOriginalScreenSurface);
+        d3d9->GetDepthStencilSurface(&pOriginalDepthSurface);
 
-    fSmallWidth = 128;
-    fSmallHeight = 128;
+        fSmallWidth = 128;
+        fSmallHeight = 128;
 
-    if (bPostProcessEnabled)
-    {
-        d3d9->CreateTexture(width, height, 1, D3DUSAGE_RENDERTARGET, D3DFMT_A8R8G8B8, D3DPOOL_DEFAULT,
-                            &pPostProcessTexture, nullptr);
-        d3d9->CreateTexture(static_cast<int>(fSmallWidth), static_cast<int>(fSmallHeight), 1, D3DUSAGE_RENDERTARGET,
-                            D3DFMT_A8R8G8B8, D3DPOOL_DEFAULT, &pSmallPostProcessTexture, nullptr);
-        d3d9->CreateTexture(static_cast<int>(fSmallWidth * 2.0f), static_cast<int>(fSmallHeight * 2.0f), 1,
-                            D3DUSAGE_RENDERTARGET, D3DFMT_A8R8G8B8, D3DPOOL_DEFAULT, &pSmallPostProcessTexture2,
-                            nullptr);
-    }
+        if (bPostProcessEnabled)
+        {
+            d3d9->CreateTexture(width, height, 1, D3DUSAGE_RENDERTARGET, D3DFMT_A8R8G8B8, D3DPOOL_DEFAULT,
+                                &pPostProcessTexture, nullptr);
+            d3d9->CreateTexture(static_cast<int>(fSmallWidth), static_cast<int>(fSmallHeight), 1, D3DUSAGE_RENDERTARGET,
+                                D3DFMT_A8R8G8B8, D3DPOOL_DEFAULT, &pSmallPostProcessTexture, nullptr);
+            d3d9->CreateTexture(static_cast<int>(fSmallWidth * 2.0f), static_cast<int>(fSmallHeight * 2.0f), 1,
+                                D3DUSAGE_RENDERTARGET, D3DFMT_A8R8G8B8, D3DPOOL_DEFAULT, &pSmallPostProcessTexture2,
+                                nullptr);
+        }
 
-    if (!pPostProcessTexture || !pSmallPostProcessTexture || !pSmallPostProcessTexture2)
-    {
-        bPostProcessEnabled = false;
-        bPostProcessError = true;
-    }
-
-    if (!bPostProcessError)
-    {
-        pPostProcessTexture->GetSurfaceLevel(0, &pPostProcessSurface);
-        pSmallPostProcessTexture2->GetSurfaceLevel(0, &pSmallPostProcessSurface2);
-        pSmallPostProcessTexture->GetSurfaceLevel(0, &pSmallPostProcessSurface);
-
-        if (!pPostProcessSurface || !pSmallPostProcessSurface2 || !pSmallPostProcessSurface)
+        if (!pPostProcessTexture || !pSmallPostProcessTexture || !pSmallPostProcessTexture2)
         {
             bPostProcessEnabled = false;
             bPostProcessError = true;
         }
+
+        if (!bPostProcessError)
+        {
+            pPostProcessTexture->GetSurfaceLevel(0, &pPostProcessSurface);
+            pSmallPostProcessTexture2->GetSurfaceLevel(0, &pSmallPostProcessSurface2);
+            pSmallPostProcessTexture->GetSurfaceLevel(0, &pSmallPostProcessSurface);
+
+            if (!pPostProcessSurface || !pSmallPostProcessSurface2 || !pSmallPostProcessSurface)
+            {
+                bPostProcessEnabled = false;
+                bPostProcessError = true;
+            }
+        }
+
+        if (!bPostProcessError)
+        {
+            ClearPostProcessSurface(pPostProcessSurface);
+            ClearPostProcessSurface(pSmallPostProcessSurface);
+            ClearPostProcessSurface(pSmallPostProcessSurface2);
+        }
+
+        ClearPostProcessSurface(pOriginalScreenSurface);
+
+        OriginalViewPort.X = 0;
+        OriginalViewPort.Y = 0;
+        OriginalViewPort.Width = width;
+        OriginalViewPort.Height = height;
+        OriginalViewPort.MinZ = 0.0f;
+        OriginalViewPort.MaxZ = 1.0f;
+
+        // if(CHECKD3DERR(SetViewport(&vprt))==true)    return false;
+
+        // set it as a render target
+        // FIX
+        // SetPostProcessTextureAsRenderTarget();
+        // set it as a render target
+
+        for (int32_t b = 0; b < MAX_BUFFERS; b++)
+        {
+            VertexBuffers[b].buff = nullptr;
+            IndexBuffers[b].buff = nullptr;
+        }
+
+        int32_t num_stages;
+        num_stages = 8;
+
+        for (int32_t s = 0; s < num_stages; s++)
+        {
+            // texture operation
+            SetTextureStageState(s, D3DTSS_COLORARG1, D3DTA_CURRENT);
+            SetTextureStageState(s, D3DTSS_COLORARG2, D3DTA_TEXTURE);
+            SetTextureStageState(s, D3DTSS_COLOROP, D3DTOP_DISABLE);
+
+            // texture coord
+            SetTextureStageState(s, D3DTSS_TEXCOORDINDEX, s);
+
+            // texture filtering
+            SetSamplerState(s, D3DSAMP_MAGFILTER, D3DTEXF_LINEAR);
+            SetSamplerState(s, D3DSAMP_MINFILTER, D3DTEXF_LINEAR);
+            SetSamplerState(s, D3DSAMP_MIPFILTER, D3DTEXF_LINEAR);
+        }
+
+        // set base texture and diffuse+specular lighting
+        SetTextureStageState(0, D3DTSS_COLORARG1, D3DTA_DIFFUSE);
+        SetTextureStageState(0, D3DTSS_COLOROP, D3DTOP_ADDSIGNED);
+
+        // texture op for lightmaps
+        // SetTextureStageState(1, D3DTSS_COLOROP, D3DTOP_ADDSIGNED);
+
+        SetCamera(CVECTOR(0.0f, 0.0f, 0.0f), CVECTOR(0.0f, 0.0f, 0.0f), 1.0f);
+
+        D3DLIGHT9 l{};
+        l.Type = D3DLIGHT_POINT;
+        l.Range = 100.0f;
+        l.Attenuation0 = 1.0f;
+
+        for (int i = 0; i < 8; i++)
+        {
+            d3d9->SetLight(i, &l);
+            d3d9->LightEnable(i, false);
+        }
+
+        SetCommonStates();
+
+        screen_size.x = width;
+        screen_size.y = height;
+
+        m_fHeightDeformator = (float)(height * 4.0f) / (float)(width * 3.0f);
     }
-
-    if (!bPostProcessError)
-    {
-        ClearPostProcessSurface(pPostProcessSurface);
-        ClearPostProcessSurface(pSmallPostProcessSurface);
-        ClearPostProcessSurface(pSmallPostProcessSurface2);
-    }
-
-    ClearPostProcessSurface(pOriginalScreenSurface);
-
-    OriginalViewPort.X = 0;
-    OriginalViewPort.Y = 0;
-    OriginalViewPort.Width = width;
-    OriginalViewPort.Height = height;
-    OriginalViewPort.MinZ = 0.0f;
-    OriginalViewPort.MaxZ = 1.0f;
-
-    // if(CHECKD3DERR(SetViewport(&vprt))==true)    return false;
-
-    // set it as a render target
-    // FIX
-    // SetPostProcessTextureAsRenderTarget();
-    // set it as a render target
-
-    for (int32_t b = 0; b < MAX_BUFFERS; b++)
-    {
-        VertexBuffers[b].buff = nullptr;
-        IndexBuffers[b].buff = nullptr;
-    }
-
-    int32_t num_stages;
-    num_stages = 8;
-
-    for (int32_t s = 0; s < num_stages; s++)
-    {
-        // texture operation
-        SetTextureStageState(s, D3DTSS_COLORARG1, D3DTA_CURRENT);
-        SetTextureStageState(s, D3DTSS_COLORARG2, D3DTA_TEXTURE);
-        SetTextureStageState(s, D3DTSS_COLOROP, D3DTOP_DISABLE);
-
-        // texture coord
-        SetTextureStageState(s, D3DTSS_TEXCOORDINDEX, s);
-
-        // texture filtering
-        SetSamplerState(s, D3DSAMP_MAGFILTER, D3DTEXF_LINEAR);
-        SetSamplerState(s, D3DSAMP_MINFILTER, D3DTEXF_LINEAR);
-        SetSamplerState(s, D3DSAMP_MIPFILTER, D3DTEXF_LINEAR);
-    }
-
-    // set base texture and diffuse+specular lighting
-    SetTextureStageState(0, D3DTSS_COLORARG1, D3DTA_DIFFUSE);
-    SetTextureStageState(0, D3DTSS_COLOROP, D3DTOP_ADDSIGNED);
-
-    // texture op for lightmaps
-    // SetTextureStageState(1, D3DTSS_COLOROP, D3DTOP_ADDSIGNED);
-
-    SetCamera(CVECTOR(0.0f, 0.0f, 0.0f), CVECTOR(0.0f, 0.0f, 0.0f), 1.0f);
-
-    D3DLIGHT9 l{};
-    l.Type = D3DLIGHT_POINT;
-    l.Range = 100.0f;
-    l.Attenuation0 = 1.0f;
-
-    for (int i = 0; i < 8; i++)
-    {
-        d3d9->SetLight(i, &l);
-        d3d9->LightEnable(i, false);
-    }
-
-    SetCommonStates();
-
-    screen_size.x = width;
-    screen_size.y = height;
-
-    m_fHeightDeformator = (float)(height * 4.0f) / (float)(width * 3.0f);
 
     // UNGUARD
     return true;
@@ -957,19 +862,7 @@ bool DX9RENDER::ReleaseDevice()
     if (d3d9 != nullptr && CHECKD3DERR(d3d9->Release()) == false)
         res = false;
     d3d9 = nullptr;
-    if (d3d != nullptr && CHECKD3DERR(d3d->Release()) == false)
-        res = false;
-    d3d = nullptr;
     return res;
-}
-
-//################################################################################
-bool DX9RENDER::DX9Clear(int32_t type)
-{
-    if (CHECKD3DERR(d3d9->Clear(0L, NULL, type, dwBackColor, 1.0f, 0L)) == true)
-        return false;
-    // if(CHECKD3DERR(d3d9->Clear(0L, NULL, type, 0x0, 1.0f, 0L))==true)    return false;
-    return true;
 }
 
 //################################################################################
@@ -1162,8 +1055,10 @@ void DX9RENDER::ClearPostProcessSurface(IDirect3DSurface9 *pSurf)
 
 void DX9RENDER::SetScreenAsRenderTarget()
 {
-    SetRenderTarget(pOriginalScreenSurface, pOriginalDepthSurface);
-    SetViewport(&OriginalViewPort);
+    if (d3d9) {
+        SetRenderTarget(pOriginalScreenSurface, pOriginalDepthSurface);
+        SetViewport(&OriginalViewPort);
+    }
 }
 
 void DX9RENDER::SetPostProcessTextureAsRenderTarget()
@@ -1205,6 +1100,10 @@ void DX9RENDER::MakePostProcess()
 //################################################################################
 bool DX9RENDER::DX9EndScene()
 {
+    if (d3d9 == nullptr) {
+        return true;
+    }
+
     if (bShowFps)
     {
         Print(screen_size.x - 100, screen_size.y - 50, "FPS %d", core.EngineFps());
@@ -2686,16 +2585,12 @@ void DX9RENDER::SetGLOWParams(float _fBlurBrushSize, int32_t _GlowIntensity, int
 
 void DX9RENDER::RunStart()
 {
-    auto &renderer = core.GetRenderer();
-    renderer.Render();
-
     auto *pScriptRender = static_cast<VDATA *>(core.GetScriptVariable("Render"));
     ATTRIBUTES *pARender = pScriptRender->GetAClass();
 
     bSeaEffect = pARender->GetAttributeAsDword("SeaEffect", 0) != 0;
     fSeaEffectSize = pARender->GetAttributeAsFloat("SeaEffectSize", 0.0f);
     fSeaEffectSpeed = pARender->GetAttributeAsFloat("SeaEffectSpeed", 0.0f);
-    dwBackColor = pARender->GetAttributeAsDword("BackColor", 0);
 
     if (bSeaEffect)
     {
@@ -2738,42 +2633,45 @@ void DX9RENDER::RunStart()
         SetScreenAsRenderTarget();
     }
 
-    DX9Clear(D3DCLEAR_TARGET | D3DCLEAR_ZBUFFER | ((stencil_format == D3DFMT_D24S8) ? D3DCLEAR_STENCIL : 0));
+    auto &renderer = core.GetRenderer();
+    renderer.Render();
 
-    dwNumDrawPrimitive = 0;
-    dwNumLV = 0;
-    dwNumLI = 0;
-    BeginScene();
+    if (d3d9) {
+        dwNumDrawPrimitive = 0;
+        dwNumLV = 0;
+        dwNumLI = 0;
+        BeginScene();
 
-    //------------------------------------------
-    bInsideScene = true;
+        //------------------------------------------
+        bInsideScene = true;
 
-    // execute default technique for set default render/texture states
-    // if (TechniqueExecuteStart("default")) do{} while (TechniqueExecuteNext());
+        // execute default technique for set default render/texture states
+        // if (TechniqueExecuteStart("default")) do{} while (TechniqueExecuteNext());
 
-    // boal del_cheat
-    if (core.Controls->GetDebugAsyncKeyState(VK_SHIFT) < 0 && core.Controls->GetDebugAsyncKeyState(VK_F11) < 0)
-    {
-        InvokeEntitiesLostRender();
+        // boal del_cheat
+        if (core.Controls->GetDebugAsyncKeyState(VK_SHIFT) < 0 && core.Controls->GetDebugAsyncKeyState(VK_F11) < 0)
+        {
+            InvokeEntitiesLostRender();
 #ifdef _WIN32 // Effects
-        RecompileEffects();
+            RecompileEffects();
 #else
-        pTechnique = std::make_unique<CTechnique>(this);
-        pTechnique->DecodeFiles();
+            pTechnique = std::make_unique<CTechnique>(this);
+            pTechnique->DecodeFiles();
 #endif
-        InvokeEntitiesRestoreRender();
-    }
+            InvokeEntitiesRestoreRender();
+        }
 
-    SetRenderState(D3DRS_FILLMODE, (core.Controls->GetDebugAsyncKeyState('F') < 0) ? D3DFILL_WIREFRAME : D3DFILL_SOLID);
-    // SetRenderState(D3DRS_FILLMODE, D3DFILL_SOLID); eddy
+        SetRenderState(D3DRS_FILLMODE, (core.Controls->GetDebugAsyncKeyState('F') < 0) ? D3DFILL_WIREFRAME : D3DFILL_SOLID);
+        // SetRenderState(D3DRS_FILLMODE, D3DFILL_SOLID); eddy
 
-    PlayToTexture();
+        PlayToTexture();
 
-    // make screenshot
-    if (CONTROL_STATE cs; core.Controls->GetControlState(kKeyTakeScreenshot, cs) 
-                          && cs.state == CST_ACTIVATED)
-    {
-        SaveShoot();
+        // make screenshot
+        if (CONTROL_STATE cs; core.Controls->GetControlState(kKeyTakeScreenshot, cs)
+                              && cs.state == CST_ACTIVATED)
+        {
+            SaveShoot();
+        }
     }
 }
 

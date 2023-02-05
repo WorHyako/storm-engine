@@ -124,7 +124,6 @@ class DX9RENDER : public VDX9RENDER
     };
 
     // DX9Render: Render Target/Begin/End/Clear
-    bool DX9Clear(int32_t type) override; // D3DCLEAR_STENCIL | D3DCLEAR_TARGET | D3DCLEAR_ZBUFFER
     bool DX9BeginScene() override;
     bool DX9EndScene() override;
 
@@ -559,7 +558,6 @@ private:
     bool bSeaEffect;
     float fSeaEffectSize;
     float fSeaEffectSpeed;
-    uint32_t dwBackColor;
 
     //-------- post process
 
