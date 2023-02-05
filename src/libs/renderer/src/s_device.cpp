@@ -2633,8 +2633,12 @@ void DX9RENDER::RunStart()
         SetScreenAsRenderTarget();
     }
 
+    storm::Scene scene = {
+        pARender->GetAttributeAsDword("BackColor", 0),
+    };
+
     auto &renderer = core.GetRenderer();
-    renderer.Render();
+    renderer.Render(scene);
 
     if (d3d9) {
         dwNumDrawPrimitive = 0;

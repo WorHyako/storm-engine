@@ -29,7 +29,7 @@ class Dx11RendererImpl
 
     void Init();
 
-    void Render();
+    void Render(const Scene& scene);
 
     [[nodiscard]] HWND GetHwnd() const
     {
@@ -93,14 +93,14 @@ void Dx11RendererImpl::Init()
     context_->RSSetViewports(1, &viewport);
 }
 
-void Dx11Renderer::Render()
+void Dx11Renderer::Render(const Scene& scene)
 {
-    impl_->Render();
+    impl_->Render(scene);
 }
 
-void Dx11RendererImpl::Render()
+void Dx11RendererImpl::Render(const Scene& scene)
 {
-    context_->ClearRenderTargetView(backBuffer_, D3DXCOLOR(0.0f, 0.2f, 0.4f, 1.0f));
+    context_->ClearRenderTargetView(backBuffer_, D3DXCOLOR(scene.background));
 
     // Do actual rendering
 

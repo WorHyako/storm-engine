@@ -14,7 +14,8 @@
 namespace storm
 {
 
-namespace {
+namespace
+{
 
 #define CHECKD3DERR(expr) ErrorHandler(expr, __FILE__, __LINE__, __func__, #expr)
 
@@ -33,8 +34,8 @@ inline bool ErrorHandler(HRESULT hr, const char *file, unsigned line, const char
     return false;
 }
 
-template<class T>
-void Release(T* resource) {
+template <class T> void Release(T *resource)
+{
     if (resource != nullptr)
     {
         CHECKD3DERR(resource->Release());
@@ -54,14 +55,14 @@ class Dx9RendererImpl
 
     void Init();
 
-    void Render();
+    void Render(const Scene &scene);
 
     [[nodiscard]] HWND GetHwnd() const
     {
         return reinterpret_cast<HWND>(window_->OSHandle());
     }
 
-    bool DX9Clear(int32_t type);
+    bool DX9Clear(int32_t type, uint32_t color);
 
     std::shared_ptr<OSWindow> window_;
 
@@ -73,8 +74,7 @@ class Dx9RendererImpl
     uint32_t backColor_ = 0;
 };
 
-Dx9Renderer::Dx9Renderer(std::shared_ptr<OSWindow> window)
-    : impl_(std::make_unique<Dx9RendererImpl>(std::move(window)))
+Dx9Renderer::Dx9Renderer(std::shared_ptr<OSWindow> window) : impl_(std::make_unique<Dx9RendererImpl>(std::move(window)))
 {
 }
 
@@ -175,7 +175,8 @@ void Dx9RendererImpl::Init()
             d3dpp.AutoDepthStencilFormat = D3DFMT_D24S8;
         stencilFormat_ = d3dpp.AutoDepthStencilFormat;
         if (!use_large_back_buffer)
-            if (d3ddm.Width < static_cast<uint32_t>(screen_size.x) || d3ddm.Height < static_cast<uint32_t>(screen_size.y))
+            if (d3ddm.Width < static_cast<uint32_t>(screen_size.x) ||
+                d3ddm.Height < static_cast<uint32_t>(screen_size.y))
             {
                 d3dpp.BackBufferWidth = d3ddm.Width;
                 d3dpp.BackBufferHeight = d3ddm.Height;
@@ -187,8 +188,8 @@ void Dx9RendererImpl::Init()
     d3dpp.MultiSampleType = D3DMULTISAMPLE_NONE;
     for (auto samples = msaa; msaa > D3DMULTISAMPLE_2_SAMPLES; samples--)
     {
-        if (SUCCEEDED(d3d_->CheckDeviceMultiSampleType(D3DADAPTER_DEFAULT, D3DDEVTYPE_HAL, d3dpp.BackBufferFormat, false,
-                                                      static_cast<D3DMULTISAMPLE_TYPE>(samples), nullptr)))
+        if (SUCCEEDED(d3d_->CheckDeviceMultiSampleType(D3DADAPTER_DEFAULT, D3DDEVTYPE_HAL, d3dpp.BackBufferFormat,
+                                                       false, static_cast<D3DMULTISAMPLE_TYPE>(samples), nullptr)))
         {
             d3dpp.MultiSampleType = static_cast<D3DMULTISAMPLE_TYPE>(samples);
             break;
@@ -235,14 +236,14 @@ void Dx9RendererImpl::Init()
                  adapter_index);
 
     // Create device
-    if (CHECKD3DERR(d3d_->CreateDevice(adapter_index, D3DDEVTYPE_HAL, hwnd, D3DCREATE_HARDWARE_VERTEXPROCESSING,
-                                      &d3dpp, &device_)))
+    if (CHECKD3DERR(d3d_->CreateDevice(adapter_index, D3DDEVTYPE_HAL, hwnd, D3DCREATE_HARDWARE_VERTEXPROCESSING, &d3dpp,
+                                       &device_)))
     {
         if (CHECKD3DERR(d3d_->CreateDevice(adapter_index, D3DDEVTYPE_HAL, hwnd, D3DCREATE_MIXED_VERTEXPROCESSING,
-                                          &d3dpp, &device_)))
+                                           &d3dpp, &device_)))
         {
-            if (CHECKD3DERR(d3d_->CreateDevice(adapter_index, D3DDEVTYPE_HAL, hwnd,
-                                              D3DCREATE_SOFTWARE_VERTEXPROCESSING, &d3dpp, &device_)))
+            if (CHECKD3DERR(d3d_->CreateDevice(adapter_index, D3DDEVTYPE_HAL, hwnd, D3DCREATE_SOFTWARE_VERTEXPROCESSING,
+                                               &d3dpp, &device_)))
             {
                 return;
             }
@@ -250,29 +251,25 @@ void Dx9RendererImpl::Init()
     }
 }
 
-void Dx9Renderer::Render()
+void Dx9Renderer::Render(const Scene &scene)
 {
-    impl_->Render();
+    impl_->Render(scene);
 }
 
-void Dx9RendererImpl::Render()
+void Dx9RendererImpl::Render(const Scene &scene)
 {
-    auto *pScriptRender = static_cast<VDATA *>(core.GetScriptVariable("Render"));
-    if (pScriptRender) {
-        ATTRIBUTES *pARender = pScriptRender->GetAClass();
-        backColor_ = pARender->GetAttributeAsDword("BackColor", 0);
-    }
-
-    DX9Clear(D3DCLEAR_TARGET | D3DCLEAR_ZBUFFER | ((stencilFormat_ == D3DFMT_D24S8) ? D3DCLEAR_STENCIL : 0));
+    DX9Clear(D3DCLEAR_TARGET | D3DCLEAR_ZBUFFER | ((stencilFormat_ == D3DFMT_D24S8) ? D3DCLEAR_STENCIL : 0),
+             scene.background);
 }
 
-[[nodiscard]] IDirect3DDevice9* Dx9Renderer::GetDevice() const {
+[[nodiscard]] IDirect3DDevice9 *Dx9Renderer::GetDevice() const
+{
     return impl_->device_;
 }
 
-bool Dx9RendererImpl::DX9Clear(const int32_t type)
+bool Dx9RendererImpl::DX9Clear(const int32_t type, const uint32_t color)
 {
-    if (CHECKD3DERR(device_->Clear(0L, NULL, type, backColor_, 1.0f, 0L)) == true)
+    if (CHECKD3DERR(device_->Clear(0L, NULL, type, color, 1.0f, 0L)) == true)
         return false;
     return true;
 }

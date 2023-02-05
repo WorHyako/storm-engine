@@ -20,7 +20,7 @@ class Dx9Renderer final : public Renderer
 
     void Init() override;
 
-    void Render() override;
+    void Render(const Scene& scene) override;
 
     // DX9 specific methods
     // _________________________________________________________________________

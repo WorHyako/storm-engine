@@ -1,5 +1,7 @@
 #pragma once
 
+#include "scene.hpp"
+
 #include <storm/handle.hpp>
 
 namespace storm
@@ -14,7 +16,7 @@ class Renderer
 
     virtual void Init() = 0;
 
-    virtual void Render() = 0;
+    virtual void Render(const Scene& scene) = 0;
 };
 
 
