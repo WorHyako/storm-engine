@@ -3,6 +3,7 @@
 #include "matrix.h"
 #include "nodes/xi_util.h"
 #include "quest_file_reader/quest_file_reader.h"
+#include "storm/renderer/renderer.hpp"
 #include "dx9render.h"
 #include "editor/editor.h"
 #include "inode.h"
@@ -58,7 +59,7 @@ class XINTERFACE : public XINTERFACE_BASE
     float fXMousePos, fYMousePos;
     int32_t m_lXMouse, m_lYMouse; // mouse pointer corrector for calculate active point
     POINT MouseSize;
-    int32_t m_idTex;
+    storm::TextureHandle m_idTex;
     XI_ONLYONETEX_VERTEX vMouse[4];
     int32_t m_lMouseSensitive;
     bool m_bMouseClick;

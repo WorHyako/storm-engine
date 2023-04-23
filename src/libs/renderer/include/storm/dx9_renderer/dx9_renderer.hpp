@@ -22,9 +22,13 @@ class Dx9Renderer final : public Renderer
 
     void Render(const Scene& scene) override;
 
+    TextureHandle LoadTexture(const std::string_view &path) override;
+
     // DX9 specific methods
     // _________________________________________________________________________
     [[nodiscard]] IDirect3DDevice9* GetDevice() const;
+
+    renderer::TexturePool &GetDefaultTexturePool() const;
 
   private:
     std::unique_ptr<Dx9RendererImpl> impl_;

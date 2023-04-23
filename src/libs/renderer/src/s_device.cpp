@@ -2,6 +2,7 @@
 
 #include "core.h"
 #include "storm/dx9_renderer/dx9_renderer.hpp"
+#include "storm/renderer/texture_pool.hpp"
 
 #include "entity.h"
 #include "math_inlines.h"
@@ -859,9 +860,6 @@ bool DX9RENDER::ReleaseDevice()
             delete Textures[t].name;
         }
 
-    if (d3d9 != nullptr && CHECKD3DERR(d3d9->Release()) == false)
-        res = false;
-    d3d9 = nullptr;
     return res;
 }
 
@@ -1773,9 +1771,9 @@ bool DX9RENDER::LoadTextureSurface(std::fstream &fileS, IDirect3DSurface9 *sufac
 }
 
 //################################################################################
-bool DX9RENDER::TextureSet(int32_t stage, int32_t texid)
+bool DX9RENDER::TextureSet(int32_t stage, storm::TextureHandle texid)
 {
-    if (texid == -1)
+    if (!texid.IsValid())
     {
         if (CHECKD3DERR(d3d9->SetTexture(stage, NULL)) == true)
         {
@@ -1784,34 +1782,10 @@ bool DX9RENDER::TextureSet(int32_t stage, int32_t texid)
         return true;
     }
 
-    /*
-    if(Textures[texid].loaded==false)
-    {
-    int tex2load[MAX_STEXTURES];
-    int t2l=0;
-    for(int32_t t=0; t<MAX_STEXTURES; t++)
-    if(Textures[t].ref>0 && Textures[t].loaded==false)    tex2load[t2l++] = t;
-    */
-    /*/sort textures
-    for(t=0; t<t2l; t++)
-    for(int32_t tt=t; tt<t2l; tt++)
-    if(_strcmpi(Textures[tex2load[tt]].name, Textures[tex2load[t]].name)<0)
-    {
-    int ttemp = tex2load[t];
-    tex2load[t] = tex2load[tt];
-    tex2load[tt] = ttemp;
-    }*/
-    /*
-    for(t=0; t<t2l; t++)
-    {
-    Textures[tex2load[t]].loaded = true;
-    TextureLoad(tex2load[t]);
-    }
-    //Textures[texid].loaded = true;    TextureLoad(texid);
-    }
-    */
+    auto &renderer = dynamic_cast<storm::Dx9Renderer &>(core.GetRenderer());
+    auto *texture = static_cast<IDirect3DTexture9 *>(renderer.GetDefaultTexturePool().GetHandle(texid));
 
-    if (CHECKD3DERR(d3d9->SetTexture(stage, Textures[texid].d3dtex)) == true)
+    if (CHECKD3DERR(d3d9->SetTexture(stage, texture)) == true)
     {
         return false;
     }
@@ -3965,7 +3939,7 @@ HRESULT DX9RENDER::ImageBlt(int32_t TextureID, RECT *pDstRect, RECT *pSrcRect)
     v[5].tu = 1.0f;
     v[5].tv = 1.0f;
 
-    TextureSet(0, TextureID);
+    TextureSet(0, storm::TextureHandle(TextureID));
 
     const bool bDraw = TechniqueExecuteStart("texturedialogfon");
     if (bDraw)
@@ -4158,7 +4132,7 @@ void DX9RENDER::ProgressView()
     v[2].v = 1.0f;
     v[3].u = 1.0f;
     v[3].v = 1.0f;
-    TextureSet(0, back0Texture);
+    TextureSet(0, storm::TextureHandle(back0Texture));
     if (back0Texture < 0)
         for (i = 0; i < 4; i++)
             v[i].color = 0;
@@ -4195,7 +4169,7 @@ void DX9RENDER::ProgressView()
     v[3].u = 1.0f;
     v[3].v = 1.0f;
 
-    TextureSet(0, backTexture);
+    TextureSet(0, storm::TextureHandle(backTexture));
     if (backTexture < 0)
     {
         for (i = 0; i < 4; i++)
@@ -4205,7 +4179,7 @@ void DX9RENDER::ProgressView()
     {
         if (progressTipsTexture >= 0)
         {
-            TextureSet(1, progressTipsTexture);
+            TextureSet(1, storm::TextureHandle(progressTipsTexture));
             DrawPrimitiveUP(D3DPT_TRIANGLESTRIP, D3DFVF_XYZRHW | D3DFVF_DIFFUSE | D3DFVF_TEX1, 2, v, sizeof(v[0]),
                             "ProgressBackTechWithTips");
         }
@@ -4249,7 +4223,7 @@ void DX9RENDER::ProgressView()
     v[3].u = (fx + 1.0f) / float(sizeX);
     v[3].v = (fy + 1.0f) / float(sizeY);
     // Draw
-    TextureSet(0, progressTexture);
+    TextureSet(0, storm::TextureHandle(progressTexture));
     DrawPrimitiveUP(D3DPT_TRIANGLESTRIP, D3DFVF_XYZRHW | D3DFVF_DIFFUSE | D3DFVF_TEX1, 2, v, sizeof(v[0]),
                     "ProgressTech");
     EndScene();

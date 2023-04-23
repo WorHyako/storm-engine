@@ -20,6 +20,8 @@ class Dx11Renderer final : public Renderer
 
     void Render(const Scene& scene) override;
 
+    TextureHandle LoadTexture(const std::string_view &path) override;
+
   private:
     std::unique_ptr<Dx11RendererImpl> impl_;
 };

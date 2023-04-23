@@ -1,5 +1,8 @@
 #include "storm/dx9_renderer/dx9_renderer.hpp"
 
+#include "storm/image_loader.hpp"
+#include "storm/renderer/texture_pool.hpp"
+
 #include "core.h"
 #include "dx9render.h"
 #include "string_compare.hpp"
@@ -7,6 +10,8 @@
 #ifdef _WIN32
 #include <DxErr.h>
 #include <corecrt_io.h>
+
+#include <utility>
 #else
 #include <unistd.h>
 #endif
@@ -47,7 +52,8 @@ template <class T> void Release(T *resource)
 class Dx9RendererImpl
 {
   public:
-    Dx9RendererImpl(std::shared_ptr<OSWindow> window) : window_(window)
+    explicit Dx9RendererImpl(std::shared_ptr<OSWindow> window)
+        : window_(std::move(window)), imageLoader_(new ImageLoader())
     {
     }
 
@@ -57,6 +63,8 @@ class Dx9RendererImpl
 
     void Render(const Scene &scene);
 
+    TextureHandle LoadTexture(const std::string_view &path);
+
     [[nodiscard]] HWND GetHwnd() const
     {
         return reinterpret_cast<HWND>(window_->OSHandle());
@@ -65,6 +73,8 @@ class Dx9RendererImpl
     bool DX9Clear(int32_t type, uint32_t color);
 
     std::shared_ptr<OSWindow> window_;
+    std::unique_ptr<ImageLoader> imageLoader_;
+    renderer::TexturePool defaultTexturePool_;
 
     IDirect3D9 *d3d_ = nullptr;
     IDirect3DDevice9 *device_ = nullptr;
@@ -262,9 +272,52 @@ void Dx9RendererImpl::Render(const Scene &scene)
              scene.background);
 }
 
+TextureHandle Dx9Renderer::LoadTexture(const std::string_view &path)
+{
+    return impl_->LoadTexture(path);
+}
+
+TextureHandle Dx9RendererImpl::LoadTexture(const std::string_view &path)
+{
+    const auto image = imageLoader_->LoadImageFromFile(path);
+
+    if (image != nullptr)
+    {
+        IDirect3DTexture9 *texture = nullptr;
+        if (CHECKD3DERR(device_->CreateTexture(image->width, image->height, 0, 0, D3DFMT_A8R8G8B8, D3DPOOL_MANAGED,
+                                               &texture, nullptr)))
+            return {};
+
+        const auto path_str = istring(traits_cast<ichar_traits<char>>(path));
+        const auto result = defaultTexturePool_.CreateTexture(path_str, texture);
+
+        IDirect3DSurface9 *surface = nullptr;
+        texture->GetSurfaceLevel(0, &surface);
+        D3DLOCKED_RECT rect;
+        if (CHECKD3DERR(surface->LockRect(&rect, nullptr, 0))) {
+            defaultTexturePool_.ReleaseTexture(result);
+            return {};
+        }
+        image->CopyToBuffer(static_cast<uint8_t *>(rect.pBits));
+        surface->UnlockRect();
+        surface->Release();
+
+        return result;
+    }
+    else
+    {
+        return {};
+    }
+}
+
 [[nodiscard]] IDirect3DDevice9 *Dx9Renderer::GetDevice() const
 {
     return impl_->device_;
+}
+
+renderer::TexturePool &Dx9Renderer::GetDefaultTexturePool() const
+{
+    return impl_->defaultTexturePool_;
 }
 
 bool Dx9RendererImpl::DX9Clear(const int32_t type, const uint32_t color)

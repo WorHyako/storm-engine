@@ -1127,8 +1127,8 @@ void XINTERFACE::LoadIni()
     m_fpMouseOutZoneOffset.y = ini->GetFloat(section, "mouseOutZoneHeight", 0.f);
     m_nMouseLastClickTimeMax = ini->GetInt(section, "mouseDblClickInterval", 300);
 
-    CMatrix oldmatp;
-    pRenderService->GetTransform(D3DTS_PROJECTION, (D3DMATRIX *)&oldmatp);
+//    CMatrix oldmatp;
+//    pRenderService->GetTransform(D3DTS_PROJECTION, (D3DMATRIX *)&oldmatp);
     GlobalRect.left = GlobalScreenRect.left;
     GlobalRect.top = GlobalScreenRect.top;
     GlobalRect.right = GlobalScreenRect.right;
@@ -1154,7 +1154,7 @@ void XINTERFACE::LoadIni()
     char param2[256];
     sscanf(param, "%[^,],%d,size:(%d,%d),pos:(%d,%d)", param2, &m_lMouseSensitive, &MouseSize.x, &MouseSize.y,
            &m_lXMouse, &m_lYMouse);
-    m_idTex = pRenderService->TextureCreate(param2);
+    m_idTex = core.GetRenderer().LoadTexture(param2);
     core.GetWindow()->WarpMouseInWindow(windowSize.width / 2, windowSize.height / 2);
     fXMousePos = static_cast<float>(dwScreenWidth / 2);
     fYMousePos = static_cast<float>(dwScreenHeight / 2);

@@ -156,7 +156,7 @@ class DX9RENDER : public VDX9RENDER
     // DX9Render: Textures Section
     int32_t TextureCreate(const char *fname) override;
     int32_t TextureCreate(UINT width, UINT height, UINT levels, uint32_t usage, D3DFORMAT format, D3DPOOL pool) override;
-    bool TextureSet(int32_t stage, int32_t texid) override;
+    bool TextureSet(int32_t stage, storm::TextureHandle texture) override;
     bool TextureRelease(int32_t texid) override;
     bool TextureIncReference(int32_t texid) override;
 

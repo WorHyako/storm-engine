@@ -222,7 +222,8 @@ class VDX9RENDER : public SERVICE
     // DX9Render: Textures Section
     virtual int32_t TextureCreate(const char *fname) = 0;
     virtual int32_t TextureCreate(UINT width, UINT height, UINT levels, uint32_t usage, D3DFORMAT format, D3DPOOL pool) = 0;
-    virtual bool TextureSet(int32_t stage, int32_t texid) = 0;
+    virtual bool TextureSet(int32_t stage, int32_t texid) { return TextureSet(stage, storm::TextureHandle(texid)); }
+    virtual bool TextureSet(int32_t stage, storm::TextureHandle texture) = 0;
     virtual bool TextureRelease(int32_t texid) = 0;
     virtual bool TextureIncReference(int32_t texid) = 0;
 

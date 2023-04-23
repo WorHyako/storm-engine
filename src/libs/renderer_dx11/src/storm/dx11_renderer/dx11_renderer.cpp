@@ -3,6 +3,8 @@
 #include <d3d11.h>
 #include <d3dx9math.h>
 
+#include <utility>
+
 namespace storm
 {
 
@@ -21,7 +23,7 @@ void Release(T* resource) {
 class Dx11RendererImpl
 {
   public:
-    Dx11RendererImpl(std::shared_ptr<OSWindow> window) : window_(window)
+    explicit Dx11RendererImpl(std::shared_ptr<OSWindow> window) : window_(std::move(window))
     {
     }
 
@@ -30,6 +32,8 @@ class Dx11RendererImpl
     void Init();
 
     void Render(const Scene& scene);
+
+    TextureHandle LoadTexture(const std::string_view& path);
 
     [[nodiscard]] HWND GetHwnd() const
     {
@@ -105,6 +109,16 @@ void Dx11RendererImpl::Render(const Scene& scene)
     // Do actual rendering
 
     swap_chain_->Present(0, 0);
+}
+
+TextureHandle Dx11Renderer::LoadTexture(const std::string_view &path)
+{
+    return impl_->LoadTexture(path);
+}
+
+TextureHandle Dx11RendererImpl::LoadTexture(const std::string_view &path)
+{
+    return {};
 }
 
 } // namespace storm
