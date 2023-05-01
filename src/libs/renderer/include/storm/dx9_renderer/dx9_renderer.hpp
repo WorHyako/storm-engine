@@ -28,7 +28,9 @@ class Dx9Renderer final : public Renderer
     // _________________________________________________________________________
     [[nodiscard]] IDirect3DDevice9* GetDevice() const;
 
-    renderer::TexturePool &GetDefaultTexturePool() const;
+    void RecompileEffects();
+
+    [[nodiscard]] renderer::TexturePool &GetDefaultTexturePool() const;
 
   private:
     std::unique_ptr<Dx9RendererImpl> impl_;

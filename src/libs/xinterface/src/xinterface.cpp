@@ -74,6 +74,7 @@ bool CheckPCcd();
 XINTERFACE *XINTERFACE::pThis = nullptr;
 
 XINTERFACE::XINTERFACE()
+    : interfaceScene_(std::make_unique<storm::Scene>())
 {
     pThis = this;
 
@@ -116,7 +117,6 @@ XINTERFACE::XINTERFACE()
     m_nMouseLastClickTimeMax = 300;
 
     m_bUse = false;
-    m_bShowMouse = false;
 
     m_fBlindFactor = 0.f;
     m_bBlindUp = true;
@@ -240,7 +240,7 @@ void XINTERFACE::SetDevice()
 
     m_pMouseWeel = core.Event("evGetMouseWeel");
 
-    m_pEditor = new GIEditor(this);
+    // m_pEditor = new GIEditor(this);
 
     // UNGUARD
 }
@@ -327,126 +327,121 @@ void XINTERFACE::Realize(uint32_t)
     if (!m_bUse || !bActive)
         return;
 
-    pRenderService->MakePostProcess();
-
-    auto Delta_Time = core.GetRDeltaTime();
-
-    CMatrix moldv, moldp, moldw;
-
-    uint32_t dwFogFlag;
-    pRenderService->GetRenderState(D3DRS_FOGENABLE, &dwFogFlag);
-    if (pRenderService->TechniqueExecuteStart("iStartTechnique"))
-        while (pRenderService->TechniqueExecuteNext())
-            ;
-
-    // Get old transformation
-    pRenderService->GetTransform(D3DTS_VIEW, moldv);
-    pRenderService->GetTransform(D3DTS_PROJECTION, moldp);
+//    pRenderService->MakePostProcess();
+//
+//    auto Delta_Time = core.GetRDeltaTime();
+//
+//    CMatrix moldv, moldp, moldw;
+//
+//    uint32_t dwFogFlag;
+//    pRenderService->GetRenderState(D3DRS_FOGENABLE, &dwFogFlag);
+//    if (pRenderService->TechniqueExecuteStart("iStartTechnique"))
+//        while (pRenderService->TechniqueExecuteNext())
+//            ;
+//
+//    // Get old transformation
+//    pRenderService->GetTransform(D3DTS_VIEW, moldv);
+//    pRenderService->GetTransform(D3DTS_PROJECTION, moldp);
     // Set new transformation
     pRenderService->SetTransform(D3DTS_WORLD, matw);
     pRenderService->SetTransform(D3DTS_VIEW, matv);
     pRenderService->SetTransform(D3DTS_PROJECTION, matp);
-
-    DrawNode(m_pNodes, Delta_Time, 0, 80);
-
-    // Do mouse move
-    auto *pOldNode = m_pCurNode;
+//
+//    DrawNode(m_pNodes, Delta_Time, 0, 80);
+//
+//    // Do mouse move
+//    auto *pOldNode = m_pCurNode;
     MouseMove();
-    if (pOldNode != m_pCurNode)
-    {
-        core.Event(ISOUND_EVENT, "l", 2); // choosing a new node
-    }
-
-    // show dinamic pictures
-    XI_ONLYONETEX_VERTEX pV[4];
-    for (auto i = 0; i < 4; i++)
-        pV[i].pos.z = 1.f;
-    auto *pImg = m_imgLists;
-    uint32_t oldTFactor;
-    pRenderService->GetRenderState(D3DRS_TEXTUREFACTOR, &oldTFactor);
-    while (pImg != nullptr)
-    {
-        if (pImg->idTexture != -1 && pImg->imageID != -1)
-        {
-            pRenderService->TextureSet(0, pImg->idTexture);
-            FXYRECT frect;
-            pPictureService->GetTexturePos(pImg->imageID, frect);
-            pV[0].pos.x = pV[2].pos.x = static_cast<float>(pImg->position.left);
-            pV[0].tu = pV[2].tu = frect.left;
-            pV[1].pos.x = pV[3].pos.x = static_cast<float>(pImg->position.right);
-            pV[1].tu = pV[3].tu = frect.right;
-            pV[0].pos.y = pV[1].pos.y = static_cast<float>(pImg->position.top);
-            pV[0].tv = pV[1].tv = frect.top;
-            pV[2].pos.y = pV[3].pos.y = static_cast<float>(pImg->position.bottom);
-            pV[2].tv = pV[3].tv = frect.bottom;
-            if (pImg->doBlind)
-            {
-                pRenderService->SetRenderState(D3DRS_TEXTUREFACTOR,
-                                               GetBlendColor(pImg->argbBlindMin, pImg->argbBlindMax, m_fBlindFactor));
-                pRenderService->DrawPrimitiveUP(D3DPT_TRIANGLESTRIP, XI_ONLYONETEX_FVF, 2, pV,
-                                                sizeof(XI_ONLYONETEX_VERTEX), "iBlindPictures");
-            }
-            else
-            {
-                if (pImg->sTechniqueName == nullptr)
-                    pRenderService->DrawPrimitiveUP(D3DPT_TRIANGLESTRIP, XI_ONLYONETEX_FVF, 2, pV,
-                                                    sizeof(XI_ONLYONETEX_VERTEX), "iDinamicPictures");
-                else
-                    pRenderService->DrawPrimitiveUP(D3DPT_TRIANGLESTRIP, XI_ONLYONETEX_FVF, 2, pV,
-                                                    sizeof(XI_ONLYONETEX_VERTEX), pImg->sTechniqueName);
-            }
-        }
-        pImg = pImg->next;
-    }
-    pRenderService->SetRenderState(D3DRS_TEXTUREFACTOR, oldTFactor);
-
-    DrawNode(m_pNodes, Delta_Time, 81, 90);
-
-    // Show dinamic stringes
-    if (m_nStringQuantity > 0)
-    {
-        auto *tmpAttr = core.Entity_GetAttributeClass(g_idInterface, "strings");
-
-        if (tmpAttr != nullptr)
-            for (auto i = 0; i < m_nStringQuantity; i++)
-                if (m_stringes[i].bUsed)
-                {
-                    pRenderService->ExtPrint(m_stringes[i].fontNum, m_stringes[i].dwColor, 0, m_stringes[i].eAlignment,
-                                             true, m_stringes[i].fScale, dwScreenWidth, dwScreenHeight, m_stringes[i].x,
-                                             m_stringes[i].y, "%s", static_cast<const char*>(tmpAttr->GetAttribute(m_stringes[i].sStringName)));
-                }
-    }
-
-    DrawNode(m_pNodes, Delta_Time, 91, 65536);
-
-    if (m_pCurToolTipNode)
-        m_pCurToolTipNode->ShowToolTip();
-
-    if (m_pEditor)
-        if (m_pEditor->IsShowMode())
-            m_pEditor->Render();
-        else
-            m_pEditor->DrawSizeBox();
+//    if (pOldNode != m_pCurNode)
+//    {
+//        core.Event(ISOUND_EVENT, "l", 2); // choosing a new node
+//    }
+//
+//    // show dinamic pictures
+//    XI_ONLYONETEX_VERTEX pV[4];
+//    for (auto i = 0; i < 4; i++)
+//        pV[i].pos.z = 1.f;
+//    auto *pImg = m_imgLists;
+//    uint32_t oldTFactor;
+//    pRenderService->GetRenderState(D3DRS_TEXTUREFACTOR, &oldTFactor);
+//    while (pImg != nullptr)
+//    {
+//        if (pImg->idTexture != -1 && pImg->imageID != -1)
+//        {
+//            pRenderService->TextureSet(0, pImg->idTexture);
+//            FXYRECT frect;
+//            pPictureService->GetTexturePos(pImg->imageID, frect);
+//            pV[0].pos.x = pV[2].pos.x = static_cast<float>(pImg->position.left);
+//            pV[0].tu = pV[2].tu = frect.left;
+//            pV[1].pos.x = pV[3].pos.x = static_cast<float>(pImg->position.right);
+//            pV[1].tu = pV[3].tu = frect.right;
+//            pV[0].pos.y = pV[1].pos.y = static_cast<float>(pImg->position.top);
+//            pV[0].tv = pV[1].tv = frect.top;
+//            pV[2].pos.y = pV[3].pos.y = static_cast<float>(pImg->position.bottom);
+//            pV[2].tv = pV[3].tv = frect.bottom;
+//            if (pImg->doBlind)
+//            {
+//                pRenderService->SetRenderState(D3DRS_TEXTUREFACTOR,
+//                                               GetBlendColor(pImg->argbBlindMin, pImg->argbBlindMax, m_fBlindFactor));
+//                pRenderService->DrawPrimitiveUP(D3DPT_TRIANGLESTRIP, XI_ONLYONETEX_FVF, 2, pV,
+//                                                sizeof(XI_ONLYONETEX_VERTEX), "iBlindPictures");
+//            }
+//            else
+//            {
+//                if (pImg->sTechniqueName == nullptr)
+//                    pRenderService->DrawPrimitiveUP(D3DPT_TRIANGLESTRIP, XI_ONLYONETEX_FVF, 2, pV,
+//                                                    sizeof(XI_ONLYONETEX_VERTEX), "iDinamicPictures");
+//                else
+//                    pRenderService->DrawPrimitiveUP(D3DPT_TRIANGLESTRIP, XI_ONLYONETEX_FVF, 2, pV,
+//                                                    sizeof(XI_ONLYONETEX_VERTEX), pImg->sTechniqueName);
+//            }
+//        }
+//        pImg = pImg->next;
+//    }
+//    pRenderService->SetRenderState(D3DRS_TEXTUREFACTOR, oldTFactor);
+//
+//    DrawNode(m_pNodes, Delta_Time, 81, 90);
+//
+//    // Show dinamic stringes
+//    if (m_nStringQuantity > 0)
+//    {
+//        auto *tmpAttr = core.Entity_GetAttributeClass(g_idInterface, "strings");
+//
+//        if (tmpAttr != nullptr)
+//            for (auto i = 0; i < m_nStringQuantity; i++)
+//                if (m_stringes[i].bUsed)
+//                {
+//                    pRenderService->ExtPrint(m_stringes[i].fontNum, m_stringes[i].dwColor, 0, m_stringes[i].eAlignment,
+//                                             true, m_stringes[i].fScale, dwScreenWidth, dwScreenHeight, m_stringes[i].x,
+//                                             m_stringes[i].y, "%s", static_cast<const char*>(tmpAttr->GetAttribute(m_stringes[i].sStringName)));
+//                }
+//    }
+//
+//    DrawNode(m_pNodes, Delta_Time, 91, 65536);
+//
+//    if (m_pCurToolTipNode)
+//        m_pCurToolTipNode->ShowToolTip();
+//
+//    if (m_pEditor)
+//        if (m_pEditor->IsShowMode())
+//            m_pEditor->Render();
+//        else
+//            m_pEditor->DrawSizeBox();
 
     // Mouse pointer show
-    if (m_bShowMouse)
-    {
-        pRenderService->TextureSet(0, m_idTex);
-        pRenderService->DrawPrimitiveUP(D3DPT_TRIANGLESTRIP, XI_ONLYONETEX_FVF, 2, vMouse, sizeof(XI_ONLYONETEX_VERTEX),
-                                        "iMouseCurShow");
-    }
+    core.GetRenderer().Render(*interfaceScene_);
 
-    // Show context help data
-    ShowContextHelp();
-
-    if (pRenderService->TechniqueExecuteStart("iExitTechnique"))
-        while (pRenderService->TechniqueExecuteNext())
-            ;
-    pRenderService->SetRenderState(D3DRS_FOGENABLE, dwFogFlag);
-
-    // Restore old transformation
-    pRenderService->SetTransform(D3DTS_VIEW, moldv);
-    pRenderService->SetTransform(D3DTS_PROJECTION, moldp);
+//    // Show context help data
+//    ShowContextHelp();
+//
+//    if (pRenderService->TechniqueExecuteStart("iExitTechnique"))
+//        while (pRenderService->TechniqueExecuteNext())
+//            ;
+//    pRenderService->SetRenderState(D3DRS_FOGENABLE, dwFogFlag);
+//
+//    // Restore old transformation
+//    pRenderService->SetTransform(D3DTS_VIEW, moldv);
+//    pRenderService->SetTransform(D3DTS_PROJECTION, moldp);
 }
 
 int32_t oldCurNum = -1L;
@@ -1152,18 +1147,22 @@ void XINTERFACE::LoadIni()
     char param[256];
     ini->ReadString(section, "MousePointer", param, sizeof(param) - 1, "");
     char param2[256];
-    sscanf(param, "%[^,],%d,size:(%d,%d),pos:(%d,%d)", param2, &m_lMouseSensitive, &MouseSize.x, &MouseSize.y,
+    POINT mouse_size;
+    sscanf(param, "%[^,],%d,size:(%d,%d),pos:(%d,%d)", param2, &m_lMouseSensitive, &mouse_size.x, &mouse_size.y,
            &m_lXMouse, &m_lYMouse);
+
     m_idTex = core.GetRenderer().LoadTexture(param2);
+    if (m_idTex.IsValid()) {
+        cursorNode_ = std::make_unique<storm::SpriteNode>(m_idTex);
+        cursorNode_->SetVisible(false);
+        cursorNode_->SetWidth(mouse_size.x);
+        cursorNode_->SetHeight(mouse_size.y);
+        interfaceScene_->AddNode(*cursorNode_);
+    }
+
     core.GetWindow()->WarpMouseInWindow(windowSize.width / 2, windowSize.height / 2);
     fXMousePos = static_cast<float>(dwScreenWidth / 2);
     fYMousePos = static_cast<float>(dwScreenHeight / 2);
-    for (int i = 0; i < 4; i++)
-        vMouse[i].pos.z = 1.f;
-    vMouse[0].tu = vMouse[1].tu = 0.f;
-    vMouse[2].tu = vMouse[3].tu = 1.f;
-    vMouse[0].tv = vMouse[2].tv = 0.f;
-    vMouse[1].tv = vMouse[3].tv = 1.f;
 #ifdef _WIN32 // FIX_LINUX Cursor
     ShowCursor(false);
 #endif
@@ -2324,11 +2323,10 @@ void XINTERFACE::MouseMove()
             fXMousePos = static_cast<float>(dwScreenWidth);
         }
 
-        m_bShowMouse = true;
-        vMouse[0].pos.x = vMouse[1].pos.x = fXMousePos - MouseSize.x / 2;
-        vMouse[2].pos.x = vMouse[3].pos.x = fXMousePos + MouseSize.x / 2;
-        vMouse[0].pos.y = vMouse[2].pos.y = fYMousePos - MouseSize.y / 2;
-        vMouse[1].pos.y = vMouse[3].pos.y = fYMousePos + MouseSize.y / 2;
+        if (cursorNode_) {
+            cursorNode_->SetVisible(true);
+            cursorNode_->SetPosition(storm::Point{static_cast<int32_t>(fXMousePos), static_cast<int32_t>(fYMousePos)});
+        }
 
         m_pCurToolTipNode = nullptr;
         pNod = m_pNodes ? m_pNodes->FindNode(fXMousePos + m_lXMouse, fYMousePos + m_lYMouse) : nullptr;

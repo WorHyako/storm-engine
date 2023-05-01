@@ -58,9 +58,7 @@ class XINTERFACE : public XINTERFACE_BASE
     int32_t lock_x, lock_y; // center position for mouse pointer
     float fXMousePos, fYMousePos;
     int32_t m_lXMouse, m_lYMouse; // mouse pointer corrector for calculate active point
-    POINT MouseSize;
     storm::TextureHandle m_idTex;
-    XI_ONLYONETEX_VERTEX vMouse[4];
     int32_t m_lMouseSensitive;
     bool m_bMouseClick;
     bool m_bDblMouseClick;
@@ -214,6 +212,9 @@ class XINTERFACE : public XINTERFACE_BASE
     }
 
   protected:
+    std::unique_ptr<storm::Scene> interfaceScene_;
+    std::unique_ptr<storm::SpriteNode> cursorNode_;
+
     // WORLD,VIEW and PROJECTION matrixes
     CMatrix matw, matv, matp;
 

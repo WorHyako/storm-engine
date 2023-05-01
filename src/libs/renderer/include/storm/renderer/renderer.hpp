@@ -1,15 +1,12 @@
 #pragma once
 
 #include "scene.hpp"
-
-#include <storm/handle.hpp>
+#include "texture_handle.hpp"
 
 #include <string_view>
 
 namespace storm
 {
-
-DEFINE_HANDLE(TextureHandle)
 
 namespace renderer {
 

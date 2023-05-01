@@ -2,6 +2,7 @@
 
 #include "storm/image_loader.hpp"
 #include "storm/renderer/texture_pool.hpp"
+#include "../../effects.h"
 
 #include "core.h"
 #include "dx9render.h"
@@ -21,6 +22,14 @@ namespace storm
 
 namespace
 {
+
+constexpr auto SPRITE_VERTEX_FORMAT = D3DFVF_XYZ | D3DFVF_TEX1 | D3DFVF_TEXTUREFORMAT2;
+
+struct SpriteVertex
+{
+    CVECTOR pos;
+    float tu, tv;
+};
 
 #define CHECKD3DERR(expr) ErrorHandler(expr, __FILE__, __LINE__, __func__, #expr)
 
@@ -47,6 +56,14 @@ template <class T> void Release(T *resource)
     }
 }
 
+struct RenderState {
+    uint32_t isFogEnabled{};
+    uint32_t textureFactor{};
+    CMatrix worldMatrix{};
+    CMatrix viewMatrix{};
+    CMatrix projectionMatrix{};
+};
+
 } // namespace
 
 class Dx9RendererImpl
@@ -61,8 +78,6 @@ class Dx9RendererImpl
 
     void Init();
 
-    void Render(const Scene &scene);
-
     TextureHandle LoadTexture(const std::string_view &path);
 
     [[nodiscard]] HWND GetHwnd() const
@@ -70,11 +85,22 @@ class Dx9RendererImpl
         return reinterpret_cast<HWND>(window_->OSHandle());
     }
 
+    RenderState SaveState();
+    void RestoreState(const RenderState &state);
+
     bool DX9Clear(int32_t type, uint32_t color);
+    uint32_t DX9GetRenderState(D3DRENDERSTATETYPE state);
+    CMatrix DX9GetTransform(D3DTRANSFORMSTATETYPE state);
+    void DX9SetRenderState(D3DRENDERSTATETYPE state, uint32_t value);
+    void DX9SetTransform(D3DTRANSFORMSTATETYPE state, const CMatrix &matrix);
+
+    void RecompileEffects();
 
     std::shared_ptr<OSWindow> window_;
     std::unique_ptr<ImageLoader> imageLoader_;
     renderer::TexturePool defaultTexturePool_;
+
+    Effects effects_;
 
     IDirect3D9 *d3d_ = nullptr;
     IDirect3DDevice9 *device_ = nullptr;
@@ -259,17 +285,59 @@ void Dx9RendererImpl::Init()
             }
         }
     }
+
+    effects_.setDevice(device_);
 }
 
 void Dx9Renderer::Render(const Scene &scene)
 {
-    impl_->Render(scene);
-}
-
-void Dx9RendererImpl::Render(const Scene &scene)
-{
-    DX9Clear(D3DCLEAR_TARGET | D3DCLEAR_ZBUFFER | ((stencilFormat_ == D3DFMT_D24S8) ? D3DCLEAR_STENCIL : 0),
+    impl_->DX9Clear(D3DCLEAR_TARGET | D3DCLEAR_ZBUFFER | ((impl_->stencilFormat_ == D3DFMT_D24S8) ? D3DCLEAR_STENCIL : 0),
              scene.background);
+
+    const auto old_state = impl_->SaveState();
+
+    // Render sprites
+    SpriteVertex vertices[4]{};
+    for (int i = 0; i < 4; i++)
+        vertices[i].pos.z = 1.f;
+    vertices[0].tu = vertices[1].tu = 0.f;
+    vertices[2].tu = vertices[3].tu = 1.f;
+    vertices[0].tv = vertices[2].tv = 0.f;
+    vertices[1].tv = vertices[3].tv = 1.f;
+
+    // Render scene
+    for (const auto &node : scene.nodes_) {
+        if (node->IsVisible() ) {
+            if (const auto *sprite_node = dynamic_cast<SpriteNode *>(node); sprite_node != nullptr) {
+                const TextureHandle texture_handle = sprite_node->GetTexture();
+                if (texture_handle.IsValid())
+                {
+                    auto *texture =
+                        static_cast<IDirect3DTexture9 *>(impl_->defaultTexturePool_.GetHandle(texture_handle));
+                    impl_->device_->SetTexture(0, texture);
+                }
+                else {
+                    impl_->device_->SetTexture(0, nullptr);
+                }
+
+                const auto &position = sprite_node->GetPosition();
+                const size_t width = sprite_node->GetWidth();
+                const size_t height = sprite_node->GetHeight();
+                vertices[0].pos.x = vertices[1].pos.x = static_cast<float>(position.x - static_cast<int32_t>(width) / 2);
+                vertices[2].pos.x = vertices[3].pos.x = static_cast<float>(position.x + static_cast<int32_t>(width) / 2);
+                vertices[0].pos.y = vertices[2].pos.y = static_cast<float>(position.y - static_cast<int32_t>(height) / 2);
+                vertices[1].pos.y = vertices[3].pos.y = static_cast<float>(position.y + static_cast<int32_t>(height) / 2);
+
+                if (impl_->effects_.begin("iMouseCurShow")) {
+                    do {
+                        impl_->device_->DrawPrimitiveUP(D3DPT_TRIANGLESTRIP, 2, vertices, sizeof(SpriteVertex));
+                    } while(impl_->effects_.next());
+                }
+            }
+        }
+    }
+
+    impl_->RestoreState(old_state);
 }
 
 TextureHandle Dx9Renderer::LoadTexture(const std::string_view &path)
@@ -315,9 +383,36 @@ TextureHandle Dx9RendererImpl::LoadTexture(const std::string_view &path)
     return impl_->device_;
 }
 
+void Dx9Renderer::RecompileEffects()
+{
+    impl_->RecompileEffects();
+}
+
 renderer::TexturePool &Dx9Renderer::GetDefaultTexturePool() const
 {
     return impl_->defaultTexturePool_;
+}
+
+RenderState Dx9RendererImpl::SaveState()
+{
+    RenderState result;
+
+    result.textureFactor = DX9GetRenderState(D3DRS_TEXTUREFACTOR);
+    result.isFogEnabled = DX9GetRenderState(D3DRS_FOGENABLE);
+    result.viewMatrix = DX9GetTransform(D3DTS_VIEW);
+    result.projectionMatrix = DX9GetTransform(D3DTS_PROJECTION);
+    result.worldMatrix = DX9GetTransform(D3DTS_WORLD);
+
+    return result;
+}
+
+void Dx9RendererImpl::RestoreState(const RenderState &state)
+{
+    DX9SetRenderState(D3DRS_TEXTUREFACTOR, state.textureFactor);
+    DX9SetRenderState(D3DRS_FOGENABLE, state.isFogEnabled);
+    DX9SetTransform(D3DTS_VIEW, state.viewMatrix);
+    DX9SetTransform(D3DTS_PROJECTION, state.projectionMatrix);
+    DX9SetTransform(D3DTS_WORLD, state.worldMatrix);
 }
 
 bool Dx9RendererImpl::DX9Clear(const int32_t type, const uint32_t color)
@@ -325,6 +420,47 @@ bool Dx9RendererImpl::DX9Clear(const int32_t type, const uint32_t color)
     if (CHECKD3DERR(device_->Clear(0L, NULL, type, color, 1.0f, 0L)) == true)
         return false;
     return true;
+}
+
+uint32_t Dx9RendererImpl::DX9GetRenderState(D3DRENDERSTATETYPE state)
+{
+    uint32_t value{};
+    CHECKD3DERR(device_->GetRenderState(state, (DWORD *)&value));
+    return value;
+}
+
+CMatrix Dx9RendererImpl::DX9GetTransform(D3DTRANSFORMSTATETYPE state)
+{
+    CMatrix m{};
+    CHECKD3DERR(device_->GetTransform(state, (D3DMATRIX *)&m));
+    return m;
+}
+
+void Dx9RendererImpl::DX9SetRenderState(D3DRENDERSTATETYPE state, uint32_t value)
+{
+    CHECKD3DERR(device_->SetRenderState(state, value));
+}
+
+void Dx9RendererImpl::DX9SetTransform(D3DTRANSFORMSTATETYPE state, const CMatrix &matrix)
+{
+    CHECKD3DERR(device_->SetTransform(state, (D3DMATRIX *)&matrix));
+}
+
+void Dx9RendererImpl::RecompileEffects()
+{
+#ifdef _WIN32 // Effects
+    effects_.release();
+
+    std::filesystem::path cur_path = std::filesystem::current_path();
+    std::filesystem::current_path(std::filesystem::u8path(fio->_GetExecutableDirectory()));
+    for (const auto &p : std::filesystem::recursive_directory_iterator("resource/techniques"))
+        if (is_regular_file(p) && p.path().extension() == ".fx")
+        {
+            auto s = p.path().string(); // hug microsoft
+            effects_.compile(s.c_str());
+        }
+    std::filesystem::current_path(cur_path);
+#endif
 }
 
 } // namespace storm

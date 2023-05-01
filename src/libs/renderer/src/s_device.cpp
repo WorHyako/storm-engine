@@ -712,9 +712,6 @@ bool DX9RENDER::InitDevice(bool windowed, HWND _hwnd, int32_t width, int32_t hei
         d3d9 = renderer->GetDevice();
 
         hwnd = _hwnd;
-#ifdef _WIN32 // Effects
-        effects_.setDevice(d3d9);
-#endif
 
         // Create render targets for POST PROCESS effects
         d3d9->GetRenderTarget(0, &pOriginalScreenSurface);
@@ -2523,19 +2520,11 @@ void DX9RENDER::RestoreRender()
 
 void DX9RENDER::RecompileEffects()
 {
-#ifdef _WIN32 // Effects
-    effects_.release();
+    auto *renderer = dynamic_cast<storm::Dx9Renderer*>(&core.GetRenderer());
 
-    std::filesystem::path cur_path = std::filesystem::current_path();
-    std::filesystem::current_path(std::filesystem::u8path(fio->_GetExecutableDirectory()));
-    for (const auto &p : std::filesystem::recursive_directory_iterator("resource/techniques"))
-        if (is_regular_file(p) && p.path().extension() == ".fx")
-        {
-            auto s = p.path().string(); // hug microsoft
-            effects_.compile(s.c_str());
-        }
-    std::filesystem::current_path(cur_path);
-#endif
+    if (renderer) {
+        renderer->RecompileEffects();
+    }
 }
 
 bool DX9RENDER::ResetDevice()
