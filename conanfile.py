@@ -37,7 +37,7 @@ class StormEngine(ConanFile):
             self.requires("steamworks/1.5.1@storm/prebuilt")
         if self.options.conan_sdl:
             self.requires("sdl/2.0.18")
-        self.options["freeimage"].with_jpeg = False
+        self.options["freeimage"].with_jpeg = "libjpeg-turbo"
         self.options["freeimage"].with_png = True
         self.options["freeimage"].with_tiff = False
         self.options["freeimage"].with_jpeg2000 = False

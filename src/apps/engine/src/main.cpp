@@ -23,6 +23,7 @@ CorePrivate *core_private;
 constexpr char defaultLoggerName[] = "system";
 bool isRunning = false;
 bool bActive = true;
+bool bSoundInBackground = false;
 
 storm::diag::LifecycleDiagnosticsService lifecycleDiagnostics;
 
@@ -96,7 +97,8 @@ void HandleWindowEvent(const storm::OSWindow::Event &event)
         if (core_private->initialized())
         {
             core_private->AppState(bActive);
-            if (const auto soundService = static_cast<VSoundService *>(core.GetService("SoundService")))
+            if (const auto soundService = static_cast<VSoundService *>(core.GetService("SoundService"));
+                soundService && !bSoundInBackground)
             {
                 soundService->SetActiveWithFade(true);
             }
@@ -108,7 +110,8 @@ void HandleWindowEvent(const storm::OSWindow::Event &event)
         if (core_private->initialized())
         {
             core_private->AppState(bActive);
-            if (const auto soundService = static_cast<VSoundService *>(core.GetService("SoundService")))
+            if (const auto soundService = static_cast<VSoundService *>(core.GetService("SoundService"));
+                soundService && !bSoundInBackground)
             {
                 soundService->SetActiveWithFade(false);
             }
@@ -180,6 +183,7 @@ int main(int argc, char *argv[])
     int preferred_display = 0;
     bool fullscreen = false;
     bool show_borders = false;
+    bool run_in_background = false;
     std::optional<std::string> preferredDriver;
 
     if (ini)
@@ -196,6 +200,8 @@ int main(int argc, char *argv[])
         preferred_display = ini->GetInt(nullptr, "display", 0);
         fullscreen = ini->GetInt(nullptr, "full_screen", false);
         show_borders = ini->GetInt(nullptr, "window_borders", false);
+        run_in_background = ini->GetInt(nullptr, "run_in_background ", false);
+        bSoundInBackground = (!run_in_background) || ini->GetInt(nullptr, "sound_in_background ", true);
         bSteam = ini->GetInt(nullptr, "Steam", 1) != 0;
         preferredDriver = ini->GetString(nullptr, "driver");
     }
@@ -232,7 +238,7 @@ int main(int argc, char *argv[])
         SDL_PumpEvents();
         SDL_FlushEvents(0, SDL_LASTEVENT);
 
-        if (bActive)
+        if (bActive || run_in_background)
         {
             if (dwMaxFPS)
             {
