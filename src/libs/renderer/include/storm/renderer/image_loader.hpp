@@ -15,7 +15,7 @@ class ImageLoader final
     ImageLoader();
     ~ImageLoader();
 
-    std::unique_ptr<Image> LoadImageFromFile(const istring &path);
+    std::unique_ptr<Image> LoadImageFromFile(const std::string &path);
 
     static void CopyImageToBuffer(const Image& image, uint8_t *destination);
 

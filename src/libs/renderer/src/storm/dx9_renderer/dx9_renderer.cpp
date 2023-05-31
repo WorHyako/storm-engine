@@ -1,6 +1,6 @@
 #include "storm/dx9_renderer/dx9_renderer.hpp"
 
-#include "storm/image_loader.hpp"
+#include "storm/renderer/image_loader.hpp"
 #include "storm/renderer/texture_pool.hpp"
 #include "../../effects.h"
 
@@ -70,7 +70,7 @@ class Dx9RendererImpl
 {
   public:
     explicit Dx9RendererImpl(std::shared_ptr<OSWindow> window)
-        : window_(std::move(window)), imageLoader_(new ImageLoader())
+        : window_(std::move(window)), imageLoader_(new renderer::ImageLoader())
     {
     }
 
@@ -97,10 +97,12 @@ class Dx9RendererImpl
     void RecompileEffects();
 
     std::shared_ptr<OSWindow> window_;
-    std::unique_ptr<ImageLoader> imageLoader_;
+    std::unique_ptr<renderer::ImageLoader> imageLoader_;
     renderer::TexturePool defaultTexturePool_;
 
+#ifdef _WIN32
     Effects effects_;
+#endif
 
     IDirect3D9 *d3d_ = nullptr;
     IDirect3DDevice9 *device_ = nullptr;
@@ -286,7 +288,9 @@ void Dx9RendererImpl::Init()
         }
     }
 
+#ifdef _WIN32
     effects_.setDevice(device_);
+#endif
 }
 
 void Dx9Renderer::Render(const Scene &scene)
@@ -328,11 +332,13 @@ void Dx9Renderer::Render(const Scene &scene)
                 vertices[0].pos.y = vertices[2].pos.y = static_cast<float>(position.y - static_cast<int32_t>(height) / 2);
                 vertices[1].pos.y = vertices[3].pos.y = static_cast<float>(position.y + static_cast<int32_t>(height) / 2);
 
+#ifdef _WIN32
                 if (impl_->effects_.begin("iMouseCurShow")) {
                     do {
                         impl_->device_->DrawPrimitiveUP(D3DPT_TRIANGLESTRIP, 2, vertices, sizeof(SpriteVertex));
                     } while(impl_->effects_.next());
                 }
+#endif
             }
         }
     }
@@ -347,7 +353,7 @@ TextureHandle Dx9Renderer::LoadTexture(const std::string_view &path)
 
 TextureHandle Dx9RendererImpl::LoadTexture(const std::string_view &path)
 {
-    const auto image = imageLoader_->LoadImageFromFile(path);
+    const auto image = imageLoader_->LoadImageFromFile(std::string(path));
 
     if (image != nullptr)
     {
@@ -366,7 +372,7 @@ TextureHandle Dx9RendererImpl::LoadTexture(const std::string_view &path)
             defaultTexturePool_.ReleaseTexture(result);
             return {};
         }
-        image->CopyToBuffer(static_cast<uint8_t *>(rect.pBits));
+        imageLoader_->CopyImageToBuffer(*image, static_cast<uint8_t *>(rect.pBits));
         surface->UnlockRect();
         surface->Release();
 

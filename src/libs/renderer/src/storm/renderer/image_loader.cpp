@@ -49,7 +49,7 @@ ImageLoader::ImageLoader()
 
 ImageLoader::~ImageLoader() = default;
 
-std::unique_ptr<Image> ImageLoader::LoadImageFromFile(const istring &path)
+std::unique_ptr<Image> ImageLoader::LoadImageFromFile(const std::string &path)
 {
     const auto image_type = FreeImage_GetFileType(path.c_str(), 0);
 
