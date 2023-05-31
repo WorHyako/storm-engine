@@ -64,6 +64,7 @@ void OpenGlRenderer::Init()
     if (context == nullptr)
     {
         std::cerr << SDL_GetError() << '\n';
+        return;
     }
 
     glbinding::initialize([](const char *fn) { return reinterpret_cast<void (*)()>(SDL_GL_GetProcAddress(fn)); });

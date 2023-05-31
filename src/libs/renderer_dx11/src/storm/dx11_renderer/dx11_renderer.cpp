@@ -33,6 +33,8 @@ class Dx11RendererImpl
 
     void Render(const Scene& scene);
 
+    void Present();
+
     TextureHandle LoadTexture(const std::string_view& path);
 
     [[nodiscard]] HWND GetHwnd() const
@@ -102,12 +104,20 @@ void Dx11Renderer::Render(const Scene& scene)
     impl_->Render(scene);
 }
 
+void Dx11Renderer::Present()
+{
+    impl_->Present();
+}
+
 void Dx11RendererImpl::Render(const Scene& scene)
 {
     context_->ClearRenderTargetView(backBuffer_, D3DXCOLOR(scene.background));
 
     // Do actual rendering
+}
 
+void Dx11RendererImpl::Present()
+{
     swap_chain_->Present(0, 0);
 }
 
