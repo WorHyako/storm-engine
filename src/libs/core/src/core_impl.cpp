@@ -9,6 +9,9 @@
 #ifdef STORM_DIRECTX11_ENABLED
 #include <storm/dx11_renderer/dx11_renderer.hpp>
 #endif
+#ifdef STORM_OPENGL_ENABLED
+#include <storm/opengl_renderer/opengl_renderer.hpp>
+#endif
 
 #include <fstream>
 
@@ -786,6 +789,11 @@ void CoreImpl::CreateRenderer(const std::string_view &type)
 #ifdef STORM_DIRECTX11_ENABLED
     if (storm::iEquals(type, "dx11")) {
         renderer_ = std::make_shared<storm::Dx11Renderer>(window_);
+    } else
+#endif
+#ifdef STORM_OPENGL_ENABLED
+    if (storm::iEquals(type, "opengl")) {
+        renderer_ = std::make_shared<storm::OpenGlRenderer>(window_);
     } else
 #endif
 #ifdef STORM_DIRECTX9_ENABLED

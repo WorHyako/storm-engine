@@ -2664,6 +2664,8 @@ void DX9RENDER::RunEnd()
     // MakePostProcess();
 
     bInsideScene = false;
+    auto &renderer = core.GetRenderer();
+    renderer.Present();
     DX9EndScene();
     if (progressTexture >= 0)
     {

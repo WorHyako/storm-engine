@@ -12,6 +12,7 @@ option(STORM_USE_CONAN_SDL "Use sdl from conan" ON)
 if (NOT WIN32)
     option(STORM_MESA_NINE "Use Gallium Nine from Mesa for native D3D9 API" OFF)
 endif()
+option(STORM_ENABLE_OPENGL "Enable OpenGL driver support" OFF)
 
 ### Set up output paths
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
@@ -32,7 +33,7 @@ conan_add_remote(NAME storm
     URL https://storm.jfrog.io/artifactory/api/conan/conan-remote
     VERIFY_SSL True
 )
-normalize_booleans(STORM_ENABLE_CRASH_REPORTS STORM_ENABLE_STEAM STORM_USE_CONAN_SDL)
+normalize_booleans(STORM_ENABLE_CRASH_REPORTS STORM_ENABLE_STEAM STORM_USE_CONAN_SDL STORM_ENABLE_OPENGL)
 conan_cmake_run(CONANFILE conanfile.py
     BASIC_SETUP CMAKE_TARGETS
     BUILD missing
@@ -42,6 +43,7 @@ conan_cmake_run(CONANFILE conanfile.py
         crash_reports=${STORM_ENABLE_CRASH_REPORTS}
         steam=${STORM_ENABLE_STEAM}
         conan_sdl=${STORM_USE_CONAN_SDL}
+        opengl=${STORM_ENABLE_OPENGL}
 )
 
 ### Define library ALIASes for use without CONAN_PKG:: prefix

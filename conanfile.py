@@ -12,7 +12,8 @@ class StormEngine(ConanFile):
         "watermark_file": "ANY",
         "crash_reports": [True, False],
         "steam": [True, False],
-        "conan_sdl": [True, False]
+        "conan_sdl": [True, False],
+        "opengl": [True, False],
     }
 
     # dependencies used in deploy binaries
@@ -37,6 +38,8 @@ class StormEngine(ConanFile):
             self.requires("steamworks/1.5.1@storm/prebuilt")
         if self.options.conan_sdl:
             self.requires("sdl/2.0.18")
+        if self.options.opengl:
+            self.requires("glbinding/3.1.0")
         self.options["freeimage"].with_jpeg = "libjpeg-turbo"
         self.options["freeimage"].with_png = True
         self.options["freeimage"].with_tiff = False

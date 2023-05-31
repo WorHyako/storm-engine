@@ -346,6 +346,10 @@ void Dx9Renderer::Render(const Scene &scene)
     impl_->RestoreState(old_state);
 }
 
+void Dx9Renderer::Present()
+{
+}
+
 TextureHandle Dx9Renderer::LoadTexture(const std::string_view &path)
 {
     return impl_->LoadTexture(path);

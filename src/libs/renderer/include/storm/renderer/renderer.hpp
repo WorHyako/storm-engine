@@ -23,6 +23,8 @@ class Renderer
 
     virtual void Render(const Scene& scene) = 0;
 
+    virtual void Present() = 0;
+
     virtual TextureHandle LoadTexture(const std::string_view &path) = 0;
 };
 

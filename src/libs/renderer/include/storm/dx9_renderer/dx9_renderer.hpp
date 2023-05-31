@@ -22,6 +22,8 @@ class Dx9Renderer final : public Renderer
 
     void Render(const Scene& scene) override;
 
+    void Present() override;
+
     TextureHandle LoadTexture(const std::string_view &path) override;
 
     // DX9 specific methods
