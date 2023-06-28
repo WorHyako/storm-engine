@@ -4,20 +4,37 @@
 
 namespace storm
 {
-SDLWindow::SDLWindow(int width, int height, int preferred_display, bool fullscreen, bool bordered)
-    : fullscreen_(fullscreen)
+SDLWindow::SDLWindow(const OSWindowOptions& options)
+    : fullscreen_(options.fullscreen)
 {
-    uint32_t flags = (fullscreen ? SDL_WINDOW_FULLSCREEN : 0) | SDL_WINDOW_HIDDEN;
-#if !defined(_WIN32) && !defined(STORM_MESA_NINE) // DXVK-Native
-    flags |= SDL_WINDOW_VULKAN;
-#endif
+    uint32_t flags = (fullscreen_ ? SDL_WINDOW_FULLSCREEN : 0) | SDL_WINDOW_HIDDEN;
+
+    switch (options.backend)
+    {
+    case GraphicsBackend::OpenGL: {
+        flags |= SDL_WINDOW_OPENGL;
+        break;
+    }
+    case GraphicsBackend::Vulkan: {
+        flags |= SDL_WINDOW_VULKAN;
+        break;
+    }
+    case GraphicsBackend::Metal: {
+        flags |= SDL_WINDOW_METAL;
+        break;
+    }
+    default:
+        break;
+    }
+
+    const auto preferred_display = options.preferred_display;
     window_ = std::unique_ptr<SDL_Window, std::function<void(SDL_Window *)>>(
         SDL_CreateWindow("", SDL_WINDOWPOS_CENTERED_DISPLAY(preferred_display),
-                         SDL_WINDOWPOS_CENTERED_DISPLAY(preferred_display), width, height, flags),
+                         SDL_WINDOWPOS_CENTERED_DISPLAY(preferred_display), options.width, options.height, flags),
         [](SDL_Window *w) { SDL_DestroyWindow(w); });
 
     sdlID_ = SDL_GetWindowID(window_.get());
-    SDL_SetWindowBordered(window_.get(), bordered ? SDL_TRUE : SDL_FALSE);
+    SDL_SetWindowBordered(window_.get(), options.bordered ? SDL_TRUE : SDL_FALSE);
     SDL_AddEventWatch(&SDLEventHandler, this);
 }
 
@@ -161,9 +178,9 @@ void SDLWindow::ProcessEvent(const SDL_WindowEvent &evt) const
         handler.second(winEvent);
 }
 
-std::shared_ptr<OSWindow> OSWindow::Create(int width, int height, int preferred_display, bool fullscreen, bool bordered)
+std::shared_ptr<OSWindow> OSWindow::Create(const OSWindowOptions& options)
 {
-    return std::make_shared<SDLWindow>(width, height, preferred_display, fullscreen, bordered);
+    return std::make_shared<SDLWindow>(options);
 }
 
 int SDLWindow::SDLEventHandler(void *userdata, SDL_Event *evt)

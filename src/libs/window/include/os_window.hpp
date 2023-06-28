@@ -12,6 +12,22 @@ struct WindowSize
     int height{};
 };
 
+enum class GraphicsBackend {
+    Default = 0,
+    OpenGL,
+    Vulkan,
+    Metal,
+};
+
+struct OSWindowOptions {
+    GraphicsBackend backend = GraphicsBackend::Default;
+    int width = 1024;
+    int height = 768;
+    int preferred_display = 0;
+    bool fullscreen = false;
+    bool bordered = false;
+};
+
 //! Abstract window
 class OSWindow
 {
@@ -74,7 +90,7 @@ class OSWindow
     virtual void *OSHandle() = 0;
 
     //! Create new window
-    static std::shared_ptr<OSWindow> Create(int width, int height, int preferred_display, bool fullscreen,
-                                            bool bordered);
+    static std::shared_ptr<OSWindow> Create(const OSWindowOptions& options);
 };
+
 } // namespace storm

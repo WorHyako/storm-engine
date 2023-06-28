@@ -79,6 +79,30 @@ void mimalloc_fun(const char *msg, void *arg)
     }
 }
 
+storm::GraphicsBackend determineRequiredGraphicsBackend(std::string_view renderer_type) {
+#if !defined(_WIN32) && !defined(STORM_MESA_NINE) // DXVK-Native
+    auto direct_x_backend = storm::GraphicsBackend::Vulkan;
+#else
+    auto direct_x_backend = storm::GraphicsBackend::Default;
+#endif
+
+#ifdef STORM_DIRECTX9_ENABLED
+    if (storm::iEquals(renderer_type, "dx9")) {
+        return direct_x_backend;
+    } else
+#endif
+#ifdef STORM_DIRECTX11_ENABLED
+    if (storm::iEquals(renderer_type, "dx11")) {
+        return direct_x_backend;
+    } else
+#endif
+#ifdef STORM_OPENGL_ENABLED
+        if (storm::iEquals(renderer_type, "opengl")) {
+        return storm::GraphicsBackend::OpenGL;
+    }
+#endif
+}
+
 } // namespace
 
 void HandleWindowEvent(const storm::OSWindow::Event &event)
@@ -217,8 +241,16 @@ int main(int argc, char *argv[])
         return EXIT_FAILURE;
     }
 
+    storm::OSWindowOptions window_options{};
+    window_options.width = width;
+    window_options.height = height;
+    window_options.preferred_display = preferred_display;
+    window_options.fullscreen = fullscreen;
+    window_options.bordered = show_borders;
+    window_options.backend = determineRequiredGraphicsBackend(preferredDriver.value_or("dx9"));
+
     std::shared_ptr<storm::OSWindow> window =
-        storm::OSWindow::Create(width, height, preferred_display, fullscreen, show_borders);
+        storm::OSWindow::Create(window_options);
     window->SetTitle("Sea Dogs");
     window->Subscribe(HandleWindowEvent);
     window->Show();

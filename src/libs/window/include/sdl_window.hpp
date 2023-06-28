@@ -1,6 +1,6 @@
 #pragma once
 
-#include <os_window.hpp>
+#include "os_window.hpp"
 #include <SDL2/SDL.h>
 #include <map>
 
@@ -9,7 +9,7 @@ namespace storm
 class SDLWindow : public OSWindow
 {
   public:
-    SDLWindow(int width, int height, int preferred_display, bool fullscreen, bool bordered);
+    explicit SDLWindow(const OSWindowOptions& options);
     ~SDLWindow() override;
 
     void Show() override;
