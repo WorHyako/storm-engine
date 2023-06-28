@@ -89,18 +89,19 @@ storm::GraphicsBackend determineRequiredGraphicsBackend(std::string_view rendere
 #ifdef STORM_DIRECTX9_ENABLED
     if (storm::iEquals(renderer_type, "dx9")) {
         return direct_x_backend;
-    } else
+    }
 #endif
 #ifdef STORM_DIRECTX11_ENABLED
     if (storm::iEquals(renderer_type, "dx11")) {
         return direct_x_backend;
-    } else
+    }
 #endif
 #ifdef STORM_OPENGL_ENABLED
         if (storm::iEquals(renderer_type, "opengl")) {
         return storm::GraphicsBackend::OpenGL;
     }
 #endif
+    return storm::GraphicsBackend::Default;
 }
 
 } // namespace
