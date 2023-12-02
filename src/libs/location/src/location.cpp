@@ -487,7 +487,7 @@ int32_t Location::LoadStaticModel(const char *modelName, const char *tech, int32
         model.DeleteModel(im);
         return -1;
     }
-    auto *const g = node->geo;
+    const auto &g = node->geo;
     if (!g)
     {
         model.DeleteModel(im);

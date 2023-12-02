@@ -1,8 +1,9 @@
 //#define SHOW_SPHERES 'Q'
 
-#include "entity.h"
 #include "core.h"
+#include "entity.h"
 #include "modelr.h"
+#include "storm/geometry/geometry_loading.hpp"
 #include "string_compare.hpp"
 
 VGEOMETRY *NODER::gs = nullptr;
@@ -169,7 +170,6 @@ NODER::NODER()
 #ifdef SHOW_SPHERES
     sphere = 0;
 #endif
-    geo = nullptr;
     parent = nullptr;
 
     max_view_dist = 0.f;
@@ -206,7 +206,9 @@ bool NODER::Init(const char *lightPath, const char *pname, const char *oname, co
 
     sys_TexPath = gs->GetTexturePath();
 
-    geo = gs->CreateGeometry(sys_modelName_full.c_str(), sys_LightPath.c_str(), 0, lmPath);
+    storm::istring_view modelname_full(sys_modelName_full.begin(), sys_modelName_full.end());
+    geo = storm::LoadGeometry(modelname_full);
+//    geo = gs->CreateGeometry(sys_modelName_full.c_str(), sys_LightPath.c_str(), 0, lmPath);
     if (!geo)
     {
         return false;
@@ -275,7 +277,7 @@ NODER::~NODER()
     }
 #endif
 
-    delete geo;
+    geo.reset();
     std::destroy(next.begin(), next.end());
 }
 
@@ -283,8 +285,7 @@ void NODER::ReleaseGeometry()
 {
     if (isReleased)
         return;
-    delete geo;
-    geo = nullptr;
+    geo.reset();
     isReleased = true;
     for (int32_t i = 0; i < next.size(); i++)
     {
@@ -304,7 +305,9 @@ void NODER::RestoreGeometry()
     auto *const ttPath = new char[len];
     memcpy(ttPath, tPath, len);
     gs->SetTexturePath(sys_TexPath.c_str());
-    geo = gs->CreateGeometry(sys_modelName_full.c_str(), sys_LightPath.c_str(), 0, sys_lmPath.c_str());
+    storm::istring_view modelname_full(sys_modelName_full.begin(), sys_modelName_full.end());
+    geo = storm::LoadGeometry(modelname_full);
+//    geo = gs->CreateGeometry(sys_modelName_full.c_str(), sys_LightPath.c_str(), 0, sys_lmPath.c_str());
     gs->SetTexturePath(ttPath);
     delete[] ttPath;
     if (!geo)

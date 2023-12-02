@@ -25,7 +25,7 @@ class NODE
 
     int32_t flags;
 
-    GEOS *geo;
+    std::unique_ptr<GEOS> geo;
     GEOS::MATERIAL_FUNC geoMaterialFunc;
     // children
     std::vector<NODE *> next;

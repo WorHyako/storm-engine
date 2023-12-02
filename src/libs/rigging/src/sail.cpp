@@ -2001,7 +2001,7 @@ void SAIL::DoNoRopeSailToNewHost(entid_t newModel, entid_t newHost, entid_t oldH
         if (nod == nullptr)
             continue;
 
-        GEOS *tgeo = slist[sn]->hostNode->geo;
+        auto &tgeo = slist[sn]->hostNode->geo;
         GEOS::INFO gi;
         tgeo->GetInfo(gi);
         for (int i = 0; i < gi.nlabels; i++)

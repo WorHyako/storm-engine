@@ -131,7 +131,7 @@ bool LGeometry::Process(VDX9RENDER *rs, int32_t numLights)
         object[i].m->Update();
         // get geometry
         auto *node = object[i].m->GetNode(0);
-        auto *g = node->geo;
+        auto &g = node->geo;
         if (!g)
         {
             core.Trace("Location lighter: incorrent model %s (node not include geos)", object[i].nameReal);
