@@ -14,6 +14,8 @@ class GltfGeometry : public GEOS {
     GltfGeometry(tinygltf::Model model);
     ~GltfGeometry() override;
 
+    void LoadColorData(const std::string_view &light_file);
+
     int32_t FindName(const char *name) const override;
     void GetInfo(INFO &i) const override;
     std::vector<LABEL> GetGroupLabels(const std::string_view &group) const override;

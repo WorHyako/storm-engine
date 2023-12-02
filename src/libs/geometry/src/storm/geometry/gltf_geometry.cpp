@@ -11,6 +11,29 @@ extern GEOM_SERVICE_R GSR;
 
 namespace storm
 {
+
+namespace
+{
+std::vector<uint32_t> getColData(GEOM_SERVICE &srv, const std::string_view &file_name)
+{
+    std::vector<uint32_t> result;
+
+    auto ltfl = srv.OpenFile(file_name.data());
+    if (ltfl.is_open())
+    {
+        const auto file_size = srv.FileSize(file_name.data());
+        if (file_size > 0)
+        {
+            result.resize(file_size / sizeof(uint32_t));
+            srv.ReadFile(ltfl, result.data(), file_size);
+        }
+    }
+    srv.CloseFile(ltfl);
+
+    return result;
+}
+} // namespace
+
 class UnimplementedError : public std::runtime_error
 {
 public:
@@ -30,6 +53,9 @@ public:
 
     tinygltf::Model model_;
     GEOS::MATERIAL material_;
+
+    std::vector<uint32_t> colorData_;
+
     int32_t vertexBuffer_{};
     int32_t indexBuffer_{};
     int32_t vertexCount_;
@@ -52,6 +78,11 @@ void GltfGeometry::Impl::Initialize()
         indexBuffer_ = GSR.CreateIndexBuffer(indexView.byteLength);
         auto *triangles = static_cast<char*>(GSR.LockIndexBuffer(indexBuffer_));
         std::copy(buffer.begin() + indexView.byteOffset, buffer.begin() + indexView.byteOffset + indexView.byteLength, triangles);
+        auto *indices = reinterpret_cast<uint16_t*>(triangles);
+        for (size_t i = 0; i < indexView.byteLength / 2;i += 3)
+        {
+            std::swap(indices[i], indices[i + 1]);
+        }
         GSR.UnlockIndexBuffer(indexBuffer_);
         triangleCount_ = indexAccessor.count / 3;
 
@@ -71,16 +102,22 @@ void GltfGeometry::Impl::Initialize()
             for (size_t i = 0; i < vertexCount_; ++i)
             {
                 vertices[i] = {};
-                vertices[i].pos.x = *reinterpret_cast<const float*>(&buffer[positionBuffer.byteOffset + i * stride]);
+                vertices[i].pos.z = *reinterpret_cast<const float*>(&buffer[positionBuffer.byteOffset + i * stride]);
                 vertices[i].pos.y = *reinterpret_cast<const float*>(&buffer[positionBuffer.byteOffset + i * stride + 1 * sizeof(float)]);
-                vertices[i].pos.z = *reinterpret_cast<const float*>(&buffer[positionBuffer.byteOffset + i * stride + 2 * sizeof(float)]);
-                vertices[i].norm.x = *reinterpret_cast<const float*>(&buffer[normalBuffer.byteOffset + i * stride]);
+                vertices[i].pos.x = *reinterpret_cast<const float*>(&buffer[positionBuffer.byteOffset + i * stride + 2 * sizeof(float)]);
+                vertices[i].norm.x = -*reinterpret_cast<const float*>(&buffer[normalBuffer.byteOffset + i * stride]);
                 vertices[i].norm.y = *reinterpret_cast<const float*>(&buffer[normalBuffer.byteOffset + i * stride + 1 * sizeof(float)]);
                 vertices[i].norm.z = *reinterpret_cast<const float*>(&buffer[normalBuffer.byteOffset + i * stride + 2 * sizeof(float)]);
                 vertices[i].tu0 = *reinterpret_cast<const float*>(&buffer[texCoordBuffer.byteOffset + i * texCoordStride]);
                 vertices[i].tv0 = *reinterpret_cast<const float*>(&buffer[texCoordBuffer.byteOffset + i * texCoordStride + sizeof(float)]);
-                vertices[i].color = 0xFFFFFFFF;
-                vertices[i].norm = CVECTOR{1.f, 0.f, 0.f};
+                if (colorData_.size() > i)
+                {
+                    vertices[i].color = colorData_[i];
+                }
+                else
+                {
+                    vertices[i].color = 0xFFFFFFFF;
+                }
             }
             GSR.UnlockVertexBuffer(vertexBuffer_);
         }
@@ -112,6 +149,11 @@ GltfGeometry::GltfGeometry(tinygltf::Model model)
 
 GltfGeometry::~GltfGeometry()
 {
+}
+
+void GltfGeometry::LoadColorData(const std::string_view &light_file)
+{
+    impl_->colorData_ = getColData(GSR, light_file);
 }
 
 int32_t GltfGeometry::FindName(const char *name) const
@@ -248,7 +290,8 @@ float GltfGeometry::Trace(GEOS::VERTEX &src, GEOS::VERTEX &dst)
 bool GltfGeometry::Clip(const GEOS::PLANE *planes, int32_t nplanes, const GEOS::VERTEX &center, float radius,
                         GEOS::ADD_POLYGON_FUNC addpoly)
 {
-    throw UnimplementedError();
+    // throw UnimplementedError();
+    return false;
 }
 
 bool GltfGeometry::GetCollisionDetails(GEOS::TRACE_INFO &ti) const

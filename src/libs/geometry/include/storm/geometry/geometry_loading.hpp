@@ -8,6 +8,6 @@
 
 namespace storm {
 
-std::unique_ptr<GEOS> LoadGeometry(const istring_view &file_name);
+std::unique_ptr<GEOS> LoadGeometry(const istring_view &file_name, const istring_view &light_name);
 
 } // namespace storm

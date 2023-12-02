@@ -12,7 +12,7 @@
 
 namespace storm {
 
-std::unique_ptr<GEOS> LoadGltfModel(const std::string_view &path)
+std::unique_ptr<GltfGeometry> LoadGltfModel(const std::string_view &path)
 {
     tinygltf::TinyGLTF loader;
     tinygltf::Model model;

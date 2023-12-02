@@ -207,7 +207,8 @@ bool NODER::Init(const char *lightPath, const char *pname, const char *oname, co
     sys_TexPath = gs->GetTexturePath();
 
     storm::istring_view modelname_full(sys_modelName_full.begin(), sys_modelName_full.end());
-    geo = storm::LoadGeometry(modelname_full);
+    storm::istring_view lightpath(sys_LightPath.begin(), sys_LightPath.end());
+    geo = storm::LoadGeometry(modelname_full, lightpath);
 //    geo = gs->CreateGeometry(sys_modelName_full.c_str(), sys_LightPath.c_str(), 0, lmPath);
     if (!geo)
     {
@@ -293,7 +294,8 @@ void NODER::RestoreGeometry()
     memcpy(ttPath, tPath, len);
     gs->SetTexturePath(sys_TexPath.c_str());
     storm::istring_view modelname_full(sys_modelName_full.begin(), sys_modelName_full.end());
-    geo = storm::LoadGeometry(modelname_full);
+    storm::istring_view lightpath(sys_LightPath.begin(), sys_LightPath.end());
+    geo = storm::LoadGeometry(modelname_full, lightpath);
 //    geo = gs->CreateGeometry(sys_modelName_full.c_str(), sys_LightPath.c_str(), 0, sys_lmPath.c_str());
     gs->SetTexturePath(ttPath);
     delete[] ttPath;
