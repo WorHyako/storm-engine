@@ -66,6 +66,8 @@ class GEOM : public GEOS
 
     virtual int32_t FindName(const char *name) const;
 
+    std::vector<LABEL> GetGroupLabels(const std::string_view &group) const override;
+
     virtual int32_t FindLabelN(int32_t start_index, int32_t name_id);
     virtual int32_t FindLabelG(int32_t start_index, int32_t group_name_id);
     virtual void GetLabel(int32_t l, LABEL &lb) const;

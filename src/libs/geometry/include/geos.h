@@ -12,6 +12,7 @@ Import library main header
 
 #include <cstdint>
 #include <fstream>
+#include <vector>
 
 class GEOS
 {
@@ -101,11 +102,13 @@ class GEOS
     {
         alignas(16) float m[4][4];
         int32_t flags; // combination of LABEL_FLAG
-        char *group_name;
-        char *name;
+        const char *group_name;
+        const char *name;
         int32_t bones[4];
         float weight[4];
     };
+
+    virtual std::vector<LABEL> GetGroupLabels(const std::string_view &group) const = 0;
 
     virtual int32_t FindLabelN(int32_t start_index, int32_t name_id) = 0;
     virtual int32_t FindLabelG(int32_t start_index, int32_t group_name_id) = 0;

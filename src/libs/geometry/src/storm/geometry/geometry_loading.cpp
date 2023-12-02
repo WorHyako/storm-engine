@@ -3,6 +3,8 @@
 #include "../../geom.h"
 #include "../../geometry_r.h"
 
+#include "gltf_loader.hpp"
+
 extern GEOM_SERVICE_R GSR;
 
 namespace storm {
@@ -10,7 +12,8 @@ namespace storm {
 std::unique_ptr<GEOS> LoadGeometry(const istring_view &file_name)
 {
     if (file_name.ends_with(".gltf")) {
-        // TODO: Load gltf
+        std::string_view file_name_str(file_name.begin(), file_name.end());
+        return LoadGltfModel(file_name_str);
     }
     else {
         std::string file_name_str(file_name.begin(), file_name.end());

@@ -17,9 +17,19 @@ class StormEngine(ConanFile):
 
     # dependencies used in deploy binaries
     # conan-center
-    requires = ["zlib/1.2.13", "spdlog/1.9.2", "fast_float/3.4.0", "mimalloc/2.0.3", "sentry-native/0.6.5", "tomlplusplus/3.3.0", "nlohmann_json/3.11.2",
-    # storm.jfrog.io
-    "directx/9.0@storm/prebuilt", "fmod/2.02.05@storm/prebuilt"]
+    requires = [
+        "zlib/1.2.13",
+        "spdlog/1.9.2",
+        "fast_float/3.4.0",
+        "mimalloc/2.0.3",
+        "sentry-native/0.6.5",
+        "tomlplusplus/3.3.0",
+        "nlohmann_json/3.11.2",
+        "tinygltf/2.8.13",
+        # storm.jfrog.io
+        "directx/9.0@storm/prebuilt",
+        "fmod/2.02.05@storm/prebuilt"
+    ]
     # aux dependencies (e.g. for tests)
     build_requires = "catch2/2.13.7"
 

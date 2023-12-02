@@ -223,37 +223,24 @@ bool NODER::Init(const char *lightPath, const char *pname, const char *oname, co
     parent = par;
     if (parent == nullptr)
         strcpy_s(name, pname);
-    // calculate number of labels
-    const auto idGeo = geo->FindName("geometry");
-    int32_t node_count = 0;
-    int32_t sti = -1;
-    while ((sti = geo->FindLabelG(sti + 1, idGeo)) > -1)
-        node_count++;
+    int32_t l = 0;
+    const auto &group_labels = geo->GetGroupLabels("geometry");
+    next = std::vector<NODE *>(group_labels.size(), nullptr);
+    for (const auto &lb : group_labels) {
+        CMatrix mt;
+        // memcpy(mt.m, lb.m, sizeof(lb.m));
+        mt.Vx() = CVECTOR(lb.m[0][0], lb.m[0][1], lb.m[0][2]);
+        mt.Vy() = CVECTOR(lb.m[1][0], lb.m[1][1], lb.m[1][2]);
+        mt.Vz() = CVECTOR(lb.m[2][0], lb.m[2][1], lb.m[2][2]);
+        mt.Pos() = CVECTOR(lb.m[3][0], lb.m[3][1], lb.m[3][2]);
 
-    if (node_count > 0)
-    {
-        next = std::vector<NODE *>(node_count, nullptr);
-        int32_t sti = -1;
-        int32_t l = 0;
-        while ((sti = geo->FindLabelG(sti + 1, idGeo)) > -1)
-        {
-            GEOS::LABEL lb;
-            geo->GetLabel(sti, lb);
-            CMatrix mt;
-            // memcpy(mt.m, lb.m, sizeof(lb.m));
-            mt.Vx() = CVECTOR(lb.m[0][0], lb.m[0][1], lb.m[0][2]);
-            mt.Vy() = CVECTOR(lb.m[1][0], lb.m[1][1], lb.m[1][2]);
-            mt.Vz() = CVECTOR(lb.m[2][0], lb.m[2][1], lb.m[2][2]);
-            mt.Pos() = CVECTOR(lb.m[3][0], lb.m[3][1], lb.m[3][2]);
+        next[l] = new NODER();
 
-            next[l] = new NODER();
+        if (!next[l]->Init(lightPath, pname, lb.name, mt, glob_mtx, this, lmPath))
+            return false;
 
-            if (!next[l]->Init(lightPath, pname, lb.name, mt, glob_mtx, this, lmPath))
-                return false;
-
-            strcpy_s(static_cast<NODER *>(next[l])->name, lb.name);
-            l++;
-        }
+        strcpy_s(static_cast<NODER *>(next[l])->name, lb.name);
+        l++;
     }
 
     idGeoGroup = -1;

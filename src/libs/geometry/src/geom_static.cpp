@@ -444,10 +444,23 @@ int32_t GEOM::FindName(const char *name) const
 //--------------------------------------------------
 // label functions
 //--------------------------------------------------
+std::vector<GEOM::LABEL> GEOM::GetGroupLabels(const std::string_view &group) const
+{
+    std::vector<LABEL> labels;
+    for (int32_t i = 0; i < rhead.nlabels; ++i)
+    {
+        if (storm::iEquals(label[i].group_name, group))
+        {
+            labels.emplace_back(label[i]);
+        }
+    }
+    return labels;
+}
+
 int32_t GEOM::FindLabelN(int32_t start_index, int32_t name_id)
 {
     for (; start_index < rhead.nlabels; start_index++)
-        if (unbelievable_workaround(label[start_index].name) == name_id)
+        if (unbelievable_workaround(const_cast<char *>(label[start_index].name)) == name_id)
             return start_index;
     return -1;
 }
@@ -455,7 +468,7 @@ int32_t GEOM::FindLabelN(int32_t start_index, int32_t name_id)
 int32_t GEOM::FindLabelG(int32_t start_index, int32_t name_id)
 {
     for (; start_index < rhead.nlabels; start_index++)
-        if (unbelievable_workaround(label[start_index].group_name) == name_id)
+        if (unbelievable_workaround(const_cast<char*>(label[start_index].group_name)) == name_id)
             return start_index;
     return -1;
 }

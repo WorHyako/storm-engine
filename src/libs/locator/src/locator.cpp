@@ -42,10 +42,9 @@ bool LOCATOR::VerifyParticles()
     return static_cast<bool>(ParticlesID);
 }
 
-void LOCATOR::LocateForI_L2(ATTRIBUTES *pA, GEOS *g, GEOS::LABEL &label)
+void LOCATOR::LocateForI_L2(ATTRIBUTES *pA, GEOS *g, const GEOS::LABEL &label)
 {
     char name[16];
-    GEOS::LABEL label2;
 
     const auto groupID = g->FindName(label.name);
     if (groupID < 0)
@@ -57,9 +56,8 @@ void LOCATOR::LocateForI_L2(ATTRIBUTES *pA, GEOS *g, GEOS::LABEL &label)
     pA = pA->CreateSubAClass(pA, "ships");
 
     int32_t n = 0;
-    for (int32_t stringIndex = 0; (stringIndex = g->FindLabelG(stringIndex, groupID)) >= 0; stringIndex++)
-    {
-        g->GetLabel(stringIndex, label2);
+    const auto &group_labels = g->GetGroupLabels(label.name);
+    for (const auto &label2 : group_labels) {
         sprintf_s(name, "l%d", n);
         auto *pAA = pA->CreateSubAClass(pA, name);
         pAA->SetAttributeUseFloat("x", label2.m[3][0]);
@@ -106,34 +104,29 @@ void LOCATOR::LocateForI(VDATA *pData)
         return;
     }
 
-    auto groupID = g->FindName("reload");
-    if (groupID >= 0)
-    {
-        for (int32_t i = 0; (i = g->FindLabelG(i, groupID)) >= 0; i++)
-        {
-            g->GetLabel(i, label);
-            pAA = pA->FindAClass(pA, "reload");
-            if (pAA)
-                for (n = 0; n < static_cast<int32_t>(pAA->GetAttributesNum()); n++)
+    const auto &group_labels = g->GetGroupLabels("reload");
+    for (const auto &label : group_labels) {
+        pAA = pA->FindAClass(pA, "reload");
+        if (pAA)
+            for (n = 0; n < static_cast<int32_t>(pAA->GetAttributesNum()); n++)
+            {
+                if (pAA->GetAttributeClass(n))
                 {
-                    if (pAA->GetAttributeClass(n))
+                    if (!pAA->GetAttributeClass(n)->GetAttribute("name"))
                     {
-                        if (!pAA->GetAttributeClass(n)->GetAttribute("name"))
-                        {
-                            core.Trace("LOCATOR: no name");
-                            continue;
-                        }
-                        if (storm::iEquals(to_string(pAA->GetAttributeClass(n)->GetAttribute("name")), label.name))
-                        {
-                            pAA->GetAttributeClass(n)->SetAttributeUseFloat("x", label.m[3][0]);
-                            pAA->GetAttributeClass(n)->SetAttributeUseFloat("y", label.m[3][1]);
-                            pAA->GetAttributeClass(n)->SetAttributeUseFloat("z", label.m[3][2]);
-                            pAA->GetAttributeClass(n)->SetAttributeUseFloat("ay", atan2f(label.m[2][0], label.m[2][2]));
-                            LocateForI_L2(pAA->GetAttributeClass(n), g, label);
-                        }
+                        core.Trace("LOCATOR: no name");
+                        continue;
+                    }
+                    if (storm::iEquals(to_string(pAA->GetAttributeClass(n)->GetAttribute("name")), label.name))
+                    {
+                        pAA->GetAttributeClass(n)->SetAttributeUseFloat("x", label.m[3][0]);
+                        pAA->GetAttributeClass(n)->SetAttributeUseFloat("y", label.m[3][1]);
+                        pAA->GetAttributeClass(n)->SetAttributeUseFloat("z", label.m[3][2]);
+                        pAA->GetAttributeClass(n)->SetAttributeUseFloat("ay", atan2f(label.m[2][0], label.m[2][2]));
+                        LocateForI_L2(pAA->GetAttributeClass(n), g, label);
                     }
                 }
-        }
+            }
     }
 
     // check for unfind reloads
