@@ -29,6 +29,7 @@ public:
     void Initialize();
 
     tinygltf::Model model_;
+    GEOS::MATERIAL material_;
     int32_t vertexBuffer_{};
     int32_t indexBuffer_{};
     int32_t vertexCount_;
@@ -58,21 +59,46 @@ void GltfGeometry::Impl::Initialize()
         {
             const auto &position = model_.accessors[primitive.attributes.at("POSITION")];
             const auto &positionBuffer = model_.bufferViews[position.bufferView];
+            const auto &normal = model_.accessors[primitive.attributes.at("NORMAL")];
+            const auto &normalBuffer = model_.bufferViews[normal.bufferView];
+            const auto &texCoord = model_.accessors[primitive.attributes.at("TEXCOORD_0")];
+            const auto &texCoordBuffer = model_.bufferViews[texCoord.bufferView];
             vertexCount_ = position.count;
             vertexBuffer_ = GSR.CreateVertexBuffer(0, sizeof(RDF_VERTEX0) * vertexCount_);
             auto *vertices = reinterpret_cast<RDF_VERTEX0*>(GSR.LockVertexBuffer(vertexBuffer_));
             const size_t stride = positionBuffer.byteStride > 0 ? positionBuffer.byteStride : sizeof(float) * 3;
+            const size_t texCoordStride = texCoordBuffer.byteStride > 0 ? texCoordBuffer.byteStride : sizeof(float) * 2;
             for (size_t i = 0; i < vertexCount_; ++i)
             {
                 vertices[i] = {};
                 vertices[i].pos.x = *reinterpret_cast<const float*>(&buffer[positionBuffer.byteOffset + i * stride]);
                 vertices[i].pos.y = *reinterpret_cast<const float*>(&buffer[positionBuffer.byteOffset + i * stride + 1 * sizeof(float)]);
                 vertices[i].pos.z = *reinterpret_cast<const float*>(&buffer[positionBuffer.byteOffset + i * stride + 2 * sizeof(float)]);
+                vertices[i].norm.x = *reinterpret_cast<const float*>(&buffer[normalBuffer.byteOffset + i * stride]);
+                vertices[i].norm.y = *reinterpret_cast<const float*>(&buffer[normalBuffer.byteOffset + i * stride + 1 * sizeof(float)]);
+                vertices[i].norm.z = *reinterpret_cast<const float*>(&buffer[normalBuffer.byteOffset + i * stride + 2 * sizeof(float)]);
+                vertices[i].tu0 = *reinterpret_cast<const float*>(&buffer[texCoordBuffer.byteOffset + i * texCoordStride]);
+                vertices[i].tv0 = *reinterpret_cast<const float*>(&buffer[texCoordBuffer.byteOffset + i * texCoordStride + sizeof(float)]);
                 vertices[i].color = 0xFFFFFFFF;
                 vertices[i].norm = CVECTOR{1.f, 0.f, 0.f};
             }
             GSR.UnlockVertexBuffer(vertexBuffer_);
         }
+
+
+        const auto &material = model_.materials[primitive.material];
+
+        material_ = {};
+        material_.diffuse = 0.8f;
+
+        if (material.pbrMetallicRoughness.baseColorTexture.index != -1)
+        {
+            material_.texture_type[0] = TEXTURE_BASE;
+            const auto &texture = model_.textures[material.pbrMetallicRoughness.baseColorTexture.index];
+            const auto &image = model_.images[texture.source];
+            material_.texture[0] = GSR.CreateTexture(image.uri.c_str());
+        }
+
         break;
     }
 
@@ -210,12 +236,7 @@ void GltfGeometry::Draw(const GEOS::PLANE *pl, int32_t np, GEOS::MATERIAL_FUNC m
     impl_->Initialize();
     GSR.SetIndexBuffer(impl_->indexBuffer_);
     GSR.SetVertexBuffer(sizeof(RDF_VERTEX0), impl_->vertexBuffer_);
-    MATERIAL material{};
-    material.diffuse = 1.0f;
-    // material.selfIllum = 1.0f;
-    material.texture_type[0] = TEXTURE_NONE;
-    material.texture[0] = -1;
-    GSR.SetMaterial(material);
+    GSR.SetMaterial(impl_->material_);
     GSR.DrawIndexedPrimitive(0, impl_->vertexCount_, sizeof(RDF_VERTEX0), 0, impl_->triangleCount_);
 }
 
