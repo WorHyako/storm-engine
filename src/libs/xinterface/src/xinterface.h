@@ -19,7 +19,7 @@ class XINTERFACE : public XINTERFACE_BASE
 
   protected:
     storm::QuestFileReader *pQuestService;
-    VXSERVICE *pPictureService;
+    std::unique_ptr<VXSERVICE> pPictureService;
     VSTRSERVICE *pStringService;
     VDX9RENDER *pRenderService;
 
@@ -120,7 +120,7 @@ class XINTERFACE : public XINTERFACE_BASE
 
     static VXSERVICE *GetPictureService()
     {
-        return pThis->pPictureService;
+        return pThis->pPictureService.get();
     }
 
     static VSTRSERVICE *GetStringService()
@@ -140,7 +140,7 @@ class XINTERFACE : public XINTERFACE_BASE
 
     VXSERVICE *PictureService() override
     {
-        return pPictureService;
+        return pPictureService.get();
     }
 
     VSTRSERVICE *StringService() override

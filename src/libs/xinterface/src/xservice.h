@@ -3,7 +3,7 @@
 #include "vx_service.h"
 #include "xdefines.h"
 
-class XSERVICE : public VXSERVICE
+class XSERVICE final : public VXSERVICE
 {
     struct IMAGELISTDESCR
     {
@@ -25,11 +25,8 @@ class XSERVICE : public VXSERVICE
     };
 
   public:
-    XSERVICE();
+    explicit XSERVICE(VDX9RENDER *pRS);
     ~XSERVICE() override;
-
-    // initialization of service
-    void Init(VDX9RENDER *pRS, int32_t lWidth, int32_t lHight) override;
 
     // get texture identificator for image group
     int32_t GetTextureID(const std::string_view &sImageListName) override;
@@ -39,34 +36,33 @@ class XSERVICE : public VXSERVICE
     // get texture positon for select picture
     bool GetTexturePos(int32_t pictureNum, FXYRECT &texRect) override;
     bool GetTexturePos(int32_t pictureNum, XYRECT &texRect) override;
-    bool GetTexturePos(const std::string_view &sImageListName, const std::string_view &sImageName, FXYRECT &texRect) override;
-    bool GetTexturePos(const std::string_view &sImageListName, const std::string_view &sImageName, XYRECT &texRect) override;
+    bool GetTexturePos(const std::string_view &sImageListName, const std::string_view &sImageName,
+                       FXYRECT &texRect) override;
+    bool GetTexturePos(const std::string_view &sImageListName, const std::string_view &sImageName,
+                       XYRECT &texRect) override;
     bool GetTexturePos(int nTextureModify, int32_t pictureNum, FXYRECT &texRect) override;
     bool GetTexturePos(int nTextureModify, const std::string_view &sImageListName, const std::string_view &sImageName,
                        FXYRECT &texRect) override;
 
-    void GetTextureCutForSize(const std::string_view &pcImageListName, const FXYPOINT &pntLeftTopUV, const XYPOINT &pntSize,
-                              int32_t nSrcWidth, int32_t nSrcHeight, FXYRECT &outUV) override;
+    void GetTextureCutForSize(const std::string_view &pcImageListName, const FXYPOINT &pntLeftTopUV,
+                              const XYPOINT &pntSize, int32_t nSrcWidth, int32_t nSrcHeight, FXYRECT &outUV) override;
 
     int32_t GetImageNum(const std::string_view &sImageListName, const std::string_view &sImageName) override;
 
-    void ReleaseAll() override;
-
-  protected:
+  private:
     void LoadAllPicturesInfo();
 
-  protected:
-    VDX9RENDER *m_pRS;
+    VDX9RENDER *m_pRS = nullptr;
 
-    int32_t m_dwListQuantity;
-    int32_t m_dwImageQuantity;
-    IMAGELISTDESCR *m_pList;
-    PICTUREDESCR *m_pImage;
+    int32_t m_dwListQuantity = 0;
+    int32_t m_dwImageQuantity = 0;
+    IMAGELISTDESCR *m_pList = nullptr;
+    PICTUREDESCR *m_pImage = nullptr;
 
     // Scale factors
-    float m_fWScale;
-    float m_fHScale;
+    float m_fWScale = 0;
+    float m_fHScale = 0;
     // scaling error parameters
-    float m_fWAdd;
-    float m_fHAdd;
+    float m_fWAdd = 0.5f;
+    float m_fHAdd = 0.5f;
 };

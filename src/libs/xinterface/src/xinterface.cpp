@@ -154,12 +154,7 @@ XINTERFACE::~XINTERFACE()
         pRenderService->Release(m_pPrevTexture);
     m_pTexture = m_pPrevTexture = nullptr;
 
-    if (pPictureService != nullptr)
-    {
-        pPictureService->ReleaseAll();
-        delete pPictureService;
-        pPictureService = nullptr;
-    }
+    pPictureService.reset();
 
     STORM_DELETE(pQuestService);
     STORM_DELETE(m_pEditor);
@@ -199,12 +194,7 @@ void XINTERFACE::SetDevice()
     LoadIni();
 
     // Create pictures and string lists service
-    pPictureService = new XSERVICE;
-    if (pPictureService == nullptr)
-    {
-        throw std::runtime_error("Not memory allocate");
-    }
-    pPictureService->Init(pRenderService, dwScreenWidth, dwScreenHeight);
+    pPictureService = std::make_unique<XSERVICE>(pRenderService);
 
     pQuestService = new storm::QuestFileReader;
     if (pQuestService == nullptr)
@@ -1376,7 +1366,7 @@ void XINTERFACE::SFLB_CreateNode(INIFILE *pOwnerIni, INIFILE *pUserIni, const ch
     if (pNewNod)
     {
         pNewNod->ptrOwner = this;
-        pNewNod->pPictureService = pPictureService;
+        pNewNod->pPictureService = pPictureService.get();
         pNewNod->pStringService = pStringService;
         pNewNod->SetPriority(priority);
         XYPOINT xypScreenSize;
@@ -2589,7 +2579,7 @@ void XINTERFACE::ReleaseOld()
 
     while (m_imgLists != nullptr)
     {
-        PICTURE_TEXTURE_RELEASE(pPictureService, m_imgLists->sImageListName, m_imgLists->idTexture);
+        PICTURE_TEXTURE_RELEASE(pPictureService.get(), m_imgLists->sImageListName, m_imgLists->idTexture);
         STORM_DELETE(m_imgLists->sImageListName);
         STORM_DELETE(m_imgLists->sImageName);
         STORM_DELETE(m_imgLists->sPicture);
@@ -3018,7 +3008,7 @@ void XINTERFACE::ReleaseDinamicPic(const char *sPicName)
     if (findImg == nullptr)
         return;
 
-    PICTURE_TEXTURE_RELEASE(pPictureService, findImg->sImageListName, findImg->idTexture);
+    PICTURE_TEXTURE_RELEASE(pPictureService.get(), findImg->sImageListName, findImg->idTexture);
     STORM_DELETE(findImg->sImageListName);
     STORM_DELETE(findImg->sImageName);
     STORM_DELETE(findImg->sPicture);

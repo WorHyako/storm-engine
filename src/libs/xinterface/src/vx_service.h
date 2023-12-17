@@ -17,7 +17,6 @@ class VXSERVICE
 {
   public:
     virtual ~VXSERVICE() = default;
-    virtual void Init(VDX9RENDER *pRS, int32_t lWidth, int32_t lHight) = 0;
 
     // get texture identificator for image group
     virtual int32_t GetTextureID(const std::string_view &sImageListName) = 0;
@@ -36,6 +35,4 @@ class VXSERVICE
                                       int32_t nSrcWidth, int32_t nSrcHeight, FXYRECT &outUV) = 0;
 
     virtual int32_t GetImageNum(const std::string_view &sImageListName, const std::string_view &sImageName) = 0;
-
-    virtual void ReleaseAll() = 0;
 };
