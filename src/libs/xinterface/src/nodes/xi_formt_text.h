@@ -2,7 +2,7 @@
 
 #include "../inode.h"
 
-class CXI_FORMATEDTEXT : public CINODE
+class CXI_FORMATEDTEXT final : public CINODE
 {
     struct STRING_DESCRIBER
     {

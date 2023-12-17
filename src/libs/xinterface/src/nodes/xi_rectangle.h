@@ -2,7 +2,7 @@
 
 #include "../inode.h"
 
-class CXI_RECTANGLE : public CINODE
+class CXI_RECTANGLE final : public CINODE
 {
   public:
     CXI_RECTANGLE();

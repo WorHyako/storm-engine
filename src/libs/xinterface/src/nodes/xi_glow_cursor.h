@@ -3,7 +3,7 @@
 #include "../inode.h"
 
 // picture
-class CXI_GLOWCURSOR : public CINODE
+class CXI_GLOWCURSOR final : public CINODE
 {
   public:
     CXI_GLOWCURSOR();

@@ -4,7 +4,7 @@
 
 class INIFILE;
 
-class CXI_KEYCHANGER : public CINODE
+class CXI_KEYCHANGER final : public CINODE
 {
   public:
     CXI_KEYCHANGER();

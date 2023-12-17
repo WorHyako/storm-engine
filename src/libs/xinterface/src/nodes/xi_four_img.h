@@ -2,7 +2,7 @@
 
 #include "../inode.h"
 
-class CXI_FOURIMAGE : public CINODE
+class CXI_FOURIMAGE final : public CINODE
 {
   public:
     CXI_FOURIMAGE(CXI_FOURIMAGE &&) = delete;

@@ -3,7 +3,7 @@
 #include "../inode.h"
 
 // picture
-class CXI_BUTTON : public CINODE
+class CXI_BUTTON final : public CINODE
 {
   public:
     CXI_BUTTON(CXI_BUTTON &&) = delete;
@@ -33,10 +33,9 @@ class CXI_BUTTON : public CINODE
     void SetUsing(bool bUsing) override;
     uint32_t MessageProc(int32_t msgcode, MESSAGE &message) override;
 
-  protected:
+private:
     void LoadIni(INIFILE *ini1, const char *name1, INIFILE *ini2, const char *name2) override;
 
-  protected:
     char *m_sGroupName;
     int32_t m_idTex; // texture identity
     CVideoTexture *m_pTex;

@@ -3,7 +3,7 @@
 #include "../inode.h"
 
 // picture
-class CXI_CHANGER : public CINODE
+class CXI_CHANGER final : public CINODE
 {
   public:
     CXI_CHANGER();

@@ -3,7 +3,7 @@
 #include "../inode.h"
 
 // text collection
-class CXI_LINECOLLECTION : public CINODE
+class CXI_LINECOLLECTION final : public CINODE
 {
   public:
     CXI_LINECOLLECTION();

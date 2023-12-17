@@ -3,7 +3,7 @@
 #include "../inode.h"
 
 // scroll image
-class CXI_SCROLLIMAGE : public CINODE
+class CXI_SCROLLIMAGE final : public CINODE
 {
     struct SCROLLEntity
     {

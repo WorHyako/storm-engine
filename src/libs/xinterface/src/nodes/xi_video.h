@@ -3,7 +3,7 @@
 #include "../inode.h"
 
 // video
-class CXI_VIDEO : public CINODE
+class CXI_VIDEO final : public CINODE
 {
   public:
     CXI_VIDEO();

@@ -5,7 +5,7 @@
 class CXI_IMAGE;
 
 // edit box
-class CXI_PCEDITBOX : public CINODE
+class CXI_PCEDITBOX final : public CINODE
 {
   public:
     CXI_PCEDITBOX(CXI_PCEDITBOX &&) = delete;

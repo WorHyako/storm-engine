@@ -2,7 +2,7 @@
 
 #include "../inode.h"
 
-class CXI_QUESTTEXTS : public CINODE
+class CXI_QUESTTEXTS final : public CINODE
 {
   public:
     CXI_QUESTTEXTS(CXI_QUESTTEXTS &&) = delete;

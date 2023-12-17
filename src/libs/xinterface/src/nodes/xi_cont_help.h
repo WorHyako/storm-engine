@@ -9,7 +9,7 @@ struct HELPEntity
     int32_t idHelpString;
 };
 
-class CXI_CONTEXTHELP : public CINODE
+class CXI_CONTEXTHELP final : public CINODE
 {
   public:
     CXI_CONTEXTHELP(CXI_CONTEXTHELP &&) = delete;

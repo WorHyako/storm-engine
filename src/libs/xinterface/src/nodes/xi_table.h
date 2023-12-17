@@ -104,7 +104,7 @@ class XI_TableLineDescribe
 };
 
 // picture
-class CXI_TABLE : public CINODE
+class CXI_TABLE final : public CINODE
 {
     friend XI_TableLineDescribe;
     friend XI_TableCellDescribe;

@@ -24,7 +24,7 @@ struct STRING_PICE
     } data;
 };
 
-class CXI_SCROLLTEXT : public CINODE
+class CXI_SCROLLTEXT final : public CINODE
 {
   public:
     CXI_SCROLLTEXT();

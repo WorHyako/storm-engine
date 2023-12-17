@@ -3,7 +3,7 @@
 #include "../inode.h"
 
 // picture
-class CXI_SCROLLBAR : public CINODE
+class CXI_SCROLLBAR final : public CINODE
 {
   public:
     CXI_SCROLLBAR(CXI_SCROLLBAR &&) = delete;

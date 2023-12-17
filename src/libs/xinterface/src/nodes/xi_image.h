@@ -11,7 +11,7 @@ enum ImagePointType
     IPType_ForceDword = 0xFFFFFFFF
 };
 
-class CXI_IMAGE
+class CXI_IMAGE final
 {
   public:
     CXI_IMAGE();

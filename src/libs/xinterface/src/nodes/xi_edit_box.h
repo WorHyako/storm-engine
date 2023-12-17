@@ -3,7 +3,7 @@
 #include "../inode.h"
 
 // edit box
-class CXI_EDITBOX : public CINODE
+class CXI_EDITBOX final : public CINODE
 {
   public:
     CXI_EDITBOX(CXI_EDITBOX &&) = delete;

@@ -9,7 +9,7 @@
 #define GLOW_ACTION_SHOW 2
 #define GLOW_ACTION_BLEND 3
 
-class CXI_GLOWER : public CINODE
+class CXI_GLOWER final : public CINODE
 {
     struct GLOW_DESCR
     {

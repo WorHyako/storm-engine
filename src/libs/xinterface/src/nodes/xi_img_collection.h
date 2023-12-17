@@ -4,7 +4,7 @@
 #include "vma.hpp"
 
 // static inactive images into one object
-class CXI_IMGCOLLECTION : public CINODE
+class CXI_IMGCOLLECTION final : public CINODE
 {
   public:
     CXI_IMGCOLLECTION();

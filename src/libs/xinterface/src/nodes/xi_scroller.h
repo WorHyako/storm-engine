@@ -3,7 +3,7 @@
 #include "../inode.h"
 
 // static inactive images into one object
-class CXI_SCROLLER : public CINODE
+class CXI_SCROLLER final : public CINODE
 {
   public:
     CXI_SCROLLER();

@@ -3,14 +3,12 @@
 #include "xi_image.h"
 #include "xi_picture.h"
 
-class CXI_SCROLLEDPICTURE : public CXI_PICTURE
+class CXI_SCROLLEDPICTURE final : public CXI_PICTURE
 {
   public:
     CXI_SCROLLEDPICTURE();
     ~CXI_SCROLLEDPICTURE() override;
     void Draw(bool bSelected, uint32_t Delta_Time) override;
-    bool Init(INIFILE *ini1, const char *name1, INIFILE *ini2, const char *name2, VDX9RENDER *rs, XYRECT &hostRect,
-              XYPOINT &ScreenSize) override;
     void ReleaseAll() override;
     int CommandExecute(int wActCode) override;
     bool IsClick(int buttonID, int32_t xPos, int32_t yPos) override;

@@ -3,7 +3,7 @@
 #include "../inode.h"
 
 // static inactive images into one object
-class CXI_STATUSLINE : public CINODE
+class CXI_STATUSLINE final : public CINODE
 {
   public:
     CXI_STATUSLINE();

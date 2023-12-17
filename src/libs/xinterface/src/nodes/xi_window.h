@@ -2,7 +2,7 @@
 
 #include "../inode.h"
 
-class CXI_WINDOW : public CINODE
+class CXI_WINDOW final : public CINODE
 {
   public:
     CXI_WINDOW();

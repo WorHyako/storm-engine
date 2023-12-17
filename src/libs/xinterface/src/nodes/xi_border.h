@@ -4,7 +4,7 @@
 
 class CXI_IMAGE;
 
-class CXI_BORDER : public CINODE
+class CXI_BORDER final : public CINODE
 {
   public:
     CXI_BORDER();

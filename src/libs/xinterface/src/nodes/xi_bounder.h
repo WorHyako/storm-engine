@@ -2,7 +2,7 @@
 
 #include "../inode.h"
 
-class CXI_BOUNDER : public CINODE
+class CXI_BOUNDER final : public CINODE
 {
   public:
     CXI_BOUNDER();

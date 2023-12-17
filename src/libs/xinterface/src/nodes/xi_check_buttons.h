@@ -35,7 +35,7 @@ struct ButtonDescribe
 };
 
 // picture
-class CXI_CHECKBUTTONS : public CINODE
+class CXI_CHECKBUTTONS final : public CINODE
 {
   public:
     CXI_CHECKBUTTONS(CXI_CHECKBUTTONS &&) = delete;

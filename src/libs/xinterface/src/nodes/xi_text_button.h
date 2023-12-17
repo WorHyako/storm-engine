@@ -3,7 +3,7 @@
 #include "../inode.h"
 
 // picture
-class CXI_TEXTBUTTON : public CINODE
+class CXI_TEXTBUTTON final : public CINODE
 {
   public:
     CXI_TEXTBUTTON(CXI_TEXTBUTTON &&) = delete;

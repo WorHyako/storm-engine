@@ -3,7 +3,7 @@
 #include "../inode.h"
 
 // text collection
-class CXI_STRCOLLECTION : public CINODE
+class CXI_STRCOLLECTION final : public CINODE
 {
   public:
     CXI_STRCOLLECTION(CXI_STRCOLLECTION &&) = delete;

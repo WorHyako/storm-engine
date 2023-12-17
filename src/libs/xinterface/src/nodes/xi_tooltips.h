@@ -6,7 +6,7 @@
 class INIFILE;
 class VXSERVICE;
 
-class CXI_ToolTip
+class CXI_ToolTip final
 {
   public:
     CXI_ToolTip(CXI_ToolTip &&) = delete;

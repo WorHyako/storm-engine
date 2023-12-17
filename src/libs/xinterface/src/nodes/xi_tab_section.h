@@ -2,7 +2,7 @@
 
 #include "../inode.h"
 
-class CXI_TABSECTION : public CINODE
+class CXI_TABSECTION final : public CINODE
 {
   public:
     CXI_TABSECTION();

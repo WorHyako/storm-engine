@@ -49,7 +49,7 @@ enum InterfaceTokenCode
     InterfaceToken_unknown = 0xFFFFFFFF
 };
 
-class CXI_UTILS
+class CXI_UTILS final
 {
     struct KeyDescribe
     {
