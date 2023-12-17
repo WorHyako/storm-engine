@@ -364,12 +364,12 @@ void CXI_FOURIMAGE::LoadIni(INIFILE *ini1, const char *name1, INIFILE *ini2, con
                 m_twoTexID[i] = pAttrTmp->GetAttributeAsDword("tex2", -1);
                 if (m_oneTexID[i] != -1 && m_oneTexID[i] < m_nTexturesQuantity)
                     m_oneImgID[i] =
-                        pPictureService->GetImageNum(m_sGroupName[m_oneTexID[i]], pAttrTmp->GetAttribute("img1"));
+                        pPictureService->GetImageNum(m_sGroupName[m_oneTexID[i]], to_string(pAttrTmp->GetAttribute("img1")));
                 else
                     m_oneImgID[i] = -1;
                 if (m_twoTexID[i] != -1 && m_twoTexID[i] < m_nTexturesQuantity)
                     m_twoImgID[i] =
-                        pPictureService->GetImageNum(m_sGroupName[m_twoTexID[i]], pAttrTmp->GetAttribute("img2"));
+                        pPictureService->GetImageNum(m_sGroupName[m_twoTexID[i]], to_string(pAttrTmp->GetAttribute("img2")));
                 else
                     m_twoImgID[i] = -1;
                 const char *tmps = pAttrTmp->GetAttribute("str1");
@@ -732,12 +732,12 @@ void CXI_FOURIMAGE::ChangeItem(int nItemNum)
                     m_oneImgID[i] = -1;
                 else
                     m_oneImgID[i] =
-                        pPictureService->GetImageNum(m_sGroupName[m_oneTexID[i]], pAttrTmp->GetAttribute("img1"));
+                        pPictureService->GetImageNum(m_sGroupName[m_oneTexID[i]], to_string(pAttrTmp->GetAttribute("img1")));
                 if (m_twoTexID[i] == -1)
                     m_twoImgID[i] = -1;
                 else
                     m_twoImgID[i] =
-                        pPictureService->GetImageNum(m_sGroupName[m_twoTexID[i]], pAttrTmp->GetAttribute("img2"));
+                        pPictureService->GetImageNum(m_sGroupName[m_twoTexID[i]], to_string(pAttrTmp->GetAttribute("img2")));
                 sptr = pAttrTmp->GetAttribute("str1");
                 if (sptr != nullptr && *sptr == '#')
                 {

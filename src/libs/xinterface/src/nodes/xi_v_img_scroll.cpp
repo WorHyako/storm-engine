@@ -521,7 +521,7 @@ void CXI_VIMAGESCROLL::LoadIni(INIFILE *ini1, const char *name1, INIFILE *ini2, 
                 {
                     sprintf_s(param, "BadPic%d", n + 1);
                     m_idBadPic[n] =
-                        pPictureService->GetImageNum(m_sGroupName[m_idBadTexture[n]], pAttribute->GetAttribute(param));
+                        pPictureService->GetImageNum(m_sGroupName[m_idBadTexture[n]], to_string(pAttribute->GetAttribute(param)));
                 }
                 else
                     m_idBadPic[n] = -1;
@@ -623,10 +623,14 @@ void CXI_VIMAGESCROLL::LoadIni(INIFILE *ini1, const char *name1, INIFILE *ini2, 
                     m_Image[i].tex[n] = pListEntity->GetAttributeAsDword(param, -1);
                     sprintf_s(param, "img%d", n + 1);
                     if (m_Image[i].tex[n] != -1)
+                    {
                         m_Image[i].img[n] = pPictureService->GetImageNum(m_sGroupName[m_Image[i].tex[n]],
-                                                                         pListEntity->GetAttribute(param));
+                                                                         to_string(pListEntity->GetAttribute(param)));
+                    }
                     else
+                    {
                         m_Image[i].img[n] = -1;
+                    }
                     sprintf_s(param, "spec%d", n + 1);
                     m_Image[i].bUseSpecTechnique[n] = pListEntity->GetAttributeAsDword(param, 0) != 0;
                 }
@@ -1110,7 +1114,7 @@ void CXI_VIMAGESCROLL::ChangeScroll(int nScrollItemNum)
                     sprintf_s(param, "img%d", n + 1);
                     if (m_Image[i].tex[n] != -1)
                         m_Image[i].img[n] = pPictureService->GetImageNum(m_sGroupName[m_Image[i].tex[n]],
-                                                                         pAttribute->GetAttribute(param));
+                                                                         to_string(pAttribute->GetAttribute(param)));
                     else
                         m_Image[i].img[n] = -1;
                     sprintf_s(param, "spec%d", n + 1);
@@ -1288,12 +1292,16 @@ void CXI_VIMAGESCROLL::RefreshScroll()
                 {
                     sprintf_s(param, "BadPic%d", n + 1);
                     m_idBadPic[n] =
-                        pPictureService->GetImageNum(m_sGroupName[m_idBadTexture[n]], pAttribute->GetAttribute(param));
+                        pPictureService->GetImageNum(m_sGroupName[m_idBadTexture[n]], to_string(pAttribute->GetAttribute(param)));
                 }
                 else
+                {
                     m_idBadPic[n] = -1;
+                }
                 if (m_idBadPic[n] == -1)
+                {
                     m_idBadTexture[n] = -1;
+                }
             }
         }
 
@@ -1391,7 +1399,7 @@ void CXI_VIMAGESCROLL::RefreshScroll()
                     sprintf_s(param, "img%d", n + 1);
                     if (m_Image[i].tex[n] != -1)
                         m_Image[i].img[n] = pPictureService->GetImageNum(m_sGroupName[m_Image[i].tex[n]],
-                                                                         pListEntity->GetAttribute(param));
+                                                                         to_string(pListEntity->GetAttribute(param)));
                     else
                         m_Image[i].img[n] = -1;
                     sprintf_s(param, "spec%d", n + 1);

@@ -518,7 +518,7 @@ void CXI_SCROLLIMAGE::LoadIni(INIFILE *ini1, const char *name1, INIFILE *ini2, c
                 {
                     sprintf_s(param, "BadPic%d", n + 1);
                     m_idBadPic[n] =
-                        pPictureService->GetImageNum(m_sGroupName[m_idBadTexture[n]], pAttribute->GetAttribute(param));
+                        pPictureService->GetImageNum(m_sGroupName[m_idBadTexture[n]], to_string(pAttribute->GetAttribute(param)));
                 }
                 else
                     m_idBadPic[n] = -1;
@@ -589,7 +589,7 @@ void CXI_SCROLLIMAGE::LoadIni(INIFILE *ini1, const char *name1, INIFILE *ini2, c
                     if (m_Image[i].slots[n].tex != -1)
                     {
                         m_Image[i].slots[n].img = pPictureService->GetImageNum(m_sGroupName[m_Image[i].slots[n].tex],
-                                                                               pListEntity->GetAttribute(param));
+                                                                               to_string(pListEntity->GetAttribute(param)));
                     }
                     else
                     {
@@ -1074,7 +1074,7 @@ void CXI_SCROLLIMAGE::ChangeScroll(int nScrollItemNum)
                     if (m_Image[i].slots[n].tex != -1)
                     {
                         m_Image[i].slots[n].img = pPictureService->GetImageNum(m_sGroupName[m_Image[i].slots[n].tex],
-                                                                               pAttribute->GetAttribute(param));
+                                                                               to_string(pAttribute->GetAttribute(param)));
                     }
                     else
                     {
@@ -1238,7 +1238,7 @@ void CXI_SCROLLIMAGE::RefreshScroll()
                 {
                     sprintf_s(param, "BadPic%d", n + 1);
                     m_idBadPic[n] =
-                        pPictureService->GetImageNum(m_sGroupName[m_idBadTexture[n]], pAttribute->GetAttribute(param));
+                        pPictureService->GetImageNum(m_sGroupName[m_idBadTexture[n]], to_string(pAttribute->GetAttribute(param)));
                 }
                 else
                     m_idBadPic[n] = -1;
@@ -1309,7 +1309,7 @@ void CXI_SCROLLIMAGE::RefreshScroll()
                     if (m_Image[i].slots[n].tex != -1)
                     {
                         m_Image[i].slots[n].img = pPictureService->GetImageNum(m_sGroupName[m_Image[i].slots[n].tex],
-                                                                               pListEntity->GetAttribute(param));
+                                                                               to_string(pListEntity->GetAttribute(param)));
                     }
                     else
                     {

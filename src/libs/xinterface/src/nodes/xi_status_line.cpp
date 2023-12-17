@@ -108,13 +108,13 @@ void CXI_STATUSLINE::LoadIni(INIFILE *ini1, const char *name1, INIFILE *ini2, co
         // get texture coordinates
         fMediumX /= (m_rect.right - m_rect.left);
         if (ReadIniString(ini1, name1, ini2, name2, "filledPicture", param, sizeof(param), ""))
-            pPictureService->GetTexturePos(m_sGroupName, param, m_texRect1);
+            pPictureService->GetTexturePos(m_sGroupName ? m_sGroupName : std::string_view(), param, m_texRect1);
         FXYRECT texRect1;
         memcpy(&texRect1, &m_texRect1, sizeof(FRECT));
         texRect1.right = m_texRect1.left + (m_texRect1.right - m_texRect1.left) * fMediumX;
         // .. other ..
         if (ReadIniString(ini1, name1, ini2, name2, "emptyPicture", param, sizeof(param), ""))
-            pPictureService->GetTexturePos(m_sGroupName, param, m_texRect2);
+            pPictureService->GetTexturePos(m_sGroupName ? m_sGroupName : std::string_view(), param, m_texRect2);
         FXYRECT texRect2;
         memcpy(&texRect2, &m_texRect2, sizeof(FRECT));
         texRect2.left = m_texRect2.left + (m_texRect2.right - m_texRect2.left) * fMediumX;

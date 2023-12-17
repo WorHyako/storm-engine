@@ -2622,16 +2622,22 @@ uint32_t XINTERFACE::AttributeChanged(ATTRIBUTES *patr)
     {
         const char *sParentName = patr->GetParent()->GetParent()->GetThisName();
         if (sParentName == nullptr || !storm::iEquals(sParentName, "pictures"))
+        {
             return 0;
+        }
         const char *sImageName = patr->GetParent()->GetThisName();
         if (sImageName == nullptr)
+        {
             return 0;
+        }
         // find this picture
         IMAGE_Entity *pImList = m_imgLists;
         while (pImList != nullptr)
         {
             if (pImList->sImageName != nullptr && storm::iEquals(pImList->sImageName, sImageName))
+            {
                 break;
+            }
             pImList = pImList->next;
         }
         // no this picture / create new
@@ -2654,7 +2660,9 @@ uint32_t XINTERFACE::AttributeChanged(ATTRIBUTES *patr)
             m_imgLists = pImList;
         }
         if (patr->GetThisName() == nullptr)
+        {
             return 0;
+        }
         // set picture
         if (storm::iEquals(patr->GetThisName(), "pic"))
         {
@@ -2669,14 +2677,18 @@ uint32_t XINTERFACE::AttributeChanged(ATTRIBUTES *patr)
                 memcpy(pImList->sPicture, patr->GetThisAttr(), len);
             }
             if (pImList->sImageListName == nullptr)
+            {
                 return 0;
+            }
             pImList->imageID = pPictureService->GetImageNum(pImList->sImageListName, pImList->sPicture);
         }
         // set texture
         if (storm::iEquals(patr->GetThisName(), "tex"))
         {
             if (pImList->sImageListName != nullptr)
+            {
                 pPictureService->ReleaseTextureID(pImList->sImageListName);
+            }
             STORM_DELETE(pImList->sImageListName);
             if (patr->HasValue())
             {
@@ -2688,7 +2700,14 @@ uint32_t XINTERFACE::AttributeChanged(ATTRIBUTES *patr)
                 memcpy(pImList->sImageListName, patr->GetThisAttr(), len);
             }
             pImList->idTexture = pPictureService->GetTextureID(pImList->sImageListName);
-            pImList->imageID = pPictureService->GetImageNum(pImList->sImageListName, pImList->sPicture);
+            if (pImList->sPicture)
+            {
+                pImList->imageID = pPictureService->GetImageNum(pImList->sImageListName, pImList->sPicture);
+            }
+            else
+            {
+                pImList->imageID = -1;
+            }
         }
     }
     return 0;

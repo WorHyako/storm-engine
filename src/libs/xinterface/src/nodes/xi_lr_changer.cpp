@@ -173,9 +173,9 @@ void CXI_LRCHANGER::LoadIni(INIFILE *ini1, const char *name1, INIFILE *ini2, con
 
     // get buttons picture name
     if (ReadIniString(ini1, name1, ini2, name2, "lpicture", param, sizeof(param), ""))
-        pPictureService->GetTexturePos(m_sGroupName, param, m_tLRect);
+        pPictureService->GetTexturePos(m_sGroupName ? m_sGroupName : std::string_view(), param, m_tLRect);
     if (ReadIniString(ini1, name1, ini2, name2, "rpicture", param, sizeof(param), ""))
-        pPictureService->GetTexturePos(m_sGroupName, param, m_tRRect);
+        pPictureService->GetTexturePos(m_sGroupName ? m_sGroupName : std::string_view(), param, m_tRRect);
 
     // get offset button image in case pressed button
     m_PressShift = GetIniFloatPoint(ini1, name1, ini2, name2, "pressPictureOffset", FXYPOINT(0.f, 0.f));

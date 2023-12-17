@@ -80,7 +80,7 @@ void CXI_PICTURE::LoadIni(INIFILE *ini1, const char *name1, INIFILE *ini2, const
         memcpy(m_pcGroupName, param, len);
 
         if (ReadIniString(ini1, name1, ini2, name2, "picName", param, sizeof(param), ""))
-            pPictureService->GetTexturePos(m_pcGroupName, param, texRect);
+            pPictureService->GetTexturePos(m_pcGroupName ? m_pcGroupName : std::string_view(), param, texRect);
     }
     else
     {
@@ -217,7 +217,7 @@ void CXI_PICTURE::SetNewPictureByGroup(const char *groupName, const char *picNam
     if (m_pcGroupName && picName)
     {
         FXYRECT texRect;
-        pPictureService->GetTexturePos(m_pcGroupName, picName, texRect);
+        pPictureService->GetTexturePos(m_pcGroupName ? m_pcGroupName : std::string_view(), picName, texRect);
         ChangeUV(texRect);
     }
 }

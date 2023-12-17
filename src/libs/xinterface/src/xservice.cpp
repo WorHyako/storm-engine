@@ -1,16 +1,19 @@
 #include "xservice.h"
 
 #include "dx9render.h"
+#include "platform/platform.hpp"
 #include "string_compare.hpp"
 #include "v_file_service.h"
-#include "platform/platform.hpp"
 
 #define ERROR_MUL 1.0f
 
 static const char *LISTS_INIFILE = "resource\\ini\\interfaces\\pictures.ini";
 
 XSERVICE::XSERVICE()
-    : m_fWScale(0), m_fHScale(0), m_fWAdd(0), m_fHAdd(0)
+    : m_fWScale(0)
+    , m_fHScale(0)
+    , m_fWAdd(0)
+    , m_fHAdd(0)
 {
     m_dwListQuantity = 0;
     m_dwImageQuantity = 0;
@@ -51,51 +54,55 @@ void XSERVICE::Init(VDX9RENDER *pRS, int32_t lWidth, int32_t lHeight)
     LoadAllPicturesInfo();
 }
 
-int32_t XSERVICE::GetTextureID(const char *sImageListName)
+int32_t XSERVICE::GetTextureID(const std::string_view &sImageListName)
 {
-    if (sImageListName != nullptr)
+    for (auto i = 0; i < m_dwListQuantity; i++)
     {
-        for (auto i = 0; i < m_dwListQuantity; i++)
-            if (storm::iEquals(m_pList[i].sImageListName, sImageListName))
+        if (storm::iEquals(m_pList[i].sImageListName, sImageListName))
+        {
+            if (m_pList[i].textureQuantity <= 0)
             {
-                if (m_pList[i].textureQuantity <= 0)
-                {
-                    char sTexName[256];
-                    sprintf_s(sTexName, "INTERFACES\\%s", m_pList[i].sTextureName);
-                    m_pList[i].textureID = m_pRS->TextureCreate(sTexName);
-                    m_pList[i].textureQuantity = 1;
-                }
-                else
-                    m_pList[i].textureQuantity++;
-                return m_pList[i].textureID;
+                char sTexName[256];
+                sprintf_s(sTexName, "INTERFACES\\%s", m_pList[i].sTextureName);
+                m_pList[i].textureID = m_pRS->TextureCreate(sTexName);
+                m_pList[i].textureQuantity = 1;
             }
+            else
+            {
+                m_pList[i].textureQuantity++;
+            }
+            return m_pList[i].textureID;
+        }
     }
 
     return -1;
 }
 
-int32_t XSERVICE::FindGroup(const char *sImageListName) const
+int32_t XSERVICE::FindGroup(const std::string_view &sImageListName) const
 {
-    if (!sImageListName)
-        return -1;
     for (auto n = 0; n < m_dwListQuantity; n++)
+    {
         if (storm::iEquals(m_pList[n].sImageListName, sImageListName))
+        {
             return n;
+        }
+    }
     return -1;
 }
 
-bool XSERVICE::ReleaseTextureID(const char *sImageListName)
+bool XSERVICE::ReleaseTextureID(const std::string_view &sImageListName)
 {
-    if (sImageListName == nullptr)
-        return false;
-
     for (auto i = 0; i < m_dwListQuantity; i++)
+    {
         if (storm::iEquals(m_pList[i].sImageListName, sImageListName))
+        {
             if (--m_pList[i].textureQuantity == 0)
             {
                 m_pRS->TextureRelease(m_pList[i].textureID);
                 return true;
             }
+        }
+    }
 
     return false;
 }
@@ -107,9 +114,13 @@ bool XSERVICE::GetTexturePos(int32_t pictureNum, FXYRECT &texRect)
         // find picture group
         int gn;
         for (gn = 0; gn < m_dwListQuantity; gn++)
+        {
             if (pictureNum >= m_pList[gn].pictureStart &&
                 pictureNum < m_pList[gn].pictureStart + m_pList[gn].pictureQuantity)
+            {
                 break;
+            }
+        }
         if (gn < m_dwListQuantity)
         {
             texRect.left =
@@ -140,12 +151,14 @@ bool XSERVICE::GetTexturePos(int32_t pictureNum, XYRECT &texRect)
     return false;
 }
 
-bool XSERVICE::GetTexturePos(const char *sImageListName, const char *sImageName, FXYRECT &texRect)
+bool XSERVICE::GetTexturePos(const std::string_view &sImageListName, const std::string_view &sImageName,
+                             FXYRECT &texRect)
 {
     return GetTexturePos(GetImageNum(sImageListName, sImageName), texRect);
 }
 
-bool XSERVICE::GetTexturePos(const char *sImageListName, const char *sImageName, XYRECT &texRect)
+bool XSERVICE::GetTexturePos(const std::string_view &sImageListName, const std::string_view &sImageName,
+                             XYRECT &texRect)
 {
     return GetTexturePos(GetImageNum(sImageListName, sImageName), texRect);
 }
@@ -159,9 +172,13 @@ bool XSERVICE::GetTexturePos(int nTextureModify, int32_t pictureNum, FXYRECT &te
         // find picture group
         int gn;
         for (gn = 0; gn < m_dwListQuantity; gn++)
+        {
             if ((pictureNum >= m_pList[gn].pictureStart) &&
                 (pictureNum < m_pList[gn].pictureStart + m_pList[gn].pictureQuantity))
+            {
                 break;
+            }
+        }
         if (gn < m_dwListQuantity)
         {
             rectTmp.left = static_cast<float>(m_pImage[pictureNum].pTextureRect.left);
@@ -192,32 +209,45 @@ bool XSERVICE::GetTexturePos(int nTextureModify, int32_t pictureNum, FXYRECT &te
     return false;
 }
 
-bool XSERVICE::GetTexturePos(int nTextureModify, const char *sImageListName, const char *sImageName, FXYRECT &texRect)
+bool XSERVICE::GetTexturePos(int nTextureModify, const std::string_view &sImageListName,
+                             const std::string_view &sImageName, FXYRECT &texRect)
 {
     return GetTexturePos(nTextureModify, GetImageNum(sImageListName, sImageName), texRect);
 }
 
-void XSERVICE::GetTextureCutForSize(const char *pcImageListName, const FXYPOINT &pntLeftTopUV, const XYPOINT &pntSize,
-                                    int32_t nSrcWidth, int32_t nSrcHeight, FXYRECT &outUV)
+void XSERVICE::GetTextureCutForSize(const std::string_view &pcImageListName, const FXYPOINT &pntLeftTopUV,
+                                    const XYPOINT &pntSize, int32_t nSrcWidth, int32_t nSrcHeight, FXYRECT &outUV)
 {
     const auto n = FindGroup(pcImageListName);
     if (n >= 0)
     {
         if (nSrcWidth < m_pList[n].textureWidth)
+        {
             nSrcWidth = m_pList[n].textureWidth;
+        }
         if (nSrcHeight < m_pList[n].textureHeight)
+        {
             nSrcHeight = m_pList[n].textureHeight;
+        }
     }
     auto fW = 1.f;
     if (nSrcWidth > 0)
+    {
         fW = static_cast<float>(pntSize.x) / nSrcWidth + pntLeftTopUV.x;
+    }
     auto fH = 1.f;
     if (nSrcHeight > 0)
+    {
         fH = static_cast<float>(pntSize.y) / nSrcHeight + pntLeftTopUV.y;
+    }
     if (fW > 1.f)
+    {
         fW = 1.f;
+    }
     if (fH > 1.f)
+    {
         fH = 1.f;
+    }
     outUV.left = pntLeftTopUV.x;
     outUV.top = pntLeftTopUV.y;
     outUV.right = fW;
@@ -281,16 +311,20 @@ void XSERVICE::LoadAllPicturesInfo()
             // get pictures quantity
             m_pList[i].pictureQuantity = 0;
             if (ini->ReadString(section, "picture", param, sizeof(param) - 1, ""))
+            {
                 do
                 {
                     m_pList[i].pictureQuantity++;
                 } while (ini->ReadStringNext(section, "picture", param, sizeof(param) - 1));
+            }
 
             // resize image list
             auto *const oldpImage = m_pImage;
             m_pImage = new PICTUREDESCR[m_dwImageQuantity + m_pList[i].pictureQuantity];
             if (m_pImage == nullptr)
+            {
                 throw std::runtime_error("allocate memory error");
+            }
             if (oldpImage != nullptr)
             {
                 memcpy(m_pImage, oldpImage, m_dwImageQuantity * sizeof(PICTUREDESCR));
@@ -320,7 +354,9 @@ void XSERVICE::LoadAllPicturesInfo()
             }
 
             if (!ini->GetSectionNameNext(section, sizeof(section) - 1))
+            {
                 break;
+            }
         }
     }
 }
@@ -332,7 +368,9 @@ void XSERVICE::ReleaseAll()
         for (auto i = 0; i < m_dwListQuantity; i++)
         {
             if (m_pList[i].textureQuantity != 0)
+            {
                 m_pRS->TextureRelease(m_pList[i].textureID);
+            }
 
             delete m_pList[i].sImageListName;
 
@@ -356,34 +394,39 @@ void XSERVICE::ReleaseAll()
     m_dwImageQuantity = 0;
 }
 
-int32_t XSERVICE::GetImageNum(const char *sImageListName, const char *sImageName)
+int32_t XSERVICE::GetImageNum(const std::string_view &sImageListName, const std::string_view &sImageName)
 {
     int32_t retVal = -1;
 
-    if (sImageName != nullptr)
-        if (sImageListName != nullptr)
+    if (!sImageListName.empty())
+    {
+        for (int i = 0; i < m_dwListQuantity; i++)
         {
-            for (int i = 0; i < m_dwListQuantity; i++)
-                if (storm::iEquals(m_pList[i].sImageListName, sImageListName))
+            if (storm::iEquals(m_pList[i].sImageListName, sImageListName))
+            {
+                for (int j = m_pList[i].pictureStart; j < m_pList[i].pictureStart + m_pList[i].pictureQuantity; j++)
                 {
-                    for (int j = m_pList[i].pictureStart; j < m_pList[i].pictureStart + m_pList[i].pictureQuantity; j++)
-                        if (storm::iEquals(m_pImage[j].sPictureName, sImageName))
-                        {
-                            retVal = j;
-                            break;
-                        }
-                    break;
+                    if (storm::iEquals(m_pImage[j].sPictureName, sImageName))
+                    {
+                        retVal = j;
+                        break;
+                    }
                 }
+                break;
+            }
         }
-        else
+    }
+    else
+    {
+        for (int i = 0; i < m_dwImageQuantity; i++)
         {
-            for (int i = 0; i < m_dwImageQuantity; i++)
-                if (storm::iEquals(m_pImage[i].sPictureName, sImageName))
-                {
-                    retVal = i;
-                    break;
-                }
+            if (storm::iEquals(m_pImage[i].sPictureName, sImageName))
+            {
+                retVal = i;
+                break;
+            }
         }
+    }
 
     return retVal;
 }

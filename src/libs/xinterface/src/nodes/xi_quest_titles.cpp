@@ -254,7 +254,9 @@ void CXI_QUESTTITLE::LoadIni(INIFILE *ini1, const char *name1, INIFILE *ini2, co
     // get line space
     m_vertOffset = GetIniLong(ini1, name1, ini2, name2, "lineSpace", 30);
     if (m_vertOffset == 0)
+    {
         m_vertOffset = 10;
+    }
 
     // counting the number of lines displayed on the screen
     m_allStrings = (m_rect.bottom - m_rect.top) / m_vertOffset;
@@ -267,7 +269,9 @@ void CXI_QUESTTITLE::LoadIni(INIFILE *ini1, const char *name1, INIFILE *ini2, co
     // get font
     m_idFont = -1;
     if (ReadIniString(ini1, name1, ini2, name2, "font", param, sizeof(param), ""))
+    {
         m_idFont = m_rs->LoadFont(param);
+    }
     m_fontOffset = GetIniLong(ini1, name1, ini2, name2, "fontOffset", 4);
 
     // get image info
@@ -278,19 +282,19 @@ void CXI_QUESTTITLE::LoadIni(INIFILE *ini1, const char *name1, INIFILE *ini2, co
     {
         const auto len = strlen(param) + 1;
         m_iconGroupName = new char[len];
-        if (m_iconGroupName == nullptr)
-        {
-            throw std::runtime_error("allocate memory error");
-        }
         memcpy(m_iconGroupName, param, len);
+        m_texId = ptrOwner->PictureService()->GetTextureID(m_iconGroupName);
     }
     else
+    {
         m_iconGroupName = nullptr;
-    m_texId = ptrOwner->PictureService()->GetTextureID(m_iconGroupName);
+        m_texId = -1;
+    }
 
     if (ReadIniString(ini1, name1, ini2, name2, "completeIcon", param, sizeof(param), ""))
     {
-        ptrOwner->PictureService()->GetTexturePos(m_iconGroupName, param, m_texComplete);
+        ptrOwner->PictureService()->GetTexturePos(m_iconGroupName ? m_iconGroupName : std::string_view(), param,
+                                                  m_texComplete);
     }
     else
     {
@@ -300,7 +304,8 @@ void CXI_QUESTTITLE::LoadIni(INIFILE *ini1, const char *name1, INIFILE *ini2, co
 
     if (ReadIniString(ini1, name1, ini2, name2, "noncompleteIcon", param, sizeof(param), ""))
     {
-        ptrOwner->PictureService()->GetTexturePos(m_iconGroupName, param, m_texNonComplete);
+        ptrOwner->PictureService()->GetTexturePos(m_iconGroupName ? m_iconGroupName : std::string_view(), param,
+                                                  m_texNonComplete);
     }
     else
     {

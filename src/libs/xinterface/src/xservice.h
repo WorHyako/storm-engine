@@ -32,23 +32,23 @@ class XSERVICE : public VXSERVICE
     void Init(VDX9RENDER *pRS, int32_t lWidth, int32_t lHight) override;
 
     // get texture identificator for image group
-    int32_t GetTextureID(const char *sImageListName) override;
-    int32_t FindGroup(const char *sImageListName) const;
-    bool ReleaseTextureID(const char *sImageListName) override;
+    int32_t GetTextureID(const std::string_view &sImageListName) override;
+    int32_t FindGroup(const std::string_view &sImageListName) const;
+    bool ReleaseTextureID(const std::string_view &sImageListName) override;
 
     // get texture positon for select picture
     bool GetTexturePos(int32_t pictureNum, FXYRECT &texRect) override;
     bool GetTexturePos(int32_t pictureNum, XYRECT &texRect) override;
-    bool GetTexturePos(const char *sImageListName, const char *sImageName, FXYRECT &texRect) override;
-    bool GetTexturePos(const char *sImageListName, const char *sImageName, XYRECT &texRect) override;
+    bool GetTexturePos(const std::string_view &sImageListName, const std::string_view &sImageName, FXYRECT &texRect) override;
+    bool GetTexturePos(const std::string_view &sImageListName, const std::string_view &sImageName, XYRECT &texRect) override;
     bool GetTexturePos(int nTextureModify, int32_t pictureNum, FXYRECT &texRect) override;
-    bool GetTexturePos(int nTextureModify, const char *sImageListName, const char *sImageName,
+    bool GetTexturePos(int nTextureModify, const std::string_view &sImageListName, const std::string_view &sImageName,
                        FXYRECT &texRect) override;
 
-    void GetTextureCutForSize(const char *pcImageListName, const FXYPOINT &pntLeftTopUV, const XYPOINT &pntSize,
+    void GetTextureCutForSize(const std::string_view &pcImageListName, const FXYPOINT &pntLeftTopUV, const XYPOINT &pntSize,
                               int32_t nSrcWidth, int32_t nSrcHeight, FXYRECT &outUV) override;
 
-    int32_t GetImageNum(const char *sImageListName, const char *sImageName) override;
+    int32_t GetImageNum(const std::string_view &sImageListName, const std::string_view &sImageName) override;
 
     void ReleaseAll() override;
 

@@ -154,13 +154,13 @@ void CXI_TITLE::LoadIni(INIFILE *ini1, const char *name1, INIFILE *ini2, const c
     FXYRECT centerRect, tiledRect, mediumRect;
     // get title images
     if (ReadIniString(ini1, name1, ini2, name2, "titleCenter", param, sizeof(param), ""))
-        pPictureService->GetTexturePos(m_sGroupName, param, centerRect);
+        pPictureService->GetTexturePos(m_sGroupName ? m_sGroupName : std::string_view(), param, centerRect);
     else
         centerRect = {};
     if (ReadIniString(ini1, name1, ini2, name2, "titleMedium", param, sizeof(param), ""))
     {
-        pPictureService->GetTexturePos(m_sGroupName, param, mediumRect);
-        pPictureService->GetTexturePos(m_sGroupName, param, m_mRect);
+        pPictureService->GetTexturePos(m_sGroupName ? m_sGroupName : std::string_view(), param, mediumRect);
+        pPictureService->GetTexturePos(m_sGroupName ? m_sGroupName : std::string_view(), param, m_mRect);
     }
     else
     {
@@ -169,8 +169,8 @@ void CXI_TITLE::LoadIni(INIFILE *ini1, const char *name1, INIFILE *ini2, const c
     }
     if (ReadIniString(ini1, name1, ini2, name2, "titleTiled", param, sizeof(param), ""))
     {
-        pPictureService->GetTexturePos(m_sGroupName, param, tiledRect);
-        pPictureService->GetTexturePos(m_sGroupName, param, m_tRect);
+        pPictureService->GetTexturePos(m_sGroupName ? m_sGroupName : std::string_view(), param, tiledRect);
+        pPictureService->GetTexturePos(m_sGroupName ? m_sGroupName : std::string_view(), param, m_tRect);
     }
     else
     {

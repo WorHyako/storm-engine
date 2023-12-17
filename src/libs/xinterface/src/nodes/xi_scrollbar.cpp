@@ -243,13 +243,13 @@ void CXI_SCROLLBAR::LoadIni(INIFILE *ini1, const char *name1, INIFILE *ini2, con
     m_rs->UnLockIndexBuffer(m_idIBuf);
 
     if (ReadIniString(ini1, name1, ini2, name2, "leftPicture", param, sizeof(param), ""))
-        pPictureService->GetTexturePos(m_sGroupName, param, m_frLeftTex);
+        pPictureService->GetTexturePos(m_sGroupName ? m_sGroupName : std::string_view(), param, m_frLeftTex);
     if (ReadIniString(ini1, name1, ini2, name2, "rightPicture", param, sizeof(param), ""))
-        pPictureService->GetTexturePos(m_sGroupName, param, m_frRightTex);
+        pPictureService->GetTexturePos(m_sGroupName ? m_sGroupName : std::string_view(), param, m_frRightTex);
     if (ReadIniString(ini1, name1, ini2, name2, "centerPicture", param, sizeof(param), ""))
-        pPictureService->GetTexturePos(m_sGroupName, param, m_rectCenterTex);
+        pPictureService->GetTexturePos(m_sGroupName ? m_sGroupName : std::string_view(), param, m_rectCenterTex);
     if (ReadIniString(ini1, name1, ini2, name2, "selectCenterPicture", param, sizeof(param), ""))
-        pPictureService->GetTexturePos(m_sGroupName, param, m_rectSelectCenterTex);
+        pPictureService->GetTexturePos(m_sGroupName ? m_sGroupName : std::string_view(), param, m_rectSelectCenterTex);
     m_bPrevSelectStatus = false;
     m_nBarWidth = GetIniLong(ini1, name1, ini2, name2, "barWidth", -1);
     m_nSideWidth = GetIniLong(ini1, name1, ini2, name2, "sideWidth", -1);

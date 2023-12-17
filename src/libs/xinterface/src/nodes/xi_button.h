@@ -2,7 +2,6 @@
 
 #include "../inode.h"
 
-// picture
 class CXI_BUTTON final : public CINODE
 {
   public:
@@ -12,8 +11,6 @@ class CXI_BUTTON final : public CINODE
     ~CXI_BUTTON() override;
 
     void Draw(bool bSelected, uint32_t Delta_Time) override;
-    bool Init(INIFILE *ini1, const char *name1, INIFILE *ini2, const char *name2, VDX9RENDER *rs, XYRECT &hostRect,
-              XYPOINT &ScreenSize) override;
     void ReleaseAll() override;
     int CommandExecute(int wActCode) override;
     bool IsClick(int buttonID, int32_t xPos, int32_t yPos) override;
@@ -33,11 +30,11 @@ class CXI_BUTTON final : public CINODE
     void SetUsing(bool bUsing) override;
     uint32_t MessageProc(int32_t msgcode, MESSAGE &message) override;
 
-private:
+  private:
     void LoadIni(INIFILE *ini1, const char *name1, INIFILE *ini2, const char *name2) override;
 
-    char *m_sGroupName;
-    int32_t m_idTex; // texture identity
+    std::string groupName_;
+    int32_t m_idTex;
     CVideoTexture *m_pTex;
 
     FXYRECT m_tRect;

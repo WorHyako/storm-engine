@@ -147,7 +147,7 @@ void CXI_IMGCOLLECTION::LoadIni(INIFILE *ini1, const char *name1, INIFILE *ini2,
                     m_aEditInfo.push_back(PicEditInfo());
 
                     pStr = GetSubStr(pStr, param2, sizeof(param2));
-                    pPictureService->GetTexturePos(sGroupName, param2, texRect);
+                    pPictureService->GetTexturePos(sGroupName ? sGroupName : std::string_view(), param2, texRect);
                     m_aEditInfo[n].sName = param2;
 
                     if (GetMidStr(pStr, param2, sizeof(param2), "col:{", "}"))
@@ -270,7 +270,7 @@ void CXI_IMGCOLLECTION::UpdateBuffers()
 
         for (int32_t n = 0; n < m_aEditInfo.size(); n++)
         {
-            pPictureService->GetTexturePos(sGroupName, m_aEditInfo[n].sName.c_str(), texRect);
+            pPictureService->GetTexturePos(sGroupName ? sGroupName : std::string_view(), m_aEditInfo[n].sName.c_str(), texRect);
 
             scrRect.left = m_aEditInfo[n].nLeft;
             scrRect.top = m_aEditInfo[n].nTop;

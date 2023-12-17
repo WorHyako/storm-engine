@@ -1,5 +1,7 @@
 #pragma once
 
+#include <storm/data.hpp>
+
 #include "c_vector.h"
 #include "quest_file_reader/quest_file_reader.h"
 #include "dx9render.h"
@@ -76,6 +78,9 @@ struct XYRECT
         this->bottom = ir.bottom;
     }
 };
+
+void to_json(storm::Data& data, const XYRECT& rect);
+void from_json(const storm::Data& data, XYRECT& rect);
 
 struct FXYPOINT
 {
@@ -251,12 +256,20 @@ struct XI_THREETEX_VERTEX
     float tu3, tv3;
 };
 
-inline void PICTURE_TEXTURE_RELEASE(VXSERVICE *ps, const char *gn, int32_t &tex)
+inline void PICTURE_TEXTURE_RELEASE(VXSERVICE *ps, const std::string_view &gn, int32_t &tex)
 {
     if (tex != -1 && ps != nullptr)
     {
         ps->ReleaseTextureID(gn);
         tex = -1;
+    }
+}
+
+inline void PICTURE_TEXTURE_RELEASE(VXSERVICE *ps, const char *gn, int32_t &tex)
+{
+    if (gn != nullptr)
+    {
+        return PICTURE_TEXTURE_RELEASE(ps, std::string_view(gn), tex);
     }
 }
 
