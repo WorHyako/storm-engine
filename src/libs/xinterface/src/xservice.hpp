@@ -3,12 +3,20 @@
 #include "vx_service.h"
 #include "xdefines.h"
 
+template<typename T>
+concept TexturePoolConcept = requires(T& t, const char *str, int texture_id)
+{
+    texture_id = t.TextureCreate(str);
+    t.TextureRelease(texture_id);
+};
+
+template<TexturePoolConcept TexturePool>
 class XSERVICE final : public VXSERVICE
 {
     struct IMAGELISTDESCR
     {
-        char *sImageListName;
-        char *sTextureName;
+        std::string sImageListName;
+        std::string sTextureName;
         int32_t textureID;
         int textureQuantity;
 
@@ -20,12 +28,12 @@ class XSERVICE final : public VXSERVICE
 
     struct PICTUREDESCR
     {
-        char *sPictureName;
+        std::string sPictureName;
         XYRECT pTextureRect;
     };
 
   public:
-    explicit XSERVICE(VDX9RENDER *pRS);
+    explicit XSERVICE(TexturePool &pRS);
     ~XSERVICE() override;
 
     // get texture identificator for image group
@@ -52,16 +60,11 @@ class XSERVICE final : public VXSERVICE
   private:
     void LoadAllPicturesInfo();
 
-    VDX9RENDER *m_pRS = nullptr;
+    TexturePool &m_pRS;
 
-    int32_t m_dwListQuantity = 0;
-    int32_t m_dwImageQuantity = 0;
-    IMAGELISTDESCR *m_pList = nullptr;
-    PICTUREDESCR *m_pImage = nullptr;
+    std::vector<IMAGELISTDESCR> m_pList;
+    std::vector<PICTUREDESCR> m_pImage;
 
-    // Scale factors
-    float m_fWScale = 0;
-    float m_fHScale = 0;
     // scaling error parameters
     float m_fWAdd = 0.5f;
     float m_fHAdd = 0.5f;

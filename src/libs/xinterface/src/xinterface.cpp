@@ -10,7 +10,7 @@
 #include "nodes/all_xi_node.h"
 #include "string_service/obj_str_service.h"
 #include "string_service/str_service.h"
-#include "xservice.h"
+#include "xservice_impl.hpp"
 #include <cstdio>
 
 #define CHECK_FILE_NAME "PiratesReadme.txt"
@@ -194,7 +194,7 @@ void XINTERFACE::SetDevice()
     LoadIni();
 
     // Create pictures and string lists service
-    pPictureService = std::make_unique<XSERVICE>(pRenderService);
+    pPictureService = std::make_unique<XSERVICE<VDX9RENDER>>(*pRenderService);
 
     pQuestService = new storm::QuestFileReader;
     if (pQuestService == nullptr)

@@ -203,6 +203,7 @@ macro(STORM_SETUP)
     add_executable(${test_target} ${TEST_SRCS})
     target_link_libraries(${test_target} PRIVATE ${_SETUP_TEST_DEPENDENCIES}
                                                  ${_SETUP_TARGET_NAME})
+    target_include_directories(${test_target} PRIVATE ${SRC_DIRS})
     _set_ide_folder(${test_target} "Tests")
 
     # setup post-build hook to run the test after build
