@@ -3,8 +3,10 @@
 #include "vx_service.h"
 #include "xdefines.h"
 
+using TextureHandle = int32_t;
+
 template<typename T>
-concept TexturePoolConcept = requires(T& t, const char *str, int texture_id)
+concept TexturePoolConcept = requires(T& t, const char *str, TextureHandle texture_id)
 {
     texture_id = t.TextureCreate(str);
     t.TextureRelease(texture_id);
@@ -37,7 +39,7 @@ class XSERVICE final : public VXSERVICE
     ~XSERVICE() override;
 
     // get texture identificator for image group
-    int32_t GetTextureID(const std::string_view &sImageListName) override;
+    TextureHandle GetTextureID(const std::string_view &sImageListName) override;
     int32_t FindGroup(const std::string_view &sImageListName) const;
     bool ReleaseTextureID(const std::string_view &sImageListName) override;
 
