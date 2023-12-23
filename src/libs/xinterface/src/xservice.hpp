@@ -36,6 +36,7 @@ class XSERVICE final : public VXSERVICE
 
   public:
     explicit XSERVICE(TexturePool &pRS);
+    XSERVICE(TexturePool &pRS, const storm::Data &config);
     ~XSERVICE() override;
 
     // get texture identificator for image group
@@ -60,7 +61,7 @@ class XSERVICE final : public VXSERVICE
     int32_t GetImageNum(const std::string_view &sImageListName, const std::string_view &sImageName) override;
 
   private:
-    void LoadAllPicturesInfo();
+    void LoadAllPicturesInfo(const storm::Data &config);
 
     TexturePool &m_pRS;
 

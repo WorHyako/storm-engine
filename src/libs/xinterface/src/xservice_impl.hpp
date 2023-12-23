@@ -8,12 +8,64 @@
 
 static constexpr const char *LISTS_INIFILE = R"(resource\ini\interfaces\pictures.ini)";
 
+template<typename T>
+T GetNumber(const storm::Data &data, const std::string &name, const T def)
+{
+    if (data.contains(name)) {
+        if (data[name].is_number()) {
+            return data[name].get<T>();
+        }
+        else if (data[name].is_string()) {
+            return static_cast<T>(std::stod(data[name].get<std::string>()));
+        }
+    }
+    return def;
+}
+
+std::string GetString(const storm::Data &data, const std::string &def)
+{
+    if (data.is_string())
+    {
+        return data.get<std::string>();
+    }
+    else if (data.is_array() && !data.empty() && data[0].is_string())
+    {
+        return data[0].get<std::string>();
+    }
+    return def;
+}
+
+std::string GetString(const storm::Data &data, const std::string &name, const std::string &def)
+{
+    if (data.contains(name))
+    {
+        return GetString(data[name], def);
+    }
+    return def;
+}
+
 template<TexturePoolConcept TexturePool>
 XSERVICE<TexturePool>::XSERVICE(TexturePool &pRS)
     : m_pRS(pRS)
 {
-    LoadAllPicturesInfo();
+    // initialize ini file
+    auto ini = fio->OpenIniFile(LISTS_INIFILE);
+    if (!ini)
+    {
+        throw std::runtime_error("ini file not found!");
+    }
+
+    LoadAllPicturesInfo(ini->ToData());
 }
+
+template<TexturePoolConcept TexturePool>
+XSERVICE<TexturePool>::XSERVICE(TexturePool &pRS, const storm::Data &config)
+    : m_pRS(pRS)
+{
+    LoadAllPicturesInfo(config);
+}
+
+
 
 template<TexturePoolConcept TexturePool>
 XSERVICE<TexturePool>::~XSERVICE()
@@ -235,88 +287,71 @@ void XSERVICE<TexturePool>::GetTextureCutForSize(const std::string_view &pcImage
 }
 
 template<TexturePoolConcept TexturePool>
-void XSERVICE<TexturePool>::LoadAllPicturesInfo()
+void XSERVICE<TexturePool>::LoadAllPicturesInfo(const storm::Data &config)
 {
-    char section[255];
     char param[255];
 
-    // initialize ini file
-    auto ini = fio->OpenIniFile(LISTS_INIFILE);
-    if (!ini)
-    {
-        throw std::runtime_error("ini file not found!");
-    }
+    int32_t image_quantity = 0;
 
-    size_t list_quantity = 0;
-    size_t image_quantity = 0;
+    for (const auto& [section, table] : config.items()) {
+        auto& picture_list = m_pList.emplace_back(IMAGELISTDESCR{
+            .sImageListName = section,
+            .sTextureName = GetString(table, "sTextureName", ""),
+            .textureID = -1,
+            .textureQuantity = 0,
+            .textureWidth = GetNumber<int32_t>(table, "wTextureWidth", 1024),
+            .textureHeight = GetNumber<int32_t>(table, "wTextureHeight", 1024),
+            .pictureQuantity = 0,
+            .pictureStart = image_quantity,
+        });
 
-    // calculate lists quantity
-    if (ini->GetSectionName(section, sizeof(section) - 1))
-    {
-        do
-        {
-            list_quantity++;
-        } while (ini->GetSectionNameNext(section, sizeof(section) - 1));
-    }
-    m_pList.resize(list_quantity);
+        if (table.contains("picture") ) {
+            const auto& picture_data = table["picture"];
+            if (picture_data.is_array() ) {
+                for (const auto &[_, picture_entry] : picture_data.items()) {
+                    ++image_quantity;
+                    ++picture_list.pictureQuantity;
 
-    // fill lists
-    if (ini->GetSectionName(section, sizeof(section) - 1))
-    {
-        for (auto i = 0; true; i++)
-        {
-            m_pList[i].textureQuantity = 0;
-            m_pList[i].textureID = -1L;
+                    const std::string &picture_string = GetString(picture_entry, "");
+                    char picName[sizeof(param)];
+                    // get texture coordinates
+                    int nLeft, nTop, nRight, nBottom;
 
-            // get list name
-            m_pList[i].sImageListName = section;
-            // get texture name
-            ini->ReadString(section, "sTextureName", param, sizeof(param) - 1, "");
-            m_pList[i].sTextureName = param;
-
-            // get texture width & height
-            m_pList[i].textureWidth = ini->GetInt(section, "wTextureWidth", 1024);
-            m_pList[i].textureHeight = ini->GetInt(section, "wTextureHeight", 1024);
-
-            m_pList[i].pictureStart = image_quantity;
-            // get pictures quantity
-            m_pList[i].pictureQuantity = 0;
-            if (ini->ReadString(section, "picture", param, sizeof(param) - 1, ""))
-            {
-                do
-                {
-                    m_pList[i].pictureQuantity++;
-                } while (ini->ReadStringNext(section, "picture", param, sizeof(param) - 1));
+                    sscanf(picture_string.c_str(), "%[^,],%d,%d,%d,%d", picName, &nLeft, &nTop, &nRight, &nBottom);
+                    m_pImage.emplace_back(PICTUREDESCR{
+                        .sPictureName = picName,
+                        .pTextureRect = {
+                            nLeft,
+                            nTop,
+                            nRight,
+                            nBottom
+                        },
+                    });
+                }
             }
+            else if (picture_data.is_string() ) {
+                ++image_quantity;
+                ++picture_list.pictureQuantity;
 
-            // resize image list
-            m_pImage.resize(image_quantity + m_pList[i].pictureQuantity);
-            image_quantity += m_pList[i].pictureQuantity;
-            Assert(image_quantity == m_pImage.size() );
+                const std::string &picture_string = picture_data.get<std::string>();
 
-            // set pictures
-            char picName[sizeof(param)];
-            ini->ReadString(section, "picture", param, sizeof(param) - 1, "");
-            for (int j = m_pList[i].pictureStart; j < image_quantity; j++)
-            {
+                char picName[sizeof(param)];
                 // get texture coordinates
                 int nLeft, nTop, nRight, nBottom;
 
-                sscanf(param, "%[^,],%d,%d,%d,%d", picName, &nLeft, &nTop, &nRight, &nBottom);
-                m_pImage[j].pTextureRect.left = nLeft;
-                m_pImage[j].pTextureRect.top = nTop;
-                m_pImage[j].pTextureRect.right = nRight;
-                m_pImage[j].pTextureRect.bottom = nBottom;
-                m_pImage[j].sPictureName = picName;
-
-                ini->ReadStringNext(section, "picture", param, sizeof(param) - 1);
-            }
-
-            if (!ini->GetSectionNameNext(section, sizeof(section) - 1))
-            {
-                break;
+                sscanf(picture_string.c_str(), "%[^,],%d,%d,%d,%d", picName, &nLeft, &nTop, &nRight, &nBottom);
+                m_pImage.emplace_back(PICTUREDESCR{
+                    .sPictureName = picName,
+                    .pTextureRect = {
+                        nLeft,
+                        nTop,
+                        nRight,
+                        nBottom
+                    },
+                });
             }
         }
+
     }
 }
 
