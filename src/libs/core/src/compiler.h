@@ -267,6 +267,8 @@ class COMPILER : public VIRTUAL_COMPILER
     // printout script functions usage
     void PrintoutUsage();
 
+    void ShowEditor(bool &active);
+
 private:
     [[nodiscard]] std::filesystem::path GetSegmentCachePath(const SEGMENT_DESC &segment) const;
 

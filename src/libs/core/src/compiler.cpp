@@ -16,6 +16,7 @@
 #include "script_cache.h"
 #include "storm/engine_settings.hpp"
 #include "storm_assert.h"
+#include <storm/editor/storm_imgui.hpp>
 
 #include <SDL_timer.h>
 #include <unordered_map>
@@ -7307,6 +7308,56 @@ void COMPILER::PrintoutUsage()
         {
             logTrace_->debug("  {} : {}", n, pRuntimeLogEvent[n]);
         }
+    }
+}
+
+void COMPILER::ShowEditor(bool &active)
+{
+    if (ImGui::Begin("Scripting", &active, 0))
+    {
+        static const VarInfo *selected = nullptr;
+        if (ImGui::BeginTable("Globals", 3, ImGuiTableFlags_SizingFixedFit | ImGuiTableFlags_Resizable | ImGuiTableFlags_Reorderable) )
+        {
+            ImGui::TableSetupColumn("ID", ImGuiTableColumnFlags_WidthFixed);
+            ImGui::TableSetupColumn("Type", ImGuiTableColumnFlags_WidthStretch);
+            ImGui::TableSetupColumn("Value", ImGuiTableColumnFlags_WidthStretch);
+
+            ImGui::TableHeadersRow();
+
+            for (size_t i = 0; i < VarTab.GetVarNum(); ++i) {
+                const VarInfo *var_info = VarTab.GetVar(i);
+                if (var_info == nullptr) {
+                    continue;
+                }
+                ImGui::TableNextRow();
+                ImGui::TableNextColumn();
+
+                std::string label = var_info->name;
+                if (ImGui::Selectable(label.c_str(), var_info == selected, ImGuiSelectableFlags_SpanAllColumns) )
+                {
+                    selected = var_info;
+                }
+                ImGui::TableNextColumn();
+                ImGui::Text("%s", Token.GetTypeName(var_info->type) );
+                ImGui::TableNextColumn();
+                if (var_info->type == S_TOKEN_TYPE::STRING) {
+                    ImGui::Text("%s", var_info->value->GetString() );
+                }
+                else if (var_info->type == S_TOKEN_TYPE::VAR_INTEGER) {
+                    ImGui::Text("%d", var_info->value->GetInt() );
+                }
+                else if (var_info->type == S_TOKEN_TYPE::VAR_FLOAT) {
+                    ImGui::Text("%f", var_info->value->GetFloat() );
+                }
+                else {
+                    ImGui::Text("%s", "-");
+                }
+            };
+
+            ImGui::EndTable();
+        }
+
+        ImGui::End();
     }
 }
 

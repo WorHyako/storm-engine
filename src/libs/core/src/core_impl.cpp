@@ -123,6 +123,9 @@ void CoreImpl::Init()
     storm::editor::EngineEditor::RegisterEditorTool("Entities", [this] (bool &active) {
         entity_manager_.ShowEditor(active);
     });
+    storm::editor::EngineEditor::RegisterEditorTool("Scripting", [this] (bool &active) {
+        Compiler->ShowEditor(active);
+    });
 }
 
 void CoreImpl::InitializeEditor(IDirect3DDevice9 *device)
