@@ -12,11 +12,10 @@ target_sources(utils
 
 target_include_directories(utils
         PUBLIC
-        ${SDL2_INCLUDE_DIRS}
         ${CMAKE_CURRENT_SOURCE_DIR}/include
         ${CMAKE_CURRENT_SOURCE_DIR}/include/dialog
         ${CMAKE_CURRENT_SOURCE_DIR}/include/platform)
 
 target_link_libraries(utils
-        PUBLIC ${SDL2_LIBRARIES})
+        PUBLIC sdl2::sdl2)
 
