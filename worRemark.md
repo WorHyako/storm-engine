@@ -82,3 +82,4 @@ I'm organizing a "Night Parade of One Hundred Demons"* as his worshipper, as his
 | nlohmann_json | :white_check_mark: | v3.11.3 |    -    |
 |     sdl2      | :white_check_mark: |    -    |    -    |
 |    fmtlib     | :white_check_mark: | 11.0.2  |    -    |
+|     imgui     |        :x:         |    ?    |    ?    |
