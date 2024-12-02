@@ -1,5 +1,8 @@
 cmake_minimum_required(VERSION 3.19)
 
+# -------- #
+#   Math   #
+# -------- #
 add_library(math INTERFACE)
 add_library(storm::math ALIAS math)
 

@@ -29,3 +29,13 @@ add_subdirectory(diagnostics)
 #   Filesystem   #
 # -------------- #
 add_subdirectory(Filesystem)
+
+# ----------------- #
+#   SharedHeaders   #
+# ----------------- #
+add_subdirectory(SharedHeaders)
+
+# -------- #
+#   Core   #
+# -------- #
+add_subdirectory(core)
