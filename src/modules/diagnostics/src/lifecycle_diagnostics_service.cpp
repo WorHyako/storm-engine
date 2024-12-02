@@ -8,7 +8,7 @@
 #include <spdlog/spdlog.h>
 
 #include "fs.h"
-#include "file_service.h"
+// #include "file_service.h"
 #include "spdlog_sinks/syncable_sink.hpp"
 #include "watermark.hpp"
 

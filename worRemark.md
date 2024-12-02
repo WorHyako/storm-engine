@@ -72,12 +72,11 @@ I'm organizing a "Night Parade of One Hundred Demons"* as his worshipper, as his
 
 ## Progress table for ThirdParty libs
 
-| Module name | State | Folder | Dependencies |
-|:-----------:|:-----:|:------:|:------------:|
-|             |       |        |              |
-|             |       |        |              |
-|             |       |        |              |
-|             |       |        |              |
-|             |       |        |              |
-|             |       |        |              |
-|             |       |        |              |
+|  Module name  |       State        |   Tag   | Options |
+|:-------------:|:------------------:|:-------:|:-------:|
+|    spdlog     | :white_check_mark: |  v1.x   |    -    |
+| sentry_native | :white_check_mark: | 0.7.15  |    -    |
+| tomlplusplus  | :white_check_mark: | v3.4.0  |    -    |
+|  fast_float   | :white_check_mark: | v7.0.0  |    -    |
+| nlohmann_json | :white_check_mark: | v3.11.3 |    -    |
+|     sdl2      | :white_check_mark: |    -    |    -    |

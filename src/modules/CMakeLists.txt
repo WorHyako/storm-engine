@@ -19,3 +19,13 @@ add_subdirectory(input)
 #   Window   #
 # ---------- #
 add_subdirectory(window)
+
+# --------------- #
+#   Diagnostics   #
+# --------------- #
+add_subdirectory(diagnostics)
+
+# -------------- #
+#   Filesystem   #
+# -------------- #
+add_subdirectory(Filesystem)
