@@ -3,7 +3,10 @@
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_system.h>
 #include <SDL2/SDL_video.h>
-#include <windows.h>
+/**
+ * TODO: Useless header
+ */
+// #include <windows.h>
 #include <map>
 
 namespace storm

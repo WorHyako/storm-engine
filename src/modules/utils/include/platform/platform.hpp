@@ -18,7 +18,10 @@ inline const char *convert_path_sep(const char *cPath)
 #include <cstdio>
 #include <cstring>
 
-#include "d3dx9.hpp"
+/**
+ * TODO: Useless header
+ */
+// #include "d3dx9.hpp"
 #include "winuser.rh"
 
 #undef EXTERN // fix for token.h:72:5: error: expected identifier EXTERN,

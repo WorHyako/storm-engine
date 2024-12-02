@@ -1,8 +1,32 @@
 cmake_minimum_required(VERSION 3.18)
-project(storm-engine)
+
+list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
+include(CmakeFlags)
+include(CompilerFlags)
+
+project(StormEngine
+        LANGUAGES CXX C)
+
+# -------------- #
+#   ThirdParty   #
+# -------------- #
+add_subdirectory(ThirdParty)
+
+# ----------------- #
+#   Storm sources   #
+# ----------------- #
+add_subdirectory(src)
+
+return()
+
+
+
+
+
+
+
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
-include(conan)
 include(StormSetup)
 
 option(STORM_ENABLE_CRASH_REPORTS "Enable automatic crash reports" OFF)
@@ -25,31 +49,6 @@ if (WIN32)
 else()
     include(linux)
 endif()
-
-### Set up third-party dependencies
-set(ENV{CONAN_REVISIONS_ENABLED} 1)
-conan_add_remote(NAME piratesahoy
-    URL https://gitlab.com/api/v4/projects/54068744/packages/conan
-    VERIFY_SSL True
-)
-normalize_booleans(STORM_ENABLE_CRASH_REPORTS STORM_ENABLE_STEAM STORM_USE_CONAN_SDL)
-conan_cmake_run(CONANFILE conanfile.py
-    BASIC_SETUP CMAKE_TARGETS
-    BUILD missing
-    OPTIONS
-        output_directory=${CMAKE_RUNTIME_OUTPUT_DIRECTORY}
-        watermark_file=${STORM_WATERMARK_FILE}
-        crash_reports=${STORM_ENABLE_CRASH_REPORTS}
-        steam=${STORM_ENABLE_STEAM}
-        conan_sdl=${STORM_USE_CONAN_SDL}
-)
-
-### Define library ALIASes for use without CONAN_PKG:: prefix
-foreach (conan_target ${CONAN_TARGETS})
-    string(REPLACE "CONAN_PKG::" "" unprefixed_target ${conan_target})
-	add_library(${unprefixed_target} ALIAS ${conan_target})
-endforeach()
-###
 
 ### Set up build scripts
 set(SRC_DIRS "src" CACHE STRING "File locations for public header files" FORCE)

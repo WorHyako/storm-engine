@@ -1,3 +1,16 @@
+cmake_minimum_required(VERSION 3.15)
+
+# ----------- #
+#   Modules   #
+# ----------- #
+add_subdirectory(modules)
+
+
+
+
+return()
+
+
 add_definitions(-DUNICODE -D_UNICODE) # Use Unicode
 add_definitions(-DNOMINMAX) # Use std::max()/std::min()
 add_definitions(-D_CRT_SECURE_NO_WARNINGS) # Disable deprecation of unsafe functions
