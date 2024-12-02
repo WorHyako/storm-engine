@@ -39,3 +39,18 @@ add_subdirectory(SharedHeaders)
 #   Core   #
 # -------- #
 add_subdirectory(Core)
+
+# --------------- #
+#   PcsControls   #
+# --------------- #
+add_subdirectory(PcsControls)
+
+# ----------------- #
+#   ScriptLibrary   #
+# ----------------- #
+add_subdirectory(ScriptLibrary)
+
+# ---------- #
+#   Editor   #
+# ---------- #
+add_subdirectory(Editor)

@@ -1,6 +1,9 @@
 #include "storm/editor/engine_editor.hpp"
 
-#include "core.h"
+/**
+ * TODO: useles?
+ */
+// #include "core.h"
 
 #include <imgui.h>
 #include <imgui_impl_sdl2.h>
