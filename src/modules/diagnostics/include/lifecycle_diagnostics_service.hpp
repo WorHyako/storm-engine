@@ -4,7 +4,10 @@
 #include <functional>
 #include <memory>
 
-#define SENTRY_BUILD_STATIC 1
+/**
+* TODO: ...
+*/
+// #define SENTRY_BUILD_STATIC 1
 #include <sentry.h>
 
 namespace storm::diag

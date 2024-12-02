@@ -5,6 +5,16 @@
 #include <mutex>
 #include <thread>
 
+/**
+ * TODO: header
+ */
+#include "file_service.h"
+
+/**
+ * TODO: header
+ */
+#include "storm/engine_settings.hpp"
+
 #include <spdlog/spdlog.h>
 
 #include "fs.h"
@@ -105,7 +115,10 @@ class LoggingService final
                 terminate_handler();
             });
 
-            create_directories(storm::GetEngineSettings().GetEnginePath(storm::EngineSettingsPathType::Logs));
+            /**
+             * TODO: fix func naming
+             */
+            std::filesystem::create_directories(storm::GetEngineSettings().GetEnginePath(storm::EngineSettingsPathType::Logs));
 
             std::thread worker{[this] { loggingThread(); }};
             worker.detach();

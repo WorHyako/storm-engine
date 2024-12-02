@@ -16,6 +16,5 @@ target_include_directories(diagnostics
 
 target_link_libraries(diagnostics
         PUBLIC
-        storm::utils
-        spdlog::spdlog
+        storm::filesystem
         sentry::sentry)
