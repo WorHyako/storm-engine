@@ -3,27 +3,27 @@ cmake_minimum_required(VERSION 3.15)
 # -------- #
 #   Math   #
 # -------- #
-add_subdirectory(math)
+add_subdirectory(Math)
 
 # --------- #
 #   Utils   #
 # --------- #
-add_subdirectory(utils)
+add_subdirectory(Utils)
 
 # --------- #
 #   Input   #
 # --------- #
-add_subdirectory(input)
+add_subdirectory(Input)
 
 # ---------- #
 #   Window   #
 # ---------- #
-add_subdirectory(window)
+add_subdirectory(Window)
 
 # --------------- #
 #   Diagnostics   #
 # --------------- #
-add_subdirectory(diagnostics)
+add_subdirectory(Diagnostics)
 
 # -------------- #
 #   Filesystem   #
@@ -38,4 +38,4 @@ add_subdirectory(SharedHeaders)
 # -------- #
 #   Core   #
 # -------- #
-add_subdirectory(core)
+add_subdirectory(Core)
