@@ -2,6 +2,11 @@
 
 #include <execution>
 
+/**
+ *TODO: header
+ */
+#include "platform.hpp"
+
 #include "string_compare.hpp"
 
 ATTRIBUTES::ATTRIBUTES(ATTRIBUTES &&other) noexcept
