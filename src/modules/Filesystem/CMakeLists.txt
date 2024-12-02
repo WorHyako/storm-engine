@@ -13,3 +13,14 @@ target_sources(filesystem
 target_include_directories(filesystem
         PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}/include)
+
+target_link_libraries(filesystem
+        PUBLIC
+        nlohmann_json
+        storm::utils
+        tomlplusplus::tomlplusplus
+        spdlog::spdlog)
+
+# * remarks
+#   файлы для настройки путей движка немножко потусуют в этом модуле,
+#   но потом они перейдут в что-то типа `storm::struct_config`

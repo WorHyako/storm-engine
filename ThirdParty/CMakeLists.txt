@@ -2,12 +2,26 @@ cmake_minimum_required(VERSION 3.15)
 
 include(FetchContent)
 
+# -------------- #
+#   dear imgui   #
+# -------------- #
+FetchContent_Declare(imgui
+        GIT_REPOSITORY https://github.com/ocornut/imgui.git
+        GIT_TAG v1.91.5)
+
 # ---------- #
 #   Toml++   #
 # ---------- #
 FetchContent_Declare(tomlplusplus
         GIT_REPOSITORY https://github.com/marzer/tomlplusplus.git
         GIT_TAG v3.4.0)
+
+# ---------- #
+#   fmtlib   #
+# ---------- #
+FetchContent_Declare(fmt
+        GIT_REPOSITORY https://github.com/fmtlib/fmt.git
+        GIT_TAG 11.0.2)
 
 # ---------- #
 #   spdlog   #
@@ -47,9 +61,20 @@ find_package(SDL2 REQUIRED GLOBAL)
 set(SDL2_LIBRARIES "${SDL2_LIBRARIES}" CACHE INTERNAL "SDL2_LIBRARIES")
 set(SDL2_INCLUDE_DIRS "${SDL2_INCLUDE_DIRS}" CACHE INTERNAL "SDL2_INCLUDE_DIRS")
 
+add_library(sdl2 INTERFACE)
+add_library(sdl2::sdl2 ALIAS sdl2)
+
+target_include_directories(sdl2
+        INTERFACE ${SDL2_INCLUDE_DIRS})
+
+target_link_libraries(sdl2
+        INTERFACE ${SDL2_LIBRARIES})
+
 FetchContent_MakeAvailable(
         spdlog
         tomlplusplus
         fast_float
         nlohmann_json
-        sentry_native)
+        sentry_native
+        fmt
+        imgui)
