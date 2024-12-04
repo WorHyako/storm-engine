@@ -54,21 +54,11 @@ FetchContent_Declare(nlohmann_json
 # -------- #
 #   SDL2   #
 # -------- #
-# TODO: swap to gitmodule
-find_package(SDL2 REQUIRED GLOBAL)
-
-# Temp solution
-set(SDL2_LIBRARIES "${SDL2_LIBRARIES}" CACHE INTERNAL "SDL2_LIBRARIES")
-set(SDL2_INCLUDE_DIRS "${SDL2_INCLUDE_DIRS}" CACHE INTERNAL "SDL2_INCLUDE_DIRS")
-
-add_library(sdl2 INTERFACE)
-add_library(sdl2::sdl2 ALIAS sdl2)
-
-target_include_directories(sdl2
-        INTERFACE ${SDL2_INCLUDE_DIRS})
-
-target_link_libraries(sdl2
-        INTERFACE ${SDL2_LIBRARIES})
+set(SDL2_DISABLE_INSTALL ON)
+FetchContent_Declare(sdl2
+        GIT_REPOSITORY https://github.com/libsdl-org/SDL.git
+        GIT_TAG release-2.30.9
+        GIT_PROGRESS TRUE)
 
 FetchContent_MakeAvailable(
         spdlog
@@ -77,4 +67,5 @@ FetchContent_MakeAvailable(
         nlohmann_json
         sentry_native
         fmt
-        imgui)
+        imgui
+        sdl2)

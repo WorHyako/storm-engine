@@ -17,5 +17,5 @@ target_include_directories(utils
         ${CMAKE_CURRENT_SOURCE_DIR}/include/platform)
 
 target_link_libraries(utils
-        PUBLIC sdl2::sdl2)
+        PUBLIC SDL2::SDL2main)
 

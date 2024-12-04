@@ -43,7 +43,7 @@ add_subdirectory(Core)
 # --------------- #
 #   PcsControls   #
 # --------------- #
-add_subdirectory(PcsControls)
+#add_subdirectory(PcsControls)
 
 # ----------------- #
 #   ScriptLibrary   #
