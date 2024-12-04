@@ -73,13 +73,15 @@ I'm organizing a "Night Parade of One Hundred Demons"* as his worshipper, as his
 
 ## Progress table for ThirdParty libs
 
-|  Module name  |       State        |   Tag   | Options |
-|:-------------:|:------------------:|:-------:|:-------:|
-|    spdlog     | :white_check_mark: |  v1.x   |    -    |
-| sentry_native | :white_check_mark: | 0.7.15  |    -    |
-| tomlplusplus  | :white_check_mark: | v3.4.0  |    -    |
-|  fast_float   | :white_check_mark: | v7.0.0  |    -    |
-| nlohmann_json | :white_check_mark: | v3.11.3 |    -    |
-|     sdl2      | :white_check_mark: |    -    |    -    |
-|    fmtlib     | :white_check_mark: | 11.0.2  |    -    |
-|     imgui     |        :x:         |    ?    |    ?    |
+|  Module name  |       State        |   Tag   |         Options         |
+|:-------------:|:------------------:|:-------:|:-----------------------:|
+|    spdlog     | :white_check_mark: |  v1.x   |            -            |
+| sentry_native | :white_check_mark: | 0.7.15  |            -            |
+| tomlplusplus  | :white_check_mark: | v3.4.0  |            -            |
+|  fast_float   | :white_check_mark: | v7.0.0  |            -            |
+| nlohmann_json | :white_check_mark: | v3.11.3 |            -            |
+|     sdl2      | :white_check_mark: | 2.30.9  | SDL2_DISABLE_INSTALL=ON |
+|    fmtlib     | :white_check_mark: | 11.0.2  |            -            |
+|     imgui     |        :x:         |    ?    |            ?            |
+|     zlib      | :white_check_mark: | v1.3.1  |            -            |
+|    catch2     | :white_check_mark: | v3.7.1  |            -            |

@@ -60,6 +60,22 @@ FetchContent_Declare(sdl2
         GIT_TAG release-2.30.9
         GIT_PROGRESS TRUE)
 
+# ---------- #
+#   Catch2   #
+# ---------- #
+FetchContent_Declare(catch2
+        GIT_REPOSITORY https://github.com/catchorg/Catch2.git
+        GIT_TAG v3.7.1
+        GIT_PROGRESS TRUE)
+
+# -------- #
+#   zlib   #
+# -------- #
+FetchContent_Declare(zlib
+        GIT_REPOSITORY https://github.com/madler/zlib.git
+        GIT_TAG v1.3.1
+        GIT_PROGRESS TRUE)
+
 FetchContent_MakeAvailable(
         spdlog
         tomlplusplus
@@ -68,4 +84,6 @@ FetchContent_MakeAvailable(
         sentry_native
         fmt
         imgui
-        sdl2)
+        sdl2
+        zlib
+        catch2)
