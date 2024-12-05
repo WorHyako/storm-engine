@@ -1,17 +1,17 @@
 cmake_minimum_required(VERSION 3.19)
 
 # ----------- #
-#   Collide   #
+#   Locator   #
 # ----------- #
-add_library(sound)
-add_library(storm::sound ALIAS sound)
+add_library(locator)
+add_library(storm::locator ALIAS locator)
 
 file(GLOB_RECURSE Sources ${CMAKE_CURRENT_SOURCE_DIR}/*.cpp)
-target_sources(sound
+target_sources(locator
         PRIVATE ${Sources})
 
-target_link_libraries(sound
+target_link_libraries(locator
         PUBLIC
         storm::core
-        storm::sound_service
-        storm::renderer)
+        storm::renderer
+        storm::sea_ai)

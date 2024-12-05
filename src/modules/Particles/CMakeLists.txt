@@ -1,8 +1,8 @@
 cmake_minimum_required(VERSION 3.19)
 
-# ----------- #
-#   Collide   #
-# ----------- #
+# ------------- #
+#   Particles   #
+# ------------- #
 add_library(particles)
 add_library(storm::particles ALIAS particles)
 

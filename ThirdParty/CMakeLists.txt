@@ -106,4 +106,15 @@ add_library(dxsdk INTERFACE)
 add_library(storm::dxsdk ALIAS dxsdk)
 
 target_include_directories(dxsdk
-INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/dxsdk/Include)
+        INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/dxsdk/Include)
+
+# -------- #
+#   fmod   #
+# -------- #
+add_library(fmod INTERFACE)
+add_library(storm::fmod ALIAS fmod)
+
+target_include_directories(fmod
+        INTERFACE
+        ${CMAKE_CURRENT_SOURCE_DIR}/fmod/Include
+        ${CMAKE_CURRENT_SOURCE_DIR}/fmod)

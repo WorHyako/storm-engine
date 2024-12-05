@@ -99,3 +99,118 @@ add_subdirectory(Blade)
 #   Particles   #
 # ------------- #
 add_subdirectory(Particles)
+
+# ---------- #
+#   Shadow   #
+# ---------- #
+add_subdirectory(Shadow)
+
+# ------------ #
+#   Teleport   #
+# ------------ #
+add_subdirectory(Teleport)
+
+# ---------------- #
+#   SoundService   #
+# ---------------- #
+add_subdirectory(SoundService)
+
+# --------- #
+#   Sound   #
+# --------- #
+add_subdirectory(Sound)
+
+# ----------- #
+#   Lighter   #
+# ----------- #
+add_subdirectory(Lighter)
+
+# ---------- #
+#   Dialog   #
+# ---------- #
+add_subdirectory(Dialog)
+
+# ------- #
+#   Sea   #
+# ------- #
+add_subdirectory(Sea)
+
+# ------ #
+#   Ai   #
+# ------ #
+add_subdirectory(Ai)
+
+# -------- #
+#   Ship   #
+# -------- #
+add_subdirectory(Ship)
+
+# -------- #
+#   Mast   #
+# -------- #
+add_subdirectory(Mast)
+
+# --------- #
+#   SeaAi   #
+# --------- #
+add_subdirectory(SeaAi)
+
+# ----------- #
+#   Rigging   #
+# ----------- #
+add_subdirectory(Rigging)
+
+# ----------- #
+#   Animals   #
+# ----------- #
+add_subdirectory(Animals)
+
+# -------------- #
+#   BallSplash   #
+# -------------- #
+add_subdirectory(BallSplash)
+
+# -------------- #
+#   SeaCameras   #
+# -------------- #
+add_subdirectory(SeaCameras)
+
+# ----------- #
+#   Sailors   #
+# ----------- #
+add_subdirectory(Sailors)
+
+# ------------------- #
+#   BattleInterface   #
+# ------------------- #
+add_subdirectory(BattleInterface)
+
+# ------------ #
+#   Location   #
+# ------------ #
+add_subdirectory(Location)
+
+# ----------- #
+#   Tornado   #
+# ----------- #
+add_subdirectory(Tornado)
+
+# ---------- #
+#   Island   #
+# ---------- #
+add_subdirectory(Island)
+
+# ----------- #
+#   Weather   #
+# ----------- #
+add_subdirectory(Weather)
+
+# ----------- #
+#   Locator   #
+# ----------- #
+add_subdirectory(Locator)
+
+# -------------- #
+#   SinkEffect   #
+# -------------- #
+add_subdirectory(SinkEffect)

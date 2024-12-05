@@ -57,6 +57,13 @@
 	path = ThirdParty/dxvk-native
 	url = https://github.com/Joshua-Ashton/dxvk-native
 	branch = a2dc99c407340432d4ba5bfa29efa685c27942ea
+
 [submodule "ThirdParty/dxsdk"]
 	path = ThirdParty/dxsdk
 	url = https://github.com/apitrace/dxsdk.git
+	branch = master
+
+[submodule "ThirdParty/fmod"]
+	path = ThirdParty/fmod
+	url = https://github.com/rosshoyt/FMOD-Audio-Engine
+	branch = master
