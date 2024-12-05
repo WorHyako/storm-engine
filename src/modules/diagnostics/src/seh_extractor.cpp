@@ -114,8 +114,11 @@ void seh_extractor::sink(const sink_func f, EXCEPTION_RECORD *next) const
 
     // sink error code message
     if (record->ExceptionCode) {
+        /**
+         *TODO: LoadLibrary("ntdll"); coz its char not wchar
+         */
         const auto error_message = FormatMessageA(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_FROM_HMODULE,
-                                                  LoadLibrary(L"ntdll"), code_, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), buf, std::size(buf), nullptr);
+                                                  LoadLibrary("ntdll"), code_, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), buf, std::size(buf), nullptr);
         if (error_message > 0) {
             f(buf);
         }

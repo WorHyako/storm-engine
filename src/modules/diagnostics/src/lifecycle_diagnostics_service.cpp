@@ -53,11 +53,14 @@ auto &getLogsArchive()
 }
 
 #ifdef _WIN32 // FIX_LINUX 7za.exe
-auto assembleArchiveCmd()
+std::string assembleArchiveCmd()
 {
+    /**
+     *TODO: fix define
+     */
     constexpr auto archiverBin = "7za.exe";
-    return _T("call \"") + (getExecutableDir() / archiverBin).native() + _T("\" a \"\\\\?\\") +
-           getLogsArchive().native() + _T("\" \"\\\\?\\") + storm::GetEngineSettings().GetEnginePath(storm::EngineSettingsPathType::Logs).native() + _T("\"");
+    return "call \"" + (getExecutableDir() / archiverBin).string() + ("\" a \"\\\\?\\") +
+           getLogsArchive().string() + ("\" \"\\\\?\\") + storm::GetEngineSettings().GetEnginePath(storm::EngineSettingsPathType::Logs).string() + ("\"");
 }
 #endif
 
@@ -215,13 +218,22 @@ LifecycleDiagnosticsService::Guard LifecycleDiagnosticsService::initialize(const
         sentry_options_set_logger(options, log_sentry, nullptr);
         sentry_options_set_dsn(options, "https://8ae9220bf1ee1d13a6b3bfe1fe1c8894@o4506010910654464.ingest.sentry.io/4506010914652160");
         sentry_options_set_release(options, STORM_BUILD_WATERMARK_STRING);
-        sentry_options_set_database_path(options, storm::GetEngineSettings().GetEnginePath(storm::EngineSettingsPathType::Sentry).c_str());
+        /**
+         * TODO: fix wstring
+         */
+        sentry_options_set_database_path(options, storm::GetEngineSettings().GetEnginePath(storm::EngineSettingsPathType::Sentry).string().c_str());
 #ifdef _WIN32
-        sentry_options_set_handler_path(options, (getExecutableDir() / "crashpad_handler.exe").c_str());
+        /**
+         * TODO: fix wstring
+         */
+        sentry_options_set_handler_path(options, (getExecutableDir() / "crashpad_handler.exe").string().c_str());
 #else
         sentry_options_set_handler_path(options, (getExecutableDir() / "crashpad_handler").c_str());
 #endif
-        sentry_options_add_attachment(options, getLogsArchive().c_str());
+        /**
+         * TODO: fix wstring
+         */
+        sentry_options_add_attachment(options, getLogsArchive().string().c_str());
         sentry_options_set_on_crash(options, beforeCrash, this);
         sentry_options_set_system_crash_reporter_enabled(options, enableCrashReports);
 
@@ -287,7 +299,7 @@ sentry_value_t LifecycleDiagnosticsService::beforeCrash(const sentry_ucontext_t 
 
 #ifdef _WIN32 // FIX_LINUX 7za.exe
     // archive logs for sentry backend
-    _tsystem(assembleArchiveCmd().c_str());
+    std::system(assembleArchiveCmd().c_str());
 #endif
 
     return event;

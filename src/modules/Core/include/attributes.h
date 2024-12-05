@@ -6,6 +6,10 @@
 #include <string>
 #include <string_view>
 #include <vector>
+/**
+ * TODO: header
+ */
+#include <memory>
 
 #include "storm_assert.h"
 

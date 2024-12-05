@@ -17,4 +17,6 @@ target_include_directories(diagnostics
 target_link_libraries(diagnostics
         PUBLIC
         storm::filesystem
+        spdlog::spdlog
+        fmt::fmt
         sentry::sentry)

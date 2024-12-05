@@ -1,0 +1,54 @@
+[submodule "ThirdParty/imgui"]
+	path = ThirdParty/imgui
+	url = https://github.com/ocornut/imgui.git
+	branch = v1.91.5
+
+[submodule "ThirdParty/tomlplusplus"]
+	path = ThirdParty/tomlplusplus
+	url = https://github.com/marzer/tomlplusplus
+    branch = v3.4.0
+
+[submodule "ThirdParty/fmt"]
+	path = ThirdParty/fmt
+	url = https://github.com/fmtlib/fmt
+	branch = 11.0.2
+
+[submodule "ThirdParty/spdlog"]
+	path = ThirdParty/spdlog
+	url = https://github.com/gabime/spdlog
+	branch = v1.x
+
+[submodule "ThirdParty/sentry-native"]
+	path = ThirdParty/sentry-native
+	url = https://github.com/getsentry/sentry-native
+	branch = 0.7.15
+
+[submodule "ThirdParty/fast_float"]
+	path = ThirdParty/fast_float
+	url = https://github.com/fastfloat/fast_float
+	branch = v7.0.0
+
+[submodule "ThirdParty/nlohmann-json"]
+	path = ThirdParty/nlohmann-json
+	url = https://github.com/nlohmann/json
+	branch = v3.11.3
+
+[submodule "ThirdParty/zlib"]
+	path = ThirdParty/zlib
+	url = https://github.com/madler/zlib
+	branch = v1.3.1
+
+[submodule "ThirdParty/plf_stack"]
+	path = ThirdParty/plf_stack
+	url = https://github.com/mattreecebentley/plf_stack
+	branch = master
+
+[submodule "ThirdParty/SDL"]
+	path = ThirdParty/SDL
+	url = https://github.com/libsdl-org/SDL
+	branch = release-2.30.9
+
+[submodule "ThirdParty/catch2"]
+	path = ThirdParty/catch2
+	url = https://github.com/catchorg/Catch2
+	branch = v3.7.1

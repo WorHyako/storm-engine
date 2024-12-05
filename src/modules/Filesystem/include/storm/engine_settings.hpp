@@ -1,3 +1,8 @@
+#pragma once
+/**
+ * TODO: pragma once
+ */
+
 #include <filesystem>
 #include <optional>
 

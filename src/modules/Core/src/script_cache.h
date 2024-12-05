@@ -4,6 +4,10 @@
 #include "data.h"
 #include <stdexcept>
 #include <vector>
+/**
+ *TODO: header
+ */
+#include <iterator>
 
 namespace storm
 {

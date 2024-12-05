@@ -14,8 +14,20 @@ target_include_directories(core
         PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}/include)
 
+target_compile_definitions(core
+        PRIVATE
+        UNICODE
+        NOMINMAX)
+
 target_link_libraries(core
         PUBLIC
+        storm::window
+        storm::script_library
+        storm::input
+        storm::imgui
         storm::diagnostics
         storm::math
-        fmt::fmt)
+        fmt::fmt
+        zlib
+        storm::plf_stack
+        FastFloat::fast_float)

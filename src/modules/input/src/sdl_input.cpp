@@ -8,6 +8,10 @@
  */
 // #include <windows.h>
 #include <map>
+/**
+ * TODO: header
+ */
+#include "winuser.rh"
 
 namespace storm
 {

@@ -15,4 +15,6 @@ target_include_directories(input
         ${CMAKE_CURRENT_SOURCE_DIR}/include)
 
 target_link_libraries(input
-        PUBLIC storm::utils)
+        PUBLIC
+        storm::utils
+        storm::shared_headers)

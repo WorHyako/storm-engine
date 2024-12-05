@@ -1,9 +1,6 @@
 #include "storm/editor/engine_editor.hpp"
 
-/**
- * TODO: hide for a while
- */
-// #include "core.h"
+#include "core.h"
 
 #include <imgui.h>
 #include <imgui_impl_sdl2.h>

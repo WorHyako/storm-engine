@@ -1,89 +1,91 @@
 cmake_minimum_required(VERSION 3.15)
 
-include(FetchContent)
-
 # -------------- #
 #   dear imgui   #
 # -------------- #
-FetchContent_Declare(imgui
-        GIT_REPOSITORY https://github.com/ocornut/imgui.git
-        GIT_TAG v1.91.5)
+add_library(imgui)
+add_library(storm::imgui ALIAS imgui)
+
+set(ImGui_Dir ${CMAKE_CURRENT_SOURCE_DIR}/imgui)
+
+file(GLOB Sources ${ImGui_Dir}/*.cpp)
+list(APPEND
+        ${ImGui_Dir}/backend/imgui_impl_sdl2.cpp
+        ${ImGui_Dir}/misc/cpp/imgui_stdlib.cpp
+        $<$<BOOL:${WIN32}>:${ImGui_Dir}/backend/imgui_impl_dx9.cpp>)
+
+target_sources(imgui
+        PRIVATE ${Sources})
+
+target_include_directories(imgui
+        PUBLIC
+        ${ImGui_Dir}
+        ${ImGui_Dir}/backends
+        ${ImGui_Dir}/misc/cpp)
+
+target_link_libraries(imgui
+        PUBLIC
+        SDL2::SDL2
+        d3d9)
+unset(Sources)
 
 # ---------- #
 #   Toml++   #
 # ---------- #
-FetchContent_Declare(tomlplusplus
-        GIT_REPOSITORY https://github.com/marzer/tomlplusplus.git
-        GIT_TAG v3.4.0)
+add_subdirectory(tomlplusplus)
 
 # ---------- #
 #   fmtlib   #
 # ---------- #
-FetchContent_Declare(fmt
-        GIT_REPOSITORY https://github.com/fmtlib/fmt.git
-        GIT_TAG 11.0.2)
+add_subdirectory(fmt)
 
 # ---------- #
 #   spdlog   #
 # ---------- #
-FetchContent_Declare(spdlog
-        GIT_REPOSITORY https://github.com/gabime/spdlog.git
-        GIT_TAG v1.x)
+add_subdirectory(spdlog)
 
 # ----------------- #
 #   sentry-native   #
 # ----------------- #
-FetchContent_Declare(sentry_native
-        GIT_REPOSITORY https://github.com/getsentry/sentry-native.git
-        GIT_TAG 0.7.15)
+add_subdirectory(sentry-native)
 
 # -------------- #
 #   fast_float   #
 # -------------- #
-FetchContent_Declare(fast_float
-        GIT_REPOSITORY https://github.com/fastfloat/fast_float.git
-        GIT_TAG v7.0.0)
+set(FASTFLOAT_CXX_STANDARD 20)
+add_subdirectory(fast_float)
 
 # ----------------- #
 #   nlohmann-json   #
 # ----------------- #
-FetchContent_Declare(nlohmann_json
-        GIT_REPOSITORY https://github.com/nlohmann/json.git
-        GIT_TAG v3.11.3)
+add_subdirectory(nlohmann-json)
 
 # -------- #
 #   SDL2   #
 # -------- #
+set(SDL2_DISABLE_SDL2MAIN ON)
 set(SDL2_DISABLE_INSTALL ON)
-FetchContent_Declare(sdl2
-        GIT_REPOSITORY https://github.com/libsdl-org/SDL.git
-        GIT_TAG release-2.30.9
-        GIT_PROGRESS TRUE)
+set(SDL2_DISABLE_UNINSTALL ON)
+add_subdirectory(SDL)
 
 # ---------- #
 #   Catch2   #
 # ---------- #
-FetchContent_Declare(catch2
-        GIT_REPOSITORY https://github.com/catchorg/Catch2.git
-        GIT_TAG v3.7.1
-        GIT_PROGRESS TRUE)
+add_subdirectory(catch2)
 
 # -------- #
 #   zlib   #
 # -------- #
-FetchContent_Declare(zlib
-        GIT_REPOSITORY https://github.com/madler/zlib.git
-        GIT_TAG v1.3.1
-        GIT_PROGRESS TRUE)
+add_subdirectory(zlib)
 
-FetchContent_MakeAvailable(
-        spdlog
-        tomlplusplus
-        fast_float
-        nlohmann_json
-        sentry_native
-        fmt
-        imgui
-        sdl2
-        zlib
-        catch2)
+find_package(PkgConfig)
+pkg_search_module(SDL2 REQUIRED SDL2)
+
+# ------------- #
+#   pfl_stack   #
+# ------------- #
+add_library(plf_stack INTERFACE)
+add_library(storm::plf_stack ALIAS plf_stack)
+
+target_include_directories(plf_stack
+        INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/plf_stack)

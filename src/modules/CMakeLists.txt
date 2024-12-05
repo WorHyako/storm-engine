@@ -53,4 +53,4 @@ add_subdirectory(ScriptLibrary)
 # ---------- #
 #   Editor   #
 # ---------- #
-add_subdirectory(Editor)
+#add_subdirectory(Editor)

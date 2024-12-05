@@ -3,7 +3,10 @@
 #include "compiler.h"
 #include "controls.h"
 #include "fs.h"
-#include "steam_api.hpp"
+/**
+ *TODO: hide for a while
+ */
+// #include "steam_api.hpp"
 
 #include <fstream>
 
@@ -216,7 +219,10 @@ bool CoreImpl::Run()
     ProcessExecute(); // transfer control to objects via Execute() function
     ProcessRealize(); // transfer control to objects via Realize() function
 
-    steamapi::SteamApi::getInstance().RunCallbacks();
+    /**
+     *TODO: hide for a while
+     */
+    // steamapi::SteamApi::getInstance().RunCallbacks();
 
     if (Controls)
         Controls->Update(Timer.rDelta_Time);
