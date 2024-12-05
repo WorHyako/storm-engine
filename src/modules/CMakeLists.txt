@@ -74,3 +74,8 @@ add_subdirectory(Renderer)
 #   Animation   #
 # ------------- #
 add_subdirectory(Animation)
+
+# ------------ #
+#   Geometry   #
+# ------------ #
+add_subdirectory(Geometry)

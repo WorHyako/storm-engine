@@ -15,7 +15,10 @@ Import library main file
 #include <fmt/format.h>
 #include <vector>
 
-#include "../../util/include/string_compare.hpp"
+/**
+ *TODO: fix header
+ */
+#include "string_compare.hpp"
 
 namespace
 {
