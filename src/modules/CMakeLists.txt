@@ -79,3 +79,23 @@ add_subdirectory(Animation)
 #   Geometry   #
 # ------------ #
 add_subdirectory(Geometry)
+
+# --------- #
+#   Model   #
+# --------- #
+add_subdirectory(Model)
+
+# -------- #
+#   Blot   #
+# -------- #
+add_subdirectory(Blot)
+
+# --------- #
+#   Blade   #
+# --------- #
+add_subdirectory(Blade)
+
+# ------------- #
+#   Particles   #
+# ------------- #
+add_subdirectory(Particles)
