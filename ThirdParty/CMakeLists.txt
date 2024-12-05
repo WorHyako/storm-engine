@@ -77,9 +77,6 @@ add_subdirectory(catch2)
 # -------- #
 add_subdirectory(zlib)
 
-find_package(PkgConfig)
-pkg_search_module(SDL2 REQUIRED SDL2)
-
 # ------------- #
 #   pfl_stack   #
 # ------------- #
@@ -88,3 +85,25 @@ add_library(storm::plf_stack ALIAS plf_stack)
 
 target_include_directories(plf_stack
         INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/plf_stack)
+
+# --------------- #
+#   dxvk-native   #
+# --------------- #
+add_library(dxvk-native INTERFACE)
+add_library(storm::dxvk-natiive ALIAS dxvk-native)
+
+target_include_directories(dxvk-native
+        INTERFACE
+        ${CMAKE_CURRENT_SOURCE_DIR}dxvk-native/include/native/directx
+        ${CMAKE_CURRENT_SOURCE_DIR}dxvk-native/include/native/windows)
+
+unset(Sources)
+
+# --------- #
+#   dxsdk   #
+# --------- #
+add_library(dxsdk INTERFACE)
+add_library(storm::dxsdk ALIAS dxsdk)
+
+target_include_directories(dxsdk
+INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/dxsdk/Include)

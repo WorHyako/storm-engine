@@ -43,7 +43,7 @@ add_subdirectory(Core)
 # --------------- #
 #   PcsControls   #
 # --------------- #
-#add_subdirectory(PcsControls)
+add_subdirectory(PcsControls)
 
 # ----------------- #
 #   ScriptLibrary   #
@@ -54,3 +54,18 @@ add_subdirectory(ScriptLibrary)
 #   Editor   #
 # ---------- #
 #add_subdirectory(Editor)
+
+# ---------- #
+#   Config   #
+# ---------- #
+add_subdirectory(Config)
+
+# ----------- #
+#   Collide   #
+# ----------- #
+add_subdirectory(Collide)
+
+# ------------ #
+#   Renderer   #
+# ------------- #
+add_subdirectory(Renderer)

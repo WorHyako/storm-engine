@@ -52,3 +52,11 @@
 	path = ThirdParty/catch2
 	url = https://github.com/catchorg/Catch2
 	branch = v3.7.1
+
+[submodule "ThirdParty/dxvk-native"]
+	path = ThirdParty/dxvk-native
+	url = https://github.com/Joshua-Ashton/dxvk-native
+	branch = a2dc99c407340432d4ba5bfa29efa685c27942ea
+[submodule "ThirdParty/dxsdk"]
+	path = ThirdParty/dxsdk
+	url = https://github.com/apitrace/dxsdk.git

@@ -2,8 +2,12 @@
 
 #include <cstdint>
 #include <d3d9.h>
+/**
+ * TODO: header
+ */
+#include <d3dx9effect.h>
 #ifdef _WIN32
-#include <d3dx9.h>
+#include "platform/d3dx9.hpp"
 #endif
 #include <string_view>
 

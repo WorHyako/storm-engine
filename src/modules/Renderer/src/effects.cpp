@@ -3,7 +3,8 @@
 #include "effects.h"
 
 #include "core.h"
-#include <DxErr.h>
+// #include <DxErr.h>
+#include <d2derr.h>
 #include <iterator>
 
 #define CHECKD3DERR(expr) ErrorHandler(expr, __FILE__, __LINE__, __func__, #expr)
@@ -12,7 +13,9 @@ inline bool Effects::ErrorHandler(HRESULT hr, const char *file, unsigned line, c
 {
     if (hr != D3D_OK && hr != S_FALSE)
     {
-        core.Trace("[%s:%s:%d] %s: %s (%s) (%.*s)", file, func, line, DXGetErrorString(hr), DXGetErrorDescription(hr),
+        // core.Trace("[%s:%s:%d] %s: %s (%s) (%.*s)", file, func, line, DXGetErrorString(hr), DXGetErrorDescription(hr),
+                   // expr, debugMsg_.size(), debugMsg_.data());
+        core.Trace("[%s:%s:%d] (%.*s)", file, func, line,
                    expr, debugMsg_.size(), debugMsg_.data());
         return true;
     }
