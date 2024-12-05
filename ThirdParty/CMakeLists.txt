@@ -52,7 +52,6 @@ add_subdirectory(sentry-native)
 # -------------- #
 #   fast_float   #
 # -------------- #
-set(FASTFLOAT_CXX_STANDARD 20)
 add_subdirectory(fast_float)
 
 # ----------------- #

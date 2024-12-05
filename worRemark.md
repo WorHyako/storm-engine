@@ -73,15 +73,16 @@ I'm organizing a "Night Parade of One Hundred Demons"* as his worshipper, as his
 
 ## Progress table for ThirdParty libs
 
-|  Module name  |       State        |   Tag   |         Options         |
-|:-------------:|:------------------:|:-------:|:-----------------------:|
-|    spdlog     | :white_check_mark: |  v1.x   |            -            |
-| sentry_native | :white_check_mark: | 0.7.15  |            -            |
-| tomlplusplus  | :white_check_mark: | v3.4.0  |            -            |
-|  fast_float   | :white_check_mark: | v7.0.0  |            -            |
-| nlohmann_json | :white_check_mark: | v3.11.3 |            -            |
-|     sdl2      | :white_check_mark: | 2.30.9  | SDL2_DISABLE_INSTALL=ON |
-|    fmtlib     | :white_check_mark: | 11.0.2  |            -            |
-|     imgui     |        :x:         |    ?    |            ?            |
-|     zlib      | :white_check_mark: | v1.3.1  |            -            |
-|    catch2     | :white_check_mark: | v3.7.1  |            -            |
+|  Module name  |        State        |      Tag       |                                      Options                                       |
+|:-------------:|:-------------------:|:--------------:|:----------------------------------------------------------------------------------:|
+|    spdlog     | :white_check_mark:  |      v1.x      |                                         -                                          |
+| sentry_native | :white_check_mark:  |     0.7.15     |                                         -                                          |
+| tomlplusplus  | :white_check_mark:  |     v3.4.0     |                                         -                                          |
+|  fast_float   | :white_check_mark:  |     v7.0.0     |                                         -                                          |
+| nlohmann_json | :white_check_mark:  |    v3.11.3     |                                         -                                          |
+|      sdl      | :white_check_mark:  | release-2.30.9 | SDL2_DISABLE_SDL2MAIN=ON<br/>SDL2_DISABLE_INSTALL=ON<br/>SDL2_DISABLE_UNINSTALL=ON |
+|      fmt      | :white_check_mark:  |     11.0.2     |                                         -                                          |
+|     imgui     | :white_check_mark:: |    v1.91.5     |                                         -                                          |
+|     zlib      | :white_check_mark:  |     v1.3.1     |                                         -                                          |
+|    catch2     | :white_check_mark:  |     v3.7.1     |                                         -                                          |
+|   plf_stack   | :white_check_mark:  |     master     |                                         -                                          |
