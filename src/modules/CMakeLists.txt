@@ -67,5 +67,10 @@ add_subdirectory(Collide)
 
 # ------------ #
 #   Renderer   #
-# ------------- #
+# ------------ #
 add_subdirectory(Renderer)
+
+# ------------- #
+#   Animation   #
+# ------------- #
+add_subdirectory(Animation)
