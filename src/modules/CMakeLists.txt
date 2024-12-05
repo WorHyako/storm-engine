@@ -180,15 +180,60 @@ add_subdirectory(SeaCameras)
 # ----------- #
 add_subdirectory(Sailors)
 
+# --------------- #
+#   SeaOperator   #
+# --------------- #
+add_subdirectory(SeaOperator)
+
 # ------------------- #
 #   BattleInterface   #
 # ------------------- #
 add_subdirectory(BattleInterface)
 
+# -------------- #
+#   XInterface   #
+# -------------- #
+add_subdirectory(XInterface)
+
+# ---------------- #
+#   SeaCreatures   #
+# ---------------- #
+add_subdirectory(SeaCreatures)
+
+# ------------ #
+#   WorldMap   #
+# ------------ #
+add_subdirectory(WorldMap)
+
+# -------------- #
+#   WaterRings   #
+# -------------- #
+add_subdirectory(WaterRings)
+
+# ------------ #
+#   SteamApi   #
+# ------------ #
+add_subdirectory(SteamApi)
+
+# ---------- #
+#   Engine   #
+# ---------- #
+add_subdirectory(Engine)
+
+# --------- #
+#   Touch   #
+# --------- #
+add_subdirectory(Touch)
+
 # ------------ #
 #   Location   #
 # ------------ #
 add_subdirectory(Location)
+
+# ----------- #
+#   SeaFoam   #
+# ----------- #
+add_subdirectory(SeaFoam)
 
 # ----------- #
 #   Tornado   #

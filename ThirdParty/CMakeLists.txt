@@ -118,3 +118,13 @@ target_include_directories(fmod
         INTERFACE
         ${CMAKE_CURRENT_SOURCE_DIR}/fmod/Include
         ${CMAKE_CURRENT_SOURCE_DIR}/fmod)
+
+# --------- #
+#   cli11   #
+# --------- #
+add_subdirectory(cli11)
+
+# ------------ #
+#   mimalloc   #
+# ------------ #
+add_subdirectory(mimalloc)

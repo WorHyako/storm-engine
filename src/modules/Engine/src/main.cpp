@@ -11,7 +11,7 @@
 #include "lifecycle_diagnostics_service.hpp"
 #include "logging.hpp"
 #include "os_window.hpp"
-#include "steam_api.hpp"
+// #include "steam_api.hpp"
 #include "storm/engine_settings.hpp"
 #include "v_sound_service.h"
 #include "watermark.hpp"
@@ -228,7 +228,7 @@ int main(int argc, char *argv[])
     // initialize SteamApi through evaluating its singleton
     try
     {
-        steamapi::SteamApi::getInstance(!bSteam);
+        // steamapi::SteamApi::getInstance(!bSteam);
     }
     catch (const std::exception &e)
     {
