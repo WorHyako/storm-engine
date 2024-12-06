@@ -94,27 +94,20 @@ add_library(storm::plf_stack ALIAS plf_stack)
 target_include_directories(plf_stack
         INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/plf_stack)
 
-# --------------- #
-#   dxvk-native   #
-# --------------- #
-add_library(dxvk-native INTERFACE)
-add_library(storm::dxvk-natiive ALIAS dxvk-native)
-
-target_include_directories(dxvk-native
-        INTERFACE
-        ${CMAKE_CURRENT_SOURCE_DIR}dxvk-native/include/native/directx
-        ${CMAKE_CURRENT_SOURCE_DIR}dxvk-native/include/native/windows)
-
-unset(Sources)
-
 # --------- #
 #   dxsdk   #
 # --------- #
-add_library(dxsdk INTERFACE)
-add_library(storm::dxsdk ALIAS dxsdk)
+if("$ENV{DXSDK_DIR}" STREQUAL "")
+    message(FATAL_ERROR "DXSDK was not found")
+endif ()
 
-target_include_directories(dxsdk
-        INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/dxsdk/Include)
+add_library(d3dx9 SHARED IMPORTED GLOBAL)
+add_library(storm::d3dx9 ALIAS d3dx9)
+
+set_target_properties(d3dx9 PROPERTIES
+        IMPORTED_LOCATION "$ENV{DXSDK_DIR}/Developer Runtime/x64/d3dx9d_33.dll"
+        IMPORTED_IMPLIB "$ENV{DXSDK_DIR}/Lib/x64/d3dx9d.lib"
+        INTERFACE_INCLUDE_DIRECTORIES "$ENV{DXSDK_DIR}/Include")
 
 # -------- #
 #   fmod   #

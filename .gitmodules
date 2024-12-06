@@ -53,16 +53,6 @@
 	url = https://github.com/catchorg/Catch2.git
 	branch = v3.7.1
 
-[submodule "ThirdParty/dxvk-native"]
-	path = ThirdParty/dxvk-native
-	url = https://github.com/Joshua-Ashton/dxvk-native.git
-	branch = a2dc99c407340432d4ba5bfa29efa685c27942ea
-
-[submodule "ThirdParty/dxsdk"]
-	path = ThirdParty/dxsdk
-	url = https://github.com/apitrace/dxsdk.git
-	branch = master
-
 [submodule "ThirdParty/fmod"]
 	path = ThirdParty/fmod
 	url = https://github.com/rosshoyt/FMOD-Audio-Engine.git
