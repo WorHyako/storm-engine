@@ -11,10 +11,7 @@ target_sources(animation
         PRIVATE ${Sources})
 
 target_include_directories(animation
-        PUBLIC
-        ${CMAKE_CURRENT_SOURCE_DIR}/include)
+        PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
 
 target_link_libraries(animation
-        PUBLIC
-        storm::core
-        storm::utils)
+        PUBLIC storm::core)
