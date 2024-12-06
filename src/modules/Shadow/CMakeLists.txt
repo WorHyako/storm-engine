@@ -14,9 +14,4 @@ target_compile_definitions(shadow
         PRIVATE NOMINMAX)
 
 target_link_libraries(shadow
-        PUBLIC
-        storm::core
-        storm::collide
-        storm::geometry
-        storm::model
-        storm::renderer)
+        PUBLIC storm::model)

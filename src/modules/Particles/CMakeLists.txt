@@ -11,12 +11,7 @@ target_sources(particles
         PRIVATE ${Sources})
 
 target_include_directories(particles
-        PUBLIC
-        ${CMAKE_CURRENT_SOURCE_DIR}/include)
+        PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
 
 target_link_libraries(particles
-        PUBLIC
-        storm::core
-        storm::geometry
-        storm::utils
-        storm::renderer)
+        PUBLIC storm::geometry)

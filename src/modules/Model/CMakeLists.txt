@@ -11,14 +11,11 @@ target_sources(model
         PRIVATE ${Sources})
 
 target_include_directories(model
-        PUBLIC
-        ${CMAKE_CURRENT_SOURCE_DIR}/include)
+        PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
 
 target_link_libraries(model
         PUBLIC
         storm::animation
         storm::collide
         storm::geometry
-        storm::renderer
-        storm::core
-        storm::utils)
+        storm::core)
