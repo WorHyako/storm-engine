@@ -11,11 +11,9 @@ target_sources(sea
         PRIVATE ${Sources})
 
 target_include_directories(sea
-        PUBLIC
-        ${CMAKE_CURRENT_SOURCE_DIR}/include)
+        PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
 
 target_link_libraries(sea
         PUBLIC
-        storm::core
-        storm::collide
-        storm::renderer)
+        storm::renderer
+        storm::collide)

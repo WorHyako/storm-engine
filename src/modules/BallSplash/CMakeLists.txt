@@ -12,7 +12,5 @@ target_sources(ball_splash
 
 target_link_libraries(ball_splash
         PUBLIC
-        storm::core
         storm::geometry
-        storm::renderer
         storm::sea)

@@ -13,13 +13,5 @@ target_sources(lighter
 target_compile_definitions(lighter
         PRIVATE NOMINMAX)
 
-target_include_directories(lighter
-        PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
-
 target_link_libraries(lighter
-        PUBLIC
-        storm::core
-        storm::geometry
-        storm::model
-        storm::utils
-        storm::renderer)
+        PUBLIC storm::model)
