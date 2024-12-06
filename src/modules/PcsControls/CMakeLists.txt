@@ -15,7 +15,4 @@ target_include_directories(pcs_controls
         PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
 
 target_link_libraries(pcs_controls
-        PUBLIC
-        storm::core
-        storm::input
-        storm::script_library)
+        PUBLIC storm::core)
