@@ -46,7 +46,7 @@
 [submodule "ThirdParty/SDL"]
 	path = ThirdParty/SDL
 	url = https://github.com/libsdl-org/SDL.git
-	branch = release-2.30.9
+	branch = release-2.0.1
 
 [submodule "ThirdParty/catch2"]
 	path = ThirdParty/catch2

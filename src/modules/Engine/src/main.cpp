@@ -1,6 +1,6 @@
 #include <thread>
 
-#include <SDL2/SDL.h>
+#include <SDL.h>
 #include <mimalloc-new-delete.h>
 #include <mimalloc.h>
 #include <spdlog/spdlog.h>
@@ -228,6 +228,9 @@ int main(int argc, char *argv[])
     // initialize SteamApi through evaluating its singleton
     try
     {
+        /**
+         * TODO: hide for a while
+         */
         // steamapi::SteamApi::getInstance(!bSteam);
     }
     catch (const std::exception &e)

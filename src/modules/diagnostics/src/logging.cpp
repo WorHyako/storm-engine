@@ -6,7 +6,7 @@
 /**
  * TODO: Should be smth like "Engine constants"
  */
-// #include "storm/engine_settings.hpp"
+#include "storm/engine_settings.hpp"
 
 namespace
 {
@@ -28,11 +28,7 @@ logger_ptr getOrCreateLogger(const std::string &name, const spdlog::level::level
         return logger;
     }
 
-    /**
-     * TODO: hide for a while
-     */
-    // auto path = GetEngineSettings().GetEnginePath(EngineSettingsPathType::Logs) / name;
-    std::filesystem::path path{};
+    auto path = GetEngineSettings().GetEnginePath(EngineSettingsPathType::Logs) / name;
     path += kLogExtension;
 
     logger = spdlog::create<sinks::syncable_sink>(name, path.string(), truncate);

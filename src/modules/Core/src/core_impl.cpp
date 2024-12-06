@@ -11,7 +11,7 @@
 #include <fstream>
 
 #include "string_compare.hpp"
-#include <SDL2/SDL.h>
+#include <SDL.h>
 
 Core &core = core_internal;
 

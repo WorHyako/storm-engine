@@ -21,13 +21,14 @@ target_compile_definitions(core
 
 target_link_libraries(core
         PUBLIC
+        comctl32
         storm::window
         storm::script_library
         storm::input
         storm::imgui
         storm::diagnostics
         storm::math
-        fmt::fmt
-        zlib
         storm::plf_stack
+        fmt::fmt-header-only
+        zlib
         FastFloat::fast_float)

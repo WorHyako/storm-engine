@@ -16,4 +16,4 @@ target_include_directories(steam_api
 target_link_libraries(steam_api
         PUBLIC
         storm::core
-        $<$<BOOL:${STORM_ENABLE_STEAM}>:steamworks)
+        $<$<BOOL:${STORM_ENABLE_STEAM}>:steamworks>)

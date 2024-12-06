@@ -1,8 +1,8 @@
 cmake_minimum_required(VERSION 3.19)
 
-# -------- #
+# ------- #
 #   Ai   #
-# -------- #
+# ------- #
 add_library(ai INTERFACE)
 add_library(storm::ai ALIAS ai)
 

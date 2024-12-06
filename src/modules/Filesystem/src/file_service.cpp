@@ -1,16 +1,12 @@
 #include "file_service.h"
 /**
- * TODO: Useless header
- */
-// #include "core_impl.h"
-/**
  * TODO: added spdlog header
  */
-#include "spdlog/spdlog.h"
+#include <spdlog/spdlog.h>
 #include "string_compare.hpp"
 #include "platform/platform.hpp"
 
-#include <SDL2/SDL.h>
+#include <SDL.h>
 #include <exception>
 #include <string>
 #include <ranges>

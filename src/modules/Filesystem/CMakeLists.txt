@@ -18,9 +18,8 @@ target_link_libraries(filesystem
         PUBLIC
         nlohmann_json
         storm::utils
-        fmt::fmt
         tomlplusplus::tomlplusplus
-        spdlog::spdlog)
+        spdlog::spdlog_header_only)
 
 # * remarks
 #   файлы для настройки путей движка немножко потусуют в этом модуле,

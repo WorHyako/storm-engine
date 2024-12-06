@@ -1,7 +1,7 @@
 #pragma once
 
 #include <input.hpp>
-#include <SDL2/SDL.h>
+#include <SDL.h>
 #include <map>
 
 #include "platform/platform.hpp"

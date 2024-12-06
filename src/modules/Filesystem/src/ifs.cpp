@@ -4,20 +4,11 @@
  */
 // #include "core_impl.h"
 #include "vma.hpp"
-/**
- * TODO: header
- */
-#include "platform.hpp"
 
 /**
  * TODO: header
  */
 #include "string_compare.hpp"
-
-/**
- * TODO: header
- */
-#include <spdlog/spdlog.h>
 
 /**
  * TODO: header
@@ -389,7 +380,7 @@ bool IFS::LoadFile(const char *_file_name)
     auto fileS = fs->_CreateFile(_file_name, std::ios::binary | std::ios::in);
     if (!fileS.is_open())
     {
-        spdlog::trace("Unable to load file: {}", _file_name);
+        // spdlog::trace("Unable to load file: {}", _file_name);
         return false;
     }
 

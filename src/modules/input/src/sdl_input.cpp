@@ -1,17 +1,11 @@
 #include "sdl_input.hpp"
 
-#include <SDL2/SDL.h>
-#include <SDL2/SDL_system.h>
-#include <SDL2/SDL_video.h>
-/**
- * TODO: Useless header
- */
-// #include <windows.h>
+#include <SDL.h>
+#include <SDL_system.h>
+#include <SDL_video.h>
+
+#include <windows.h>
 #include <map>
-/**
- * TODO: header
- */
-#include "winuser.rh"
 
 namespace storm
 {

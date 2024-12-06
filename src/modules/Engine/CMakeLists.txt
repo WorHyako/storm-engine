@@ -17,11 +17,11 @@ target_include_directories(engine
 
 target_link_libraries(engine
         PUBLIC
-#        "comctl32"
 #        "dbghelp"
 #        "winhttp"
         mimalloc
-        SDL2::SDL2
+        SDL2main
+        storm::imgui
         zlib
         CLI11
         sentry::sentry
