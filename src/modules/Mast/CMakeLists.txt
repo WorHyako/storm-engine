@@ -12,10 +12,4 @@ target_sources(mast
 
 target_link_libraries(mast
         PUBLIC
-        storm::collide
-        storm::core
-        storm::island
-        storm::model
-        storm::renderer
-        storm::ship
-        storm::geometry)
+        storm::ship)

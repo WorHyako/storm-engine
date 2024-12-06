@@ -12,9 +12,6 @@ target_sources(touch
 
 target_link_libraries(touch
         PUBLIC
-        storm::core
-        storm::geometry
         storm::island
-        storm::location
-        storm::renderer
-        storm::ship)
+        storm::ship
+        storm::location)

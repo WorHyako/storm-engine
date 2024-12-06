@@ -12,10 +12,7 @@ target_sources(sea_ai
 
 target_link_libraries(sea_ai
         PUBLIC
+        storm::ship
         storm::island
-        storm::ai
         storm::location
-        storm::model
-        storm::particles
-        storm::sea
-        storm::ship)
+        storm::particles)

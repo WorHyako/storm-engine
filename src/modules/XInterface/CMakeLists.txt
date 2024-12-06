@@ -18,11 +18,8 @@ target_include_directories(xinterface
 
 target_link_libraries(xinterface
         PUBLIC
-        #"ddraw"
-        #"amstrmid"
+        ddraw
+        amstrmid
+        SDL2::SDL2
         storm::animation
-        storm::core
-        storm::geometry
-        storm::model
-        storm::renderer
-        storm::utils)
+        storm::model)

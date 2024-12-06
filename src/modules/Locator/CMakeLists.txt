@@ -11,7 +11,4 @@ target_sources(locator
         PRIVATE ${Sources})
 
 target_link_libraries(locator
-        PUBLIC
-        storm::core
-        storm::renderer
-        storm::sea_ai)
+        PUBLIC storm::sea_ai)

@@ -12,8 +12,5 @@ target_sources(dialog
 
 target_link_libraries(dialog
         PUBLIC
-        storm::core
-        storm::geometry
         storm::model
-        storm::renderer
         storm::sound_service)

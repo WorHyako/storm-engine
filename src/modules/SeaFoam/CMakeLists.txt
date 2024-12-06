@@ -12,12 +12,6 @@ target_sources(sea_foam
 
 target_link_libraries(sea_foam
         PUBLIC
-        storm::particles
-        storm::core
-        storm::geometry
-        storm::ship
-        storm::model
         storm::sound_service
-        storm::renderer
         storm::sea
         storm::sea_ai)

@@ -112,13 +112,13 @@ set_target_properties(d3dx9 PROPERTIES
 # -------- #
 #   fmod   #
 # -------- #
-add_library(fmod INTERFACE)
+add_library(fmod SHARED IMPORTED GLOBAL)
 add_library(storm::fmod ALIAS fmod)
 
-target_include_directories(fmod
-        INTERFACE
-        ${CMAKE_CURRENT_SOURCE_DIR}/fmod/Include
-        ${CMAKE_CURRENT_SOURCE_DIR}/fmod)
+set_target_properties(fmod PROPERTIES
+        IMPORTED_LOCATION "${CMAKE_CURRENT_SOURCE_DIR}/fmod/Libraries x64/fmod.dll"
+        IMPORTED_IMPLIB "${CMAKE_CURRENT_SOURCE_DIR}/fmod/Libraries x64/fmod_vc.lib"
+        INTERFACE_INCLUDE_DIRECTORIES "${CMAKE_CURRENT_SOURCE_DIR}/fmod/Include")
 
 # --------- #
 #   cli11   #

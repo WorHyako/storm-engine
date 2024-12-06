@@ -12,11 +12,5 @@ target_sources(sailors
 
 target_link_libraries(sailors
         PUBLIC
-        storm::animation
-        storm::collide
-        storm::core
-        storm::geometry
-        storm::model
-        storm::renderer
         storm::sea
         storm::ship)

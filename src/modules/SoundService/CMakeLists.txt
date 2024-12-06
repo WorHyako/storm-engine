@@ -15,6 +15,5 @@ target_include_directories(sound_service
 
 target_link_libraries(sound_service
         PUBLIC
-        storm::core
         storm::fmod
         storm::renderer)

@@ -11,9 +11,4 @@ target_sources(sea_operator
         PRIVATE ${Sources})
 
 target_link_libraries(sea_operator
-        PUBLIC
-        storm::core
-        storm::geometry
-        storm::renderer
-        storm::sea
-        storm::ship)
+        PUBLIC storm::ship)

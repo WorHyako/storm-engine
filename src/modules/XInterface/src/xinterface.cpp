@@ -1,6 +1,6 @@
 #include "options_parser.hpp"
 
-#include <SDL2/SDL.h>
+#include <SDL.h>
 
 #include "xinterface.h"
 #include "back_scene/back_scene.h"

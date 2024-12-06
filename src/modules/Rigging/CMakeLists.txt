@@ -11,11 +11,4 @@ target_sources(rigging
         PRIVATE ${Sources})
 
 target_link_libraries(rigging
-        PUBLIC
-        storm::geometry
-        storm::core
-        storm::model
-        storm::renderer
-        storm::sea_ai
-        storm::ship
-        storm::weather)
+        PUBLIC storm::weather)

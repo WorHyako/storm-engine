@@ -12,9 +12,5 @@ target_sources(water_rings
 
 target_link_libraries(water_rings
         PUBLIC
-        storm::collide
-        storm::geometry
-        storm::core
         storm::model
-        storm::renderer
         storm::sea)

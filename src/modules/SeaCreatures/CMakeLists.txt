@@ -12,10 +12,5 @@ target_sources(sea_creatures
 
 target_link_libraries(sea_creatures
         PUBLIC
-        storm::animation
-        storm::core
-        storm::geometry
         storm::island
-        storm::renderer
-        storm::sea
         storm::ship)

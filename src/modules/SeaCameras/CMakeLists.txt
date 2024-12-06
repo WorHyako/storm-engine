@@ -15,11 +15,5 @@ target_compile_definitions(sea_cameras
 
 target_link_libraries(sea_cameras
         PUBLIC
-        storm::collide
-        storm::core
-        storm::geometry
         storm::island
-        storm::model
-        storm::renderer
-        storm::sea
         storm::sea_ai)

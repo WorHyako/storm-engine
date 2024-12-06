@@ -12,10 +12,6 @@ target_sources(tornado
 
 target_link_libraries(tornado
         PUBLIC
-        storm::core
-        storm::geometry
-        storm::model
-        storm::renderer
         storm::sea
         storm::ship
         storm::sound_service)

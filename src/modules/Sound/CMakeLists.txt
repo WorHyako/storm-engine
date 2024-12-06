@@ -1,8 +1,8 @@
 cmake_minimum_required(VERSION 3.19)
 
-# ----------- #
-#   Collide   #
-# ----------- #
+# --------- #
+#   Sound   #
+# --------- #
 add_library(sound)
 add_library(storm::sound ALIAS sound)
 
@@ -11,7 +11,4 @@ target_sources(sound
         PRIVATE ${Sources})
 
 target_link_libraries(sound
-        PUBLIC
-        storm::core
-        storm::sound_service
-        storm::renderer)
+        PUBLIC storm::sound_service)

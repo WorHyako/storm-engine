@@ -16,12 +16,6 @@ target_include_directories(ship
 
 target_link_libraries(ship
         PUBLIC
-        storm::collide
-        storm::core
-        storm::geometry
         storm::island
         storm::location
-        storm::model
-        storm::sea
-        storm::particles
-        storm::renderer)
+        storm::particles)

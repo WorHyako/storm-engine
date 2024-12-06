@@ -14,10 +14,4 @@ target_compile_definitions(worldmap
         PRIVATE NOMINMAX)
 
 target_link_libraries(worldmap
-        PUBLIC
-        storm::battle_interface
-        storm::core
-        storm::geometry
-        storm::location
-        storm::renderer
-        storm::utils)
+        PUBLIC storm::battle_interface)

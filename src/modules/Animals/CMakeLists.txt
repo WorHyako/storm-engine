@@ -13,12 +13,5 @@ target_sources(animals
 target_link_libraries(animals
         PUBLIC
         storm::animation
-        storm::collide
-        storm::core
-        storm::geometry
-        storm::model
-        storm::renderer
-        storm::sea
         storm::ship
-        storm::sound_service
-        storm::geometry)
+        storm::sound_service)

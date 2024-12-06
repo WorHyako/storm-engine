@@ -12,9 +12,6 @@ target_sources(sink_effect
 
 target_link_libraries(sink_effect
         PUBLIC
-        storm::core
-        storm::geometry
-        storm::model
         storm::sea
         storm::ship
         storm::sound_service)

@@ -11,21 +11,10 @@ target_sources(battle_interface
         PRIVATE ${Sources})
 
 target_include_directories(battle_interface
-        PUBLIC
-        ${CMAKE_CURRENT_SOURCE_DIR}/include)
+        PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
 
 target_compile_definitions(battle_interface
         PRIVATE NOMINMAX)
 
 target_link_libraries(battle_interface
-        PUBLIC
-        storm::animation
-        storm::core
-        storm::geometry
-        storm::island
-        storm::model
-        storm::particles
-        storm::renderer
-        storm::sea_ai
-        storm::ship
-        storm::weather)
+        PUBLIC storm::weather)

@@ -19,12 +19,6 @@ target_include_directories(location
 
 target_link_libraries(location
         PUBLIC
-        storm::animation
         storm::blade
-        storm::collide
-        storm::core
-        storm::geometry
-        storm::renderer
         storm::sea
-        storm::sound_service
-        storm::utils)
+        storm::sound_service)

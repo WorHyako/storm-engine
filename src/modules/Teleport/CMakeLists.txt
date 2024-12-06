@@ -12,6 +12,5 @@ target_sources(teleport
 
 target_link_libraries(teleport
         PUBLIC
-        storm::core
         storm::pcs_controls
         storm::renderer)
