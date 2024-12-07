@@ -25,7 +25,3 @@ endif()
 if(STORM_ENABLE_SAFE_MODE)
   add_definitions(-DSTORM_ENABLE_SAFE_MODE=1)
 endif()
-
-# this is crucial to include libs first
-add_subdirectory(libs)
-add_subdirectory(apps)
