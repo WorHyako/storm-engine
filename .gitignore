@@ -4,3 +4,6 @@
 .vs
 .idea
 *.user
+
+game/*
+steamGame/*
