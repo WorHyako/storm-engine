@@ -4,14 +4,6 @@
 #include "string_compare.hpp"
 #include "vma.hpp"
 
-namespace {
-
-using Scene = storm::Scene;
-
-CREATE_CLASS(Scene)
-
-} // namespace
-
 namespace storm {
 
 bool Scene::Init()

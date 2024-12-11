@@ -7,8 +7,6 @@
 
 #include <input.hpp>
 
-CREATE_SERVICE(PCS_CONTROLS)
-
 using namespace storm;
 
 PCS_CONTROLS::PCS_CONTROLS()

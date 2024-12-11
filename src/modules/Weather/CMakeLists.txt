@@ -11,7 +11,7 @@ target_sources(weather
         PRIVATE ${Sources})
 
 target_include_directories(weather
-        PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
+        PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include src)
 
 target_link_libraries(weather
         PUBLIC storm::ship)

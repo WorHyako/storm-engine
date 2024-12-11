@@ -15,10 +15,6 @@
 #include "math3d/color.h"
 #include "math_inlines.h"
 
-CREATE_SERVICE(SoundService)
-
-CREATE_CLASS(SoundVisualisationEntity)
-
 #define DISTANCEFACTOR 1.0f
 #define CHECKFMODERR(expr) ErrorHandler(expr, __FILE__, __LINE__, __func__, #expr)
 

@@ -12,12 +12,10 @@ target_sources(window
 
 target_include_directories(window
         PUBLIC
-        ${CMAKE_CURRENT_SOURCE_DIR}/include)
+        ${CMAKE_CURRENT_SOURCE_DIR}/include src)
 
 target_compile_definitions(window
         PUBLIC $<$<BOOL:${STORM_MESA_NINE}>:STORM_MESA_NINE>)
 
 target_link_libraries(window
-        PUBLIC
-        SDL2::SDL2)
-
+        PUBLIC SDL2::SDL2$<$<NOT:$<BOOL:${BUILD_SHARED_LIBS}>>:-static>)

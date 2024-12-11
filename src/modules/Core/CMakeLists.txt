@@ -12,7 +12,7 @@ target_sources(core
 
 target_include_directories(core
         PUBLIC
-        ${CMAKE_CURRENT_SOURCE_DIR}/include)
+        ${CMAKE_CURRENT_SOURCE_DIR}/include src)
 
 target_compile_definitions(core
         PRIVATE
@@ -25,10 +25,12 @@ target_link_libraries(core
         storm::window
         storm::script_library
         storm::input
+        storm::shadow
         storm::imgui
         storm::diagnostics
         storm::math
         storm::plf_stack
         fmt::fmt-header-only
+        storm::steamworksSdk
         zlib
         FastFloat::fast_float)

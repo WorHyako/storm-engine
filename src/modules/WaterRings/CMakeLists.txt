@@ -10,6 +10,7 @@ file(GLOB_RECURSE Sources ${CMAKE_CURRENT_SOURCE_DIR}/*.cpp)
 target_sources(water_rings
         PRIVATE ${Sources})
 
+target_include_directories(water_rings PUBLIC src)
 target_link_libraries(water_rings
         PUBLIC
         storm::model

@@ -783,11 +783,11 @@ VDATA *COMPILER::ProcessEvent(const char *event_name)
     RDTSC_E(dwRDTSC);
 
     // VANO CHANGES - remove in release
-    if (core_internal.Controls->GetDebugAsyncKeyState('5') < 0 &&
-        core_internal.Controls->GetDebugAsyncKeyState(VK_SHIFT) < 0)
-    {
-        core_internal.Trace("evnt: %d, %s", dwRDTSC, event_name);
-    }
+    // if (core_internal.Controls->GetDebugAsyncKeyState('5') < 0 &&
+        // core_internal.Controls->GetDebugAsyncKeyState(VK_SHIFT) < 0)
+    // {
+        // core_internal.Trace("evnt: %d, %s", dwRDTSC, event_name);
+    // }
 
     return pVD;
 }

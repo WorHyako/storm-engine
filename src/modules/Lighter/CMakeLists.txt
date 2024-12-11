@@ -10,6 +10,7 @@ file(GLOB_RECURSE Sources ${CMAKE_CURRENT_SOURCE_DIR}/*.cpp)
 target_sources(lighter
         PRIVATE ${Sources})
 
+target_include_directories(lighter PUBLIC src)
 target_compile_definitions(lighter
         PRIVATE NOMINMAX)
 

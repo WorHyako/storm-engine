@@ -10,6 +10,7 @@ file(GLOB_RECURSE Sources ${CMAKE_CURRENT_SOURCE_DIR}/*.cpp)
 target_sources(tornado
         PRIVATE ${Sources})
 
+target_include_directories(tornado PUBLIC src)
 target_link_libraries(tornado
         PUBLIC
         storm::sea

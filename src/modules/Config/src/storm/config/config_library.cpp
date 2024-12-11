@@ -12,10 +12,6 @@ namespace storm {
 
 namespace {
 
-using Config = ConfigLibrary;
-
-CREATE_SCRIPTLIBRIARY(Config)
-
 void ConvertTable(ATTRIBUTES *target, const storm::Data &table, entid_t entity_id);
 
 void ConvertValue(ATTRIBUTES *target, const std::string &key, const storm::Data &node, entid_t entity_id)

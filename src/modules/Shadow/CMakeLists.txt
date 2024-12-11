@@ -10,6 +10,7 @@ file(GLOB_RECURSE Sources ${CMAKE_CURRENT_SOURCE_DIR}/*.cpp)
 target_sources(shadow
         PRIVATE ${Sources})
 
+target_include_directories(shadow PUBLIC src)
 target_compile_definitions(shadow
         PRIVATE NOMINMAX)
 

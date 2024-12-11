@@ -4,8 +4,6 @@
 #include "shared/messages.h"
 #include "shared/sea_ai/script_defines.h"
 
-CREATE_CLASS(SailorsEditor)
-
 SailorsEditor::SailorsEditor()
     : rs(nullptr), sailors(0), shipID(0), pointID(0), model(nullptr)
 {

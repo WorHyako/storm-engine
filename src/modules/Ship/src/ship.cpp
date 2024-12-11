@@ -13,11 +13,7 @@
 #include "ship_lights.h"
 #include "track.h"
 
-CREATE_CLASS(SHIP)
-
-CREATE_CLASS(ShipLights)
-
-CREATE_CLASS(ShipTracks)
+#include <ship_lights.h>
 
 VDX9RENDER *SHIP::pRS = nullptr;
 SEA_BASE *SHIP::pSea = nullptr;

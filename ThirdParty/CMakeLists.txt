@@ -1,34 +1,5 @@
 cmake_minimum_required(VERSION 3.15)
 
-# -------------- #
-#   dear imgui   #
-# -------------- #
-add_library(imgui)
-add_library(storm::imgui ALIAS imgui)
-
-set(ImGui_Dir ${CMAKE_CURRENT_SOURCE_DIR}/imgui)
-
-file(GLOB Sources ${ImGui_Dir}/*.cpp)
-list(APPEND Sources
-        ${ImGui_Dir}/backends/imgui_impl_sdl2.cpp
-        ${ImGui_Dir}/misc/cpp/imgui_stdlib.cpp
-        $<$<BOOL:${WIN32}>:${ImGui_Dir}/backends/imgui_impl_dx9.cpp>)
-
-target_sources(imgui
-        PRIVATE ${Sources})
-
-target_include_directories(imgui
-        PUBLIC
-        ${ImGui_Dir}
-        ${ImGui_Dir}/backends
-        ${ImGui_Dir}/misc/cpp)
-
-target_link_libraries(imgui
-        PUBLIC
-        SDL2::SDL2
-        d3d9)
-unset(Sources)
-
 # ---------- #
 #   Toml++   #
 # ---------- #
@@ -70,7 +41,37 @@ add_subdirectory(nlohmann-json)
 set(SDL2_DISABLE_INSTALL ON)
 set(SDL2_DISABLE_UNINSTALL ON)
 set(SDL_TEST OFF)
+set(SDL_SHARED ${BUILD_SHARED_LIBS})
 add_subdirectory(SDL)
+
+# -------------- #
+#   dear imgui   #
+# -------------- #
+add_library(imgui)
+add_library(storm::imgui ALIAS imgui)
+
+set(ImGui_Dir ${CMAKE_CURRENT_SOURCE_DIR}/imgui)
+
+file(GLOB Sources ${ImGui_Dir}/*.cpp)
+list(APPEND Sources
+        ${ImGui_Dir}/backends/imgui_impl_sdl2.cpp
+        ${ImGui_Dir}/misc/cpp/imgui_stdlib.cpp
+        $<$<BOOL:${WIN32}>:${ImGui_Dir}/backends/imgui_impl_dx9.cpp>)
+
+target_sources(imgui
+        PRIVATE ${Sources})
+
+target_include_directories(imgui
+        PUBLIC
+        ${ImGui_Dir}
+        ${ImGui_Dir}/backends
+        ${ImGui_Dir}/misc/cpp)
+
+target_link_libraries(imgui
+        PUBLIC
+        SDL2::SDL2$<$<NOT:$<BOOL:${BUILD_SHARED_LIBS}>>:-static>
+        d3d9)
+unset(Sources)
 
 # ---------- #
 #   Catch2   #
@@ -97,7 +98,7 @@ target_include_directories(plf_stack
 # --------- #
 #   dxsdk   #
 # --------- #
-if("$ENV{DXSDK_DIR}" STREQUAL "")
+if ("$ENV{DXSDK_DIR}" STREQUAL "")
     message(FATAL_ERROR "DXSDK was not found")
 endif ()
 
@@ -133,3 +134,14 @@ add_subdirectory(cli11)
 #   mimalloc   #
 # ------------ #
 add_subdirectory(mimalloc)
+
+# ----------------- #
+#   SteamworksSDK   #
+# ----------------- #
+add_library(steamworksSdk SHARED IMPORTED GLOBAL)
+add_library(storm::steamworksSdk ALIAS steamworksSdk)
+
+set_target_properties(steamworksSdk PROPERTIES
+        IMPORTED_LOCATION $ENV{STEAM_SDK}/redistributable_bin/win64/steam_api64.dll
+        IMPORTED_IMPLIB $ENV{STEAM_SDK}/redistributable_bin/win64/steam_api64.lib
+        INTERFACE_INCLUDE_DIRECTORIES $ENV{STEAM_SDK}/public/steam/)

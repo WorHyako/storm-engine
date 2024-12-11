@@ -246,7 +246,7 @@ uint64_t Fader::ProcessMessage(MESSAGE &message)
                     rs->TextureRelease(tipsID);
                 }
                 tipsID = rs->TextureCreate(pTipsName);
-                // rs->SetTipsImage(_name);
+                rs->SetTipsImage(_name.c_str());
             }
         }
         break;

@@ -4,10 +4,6 @@
 #include "string_compare.hpp"
 #include "shared/messages.h"
 
-CREATE_CLASS(LOCATOR)
-
-CREATE_CLASS(BLAST)
-
 LOCATOR::LOCATOR()
     : rs(nullptr), ParticlesID(0)
 {

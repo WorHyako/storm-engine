@@ -2,8 +2,12 @@
 
 #include <algorithm>
 #include <cstdint>
+#include <iostream>
+#include <ostream>
 #include <string_view>
 #include <vector>
+
+extern
 
 /* TODO: REMOVE THIS.... */
 constexpr uint32_t MakeHashValue(const std::string_view &string)
@@ -124,7 +128,9 @@ class VMA
             nReference++;                                                                                              \
             return new a;                                                                                              \
         }                                                                                                              \
-    } a##vmaci;
+    };\
+\
+    volatile static a##vmacd a##vmaci;
 #define CREATE_SERVICE(a)                                                                                              \
     class a##vmacd : public VMA                                                                                        \
     {                                                                                                                  \

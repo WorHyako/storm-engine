@@ -14,12 +14,12 @@ target_compile_definitions(xinterface
         PRIVATE NOMINMAX)
 
 target_include_directories(xinterface
-        PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
+        PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include src)
 
 target_link_libraries(xinterface
         PUBLIC
         ddraw
         amstrmid
-        SDL2::SDL2
+        SDL2::SDL2$<$<NOT:$<BOOL:${BUILD_SHARED_LIBS}>>:-static>
         storm::animation
         storm::model)

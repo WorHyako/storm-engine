@@ -7,10 +7,6 @@
 #include "shared/sail_msg.h"
 #include "ship_base.h"
 
-CREATE_CLASS(MAST)
-
-CREATE_CLASS(HULL)
-
 #define DELTA_TIME(x) ((x)*0.001f)
 #define DELTA_TIME_ROTATE(x) ((x)*0.01f)
 

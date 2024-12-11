@@ -95,7 +95,7 @@ void SDLWindow::SetTitle(const std::string &title)
 
 void SDLWindow::SetGamma(const uint16_t (&red)[256], const uint16_t (&green)[256], const uint16_t (&blue)[256])
 {
-    SDL_SetWindowGammaRamp(window_.get(), red, green, blue);
+    // auto t = SDL_SetWindowGammaRamp(window_.get(), red, green, blue);
 }
 
 void SDLWindow::ShowCursor(bool show_cursor)

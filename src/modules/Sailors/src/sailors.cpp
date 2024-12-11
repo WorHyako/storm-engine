@@ -7,8 +7,6 @@
 #include "shared/messages.h"
 #include "shared/sea_ai/script_defines.h"
 
-CREATE_CLASS(Sailors)
-
 namespace
 {
 

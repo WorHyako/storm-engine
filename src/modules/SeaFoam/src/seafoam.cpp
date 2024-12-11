@@ -6,8 +6,6 @@
 #include "math_inlines.h"
 #include "string_compare.hpp"
 
-CREATE_CLASS(SEAFOAM)
-
 // entid_t arrowModel;
 
 #define U_SPEED_K 24e-4f

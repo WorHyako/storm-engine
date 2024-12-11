@@ -17,5 +17,4 @@ target_include_directories(utils
         ${CMAKE_CURRENT_SOURCE_DIR}/include/platform)
 
 target_link_libraries(utils
-        PUBLIC
-        SDL2::SDL2)
+        PUBLIC SDL2::SDL2$<$<NOT:$<BOOL:${BUILD_SHARED_LIBS}>>:-static>)

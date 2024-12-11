@@ -10,6 +10,7 @@ file(GLOB_RECURSE Sources ${CMAKE_CURRENT_SOURCE_DIR}/*.cpp)
 target_sources(worldmap
         PRIVATE ${Sources})
 
+target_include_directories(worldmap PUBLIC src)
 target_compile_definitions(worldmap
         PRIVATE NOMINMAX)
 

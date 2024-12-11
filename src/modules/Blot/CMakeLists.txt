@@ -10,5 +10,7 @@ file(GLOB_RECURSE Sources ${CMAKE_CURRENT_SOURCE_DIR}/*.cpp)
 target_sources(blot
         PRIVATE ${Sources})
 
+target_include_directories(blot PUBLIC src)
+
 target_link_libraries(blot
         PUBLIC storm::model)

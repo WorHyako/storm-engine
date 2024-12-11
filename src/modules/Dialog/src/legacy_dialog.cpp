@@ -15,8 +15,6 @@
 
 #include <array>
 
-CREATE_CLASS(LegacyDialog)
-
 namespace
 {
 

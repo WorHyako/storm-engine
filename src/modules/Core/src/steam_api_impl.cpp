@@ -1,9 +1,8 @@
 #include "steam_api.hpp"
 
-#ifdef STORM_ENABLE_STEAM
 #include <stdexcept>
 
-#include <steam/steam_api.h>
+#include <steam_api.h>
 
 #include "achievements.hpp"
 #include "core.h"
@@ -155,18 +154,15 @@ void SteamApiImpl::RunCallbacks()
 }
 
 } // namespace steamapi
-#endif
 
 namespace steamapi::detail
 {
 std::unique_ptr<SteamApi> factory(const bool mock)
 {
-#ifdef STORM_ENABLE_STEAM
     if (!mock)
     {
         return std::make_unique<SteamApiImpl>();
     }
-#endif
     return std::make_unique<SteamApi>();
 }
 } // namespace steamapi::detail

@@ -11,7 +11,7 @@ target_sources(collide
         PRIVATE ${Sources})
 
 target_include_directories(collide
-        PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
+        PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include src)
 
 target_link_libraries(collide
         PUBLIC storm::core)

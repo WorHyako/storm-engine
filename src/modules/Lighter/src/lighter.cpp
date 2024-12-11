@@ -18,8 +18,6 @@
 // Construction, destruction
 // ============================================================================================
 
-CREATE_CLASS(Lighter)
-
 Lighter::Lighter()
     : autoTrace(false), autoSmooth(false)
 {
@@ -44,7 +42,7 @@ bool Lighter::Init()
     autoSmooth = ini->GetInt(nullptr, "autosmooth", 0) != 0;
     window.isSmallSlider = ini->GetInt(nullptr, "smallslider", 0) != 0;
     geometry.useColor = ini->GetInt(nullptr, "usecolor", 0) != 0;
-    if (!isLoading)
+    if (isLoading)
         return false;
     // DX9 render
     rs = static_cast<VDX9RENDER *>(core.GetService("dx9render"));

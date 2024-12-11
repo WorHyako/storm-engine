@@ -2,12 +2,6 @@
 #include "ai_group.h"
 #include "shared/messages.h"
 
-CREATE_CLASS(SEA_AI)
-
-CREATE_CLASS(AIFort)
-
-CREATE_CLASS(AIBalls)
-
 SEA_AI::SEA_AI()
 {
     bFirstInit = true;

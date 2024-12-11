@@ -1,4 +1,4 @@
-#include "ship_lights.h"
+#include <ship_lights.h>
 
 #include <algorithm>
 

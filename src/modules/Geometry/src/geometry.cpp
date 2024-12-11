@@ -3,8 +3,6 @@
 #include "geometry_r.h"
 #include "string_compare.hpp"
 
-CREATE_SERVICE(GEOMETRY)
-
 IDirect3DVertexDeclaration9 *GEOM_SERVICE_R::vertexDecl_ = nullptr;
 
 char technique[256] = "";

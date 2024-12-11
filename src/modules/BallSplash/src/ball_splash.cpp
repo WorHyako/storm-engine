@@ -6,8 +6,6 @@
 
 #include "file_service.h"
 
-CREATE_CLASS(BALLSPLASH)
-
 //--------------------------------------------------------------------
 BALLSPLASH::BALLSPLASH() : renderer(nullptr), sea(nullptr)
 {

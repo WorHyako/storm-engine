@@ -16,8 +16,6 @@
 
 using storm::Sqr;
 
-CREATE_CLASS(SEA)
-
 //#define OLD_WORLD_POS
 
 #define NUM_VERTEXS 65500

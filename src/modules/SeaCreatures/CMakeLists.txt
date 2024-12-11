@@ -10,6 +10,7 @@ file(GLOB_RECURSE Sources ${CMAKE_CURRENT_SOURCE_DIR}/*.cpp)
 target_sources(sea_creatures
         PRIVATE ${Sources})
 
+target_include_directories(sea_creatures PUBLIC src)
 target_link_libraries(sea_creatures
         PUBLIC
         storm::island

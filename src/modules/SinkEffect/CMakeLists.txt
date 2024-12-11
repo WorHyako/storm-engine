@@ -10,6 +10,7 @@ file(GLOB_RECURSE Sources ${CMAKE_CURRENT_SOURCE_DIR}/*.cpp)
 target_sources(sink_effect
         PRIVATE ${Sources})
 
+target_include_directories(sink_effect PUBLIC src)
 target_link_libraries(sink_effect
         PUBLIC
         storm::sea

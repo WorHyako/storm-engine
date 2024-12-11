@@ -3,10 +3,7 @@
 #include "compiler.h"
 #include "controls.h"
 #include "fs.h"
-/**
- *TODO: hide for a while
- */
-// #include "steam_api.hpp"
+#include "steam_api.hpp"
 
 #include <fstream>
 
@@ -219,10 +216,7 @@ bool CoreImpl::Run()
     ProcessExecute(); // transfer control to objects via Execute() function
     ProcessRealize(); // transfer control to objects via Realize() function
 
-    /**
-     *TODO: hide for a while
-     */
-    // steamapi::SteamApi::getInstance().RunCallbacks();
+    steamapi::SteamApi::getInstance().RunCallbacks();
 
     if (Controls)
         Controls->Update(Timer.rDelta_Time);
@@ -1057,11 +1051,11 @@ void CoreImpl::loadCompatibilitySettings(INIFILE &inifile)
     const std::string_view target_engine_version = strBuffer.data();
 
     targetVersion_ = getTargetEngineVersion(target_engine_version);
-    if (targetVersion_ == ENGINE_VERSION::UNKNOWN)
-    {
-        spdlog::warn("Unknown target version '{}' in engine compatibility settings", target_engine_version);
-        targetVersion_ = ENGINE_VERSION::LATEST;
-    }
+    // if (targetVersion_ == ENGINE_VERSION::UNKNOWN)
+    // {
+        // spdlog::warn("Unknown target version '{}' in engine compatibility settings", target_engine_version);
+        targetVersion_ = ENGINE_VERSION::TO_EACH_HIS_OWN;
+    // }
 }
 
 void CoreImpl::determineScreenSize(INIFILE &inifile)

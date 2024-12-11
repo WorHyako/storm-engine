@@ -6,18 +6,11 @@
 #include "shared/messages.h"
 #include "shared/sea_ai/script_defines.h"
 #include "tga.h"
-/**
- *TODO: useles
- */
-// #include "weather_base.h"
+
 #include <cstdio>
 #include <imgui.h>
 
 using storm::Sqr;
-
-CREATE_CLASS(ISLAND)
-
-CREATE_CLASS(CoastFoam)
 
 #define HMAP_EMPTY 0
 #define HMAP_START 2.0f

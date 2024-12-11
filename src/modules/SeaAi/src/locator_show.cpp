@@ -4,8 +4,6 @@
 
 #include <thread>
 
-CREATE_CLASS(SeaLocatorShow)
-
 SeaLocatorShow::SeaLocatorShow()
     : fWidth(0), fHeight(0)
 {

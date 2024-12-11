@@ -21,6 +21,11 @@
 #define MAX_BUFFERS 10240
 constexpr size_t MAX_FONTS = 256;
 
+class LostDeviceSentinel : public SERVICE
+{
+    void RunStart() override;
+};
+
 struct D3DERRORS
 {
     HRESULT err;

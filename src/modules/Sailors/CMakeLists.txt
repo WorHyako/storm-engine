@@ -10,6 +10,7 @@ file(GLOB_RECURSE Sources ${CMAKE_CURRENT_SOURCE_DIR}/*.cpp)
 target_sources(sailors
         PRIVATE ${Sources})
 
+target_include_directories(sailors PUBLIC src)
 target_link_libraries(sailors
         PUBLIC
         storm::sea

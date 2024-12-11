@@ -8,8 +8,6 @@
 
 #include <storm/editor/storm_imgui.hpp>
 
-CREATE_CLASS(BLADE)
-
 static const char *handName = "saber_hand";
 static const char *beltName = "saber_belt";
 static const char *bladeStart = "start";

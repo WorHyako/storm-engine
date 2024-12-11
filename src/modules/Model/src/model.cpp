@@ -9,8 +9,6 @@
 
 #include <storm/editor/storm_imgui.hpp>
 
-CREATE_CLASS(MODELR)
-
 IDirect3DVertexBuffer9 *dest_vb;
 
 MODELR::MODELR()

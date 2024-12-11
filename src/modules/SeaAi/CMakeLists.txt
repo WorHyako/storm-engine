@@ -10,6 +10,7 @@ file(GLOB_RECURSE Sources ${CMAKE_CURRENT_SOURCE_DIR}/*.cpp)
 target_sources(sea_ai
         PRIVATE ${Sources})
 
+target_include_directories(sea_ai PUBLIC src)
 target_link_libraries(sea_ai
         PUBLIC
         storm::ship

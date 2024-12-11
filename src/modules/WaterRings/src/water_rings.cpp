@@ -7,8 +7,6 @@
 #include "iv_buffer_manager.h"
 #include "math_inlines.h"
 
-CREATE_CLASS(WaterRings)
-
 //------------------------------------------------------------------------------------
 WaterRings::WaterRings() : ivManager(nullptr)
 {

@@ -15,7 +15,7 @@ target_compile_definitions(location
 
 target_include_directories(location
         PUBLIC
-        ${CMAKE_CURRENT_SOURCE_DIR}/include)
+        ${CMAKE_CURRENT_SOURCE_DIR}/include src)
 
 target_link_libraries(location
         PUBLIC

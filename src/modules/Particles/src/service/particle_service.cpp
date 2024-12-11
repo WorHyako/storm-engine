@@ -6,10 +6,6 @@
 #include "../manager/particle_manager.h"
 #include "vma.hpp"
 
-CREATE_SERVICE(ParticleService)
-
-CREATE_CLASS(PARTICLES)
-
 ParticleService::ParticleService()
 {
     pDefaultManager = nullptr;

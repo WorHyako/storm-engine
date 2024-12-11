@@ -6,8 +6,6 @@
 #include <v_sound_service.h>
 #include <v_file_service.h>
 
-CREATE_CLASS(DIALOG)
-
 #define CNORMAL 0xFFFFFFFF
 #define UNFADE_TIME 1000
 

@@ -6,12 +6,6 @@
 #include "string_compare.hpp"
 #include "file_service.h"
 
-CREATE_CLASS(TMPTELEPORT)
-
-CREATE_CLASS(FINDFILESINTODIRECTORY)
-
-CREATE_CLASS(FINDDIALOGNODES)
-
 #define DELETE_PTR(x)                                                                                                  \
     if (x)                                                                                                             \
         delete x;                                                                                                      \

@@ -11,10 +11,107 @@
 #include "lifecycle_diagnostics_service.hpp"
 #include "logging.hpp"
 #include "os_window.hpp"
-// #include "steam_api.hpp"
+#include "steam_api.hpp"
 #include "storm/engine_settings.hpp"
 #include "v_sound_service.h"
 #include "watermark.hpp"
+
+#include "active_perk_shower.h"
+#include "ai_sea_goods.h"
+#include "animals.h"
+#include "animation_service_imp.h"
+#include "astronomy.h"
+#include "aviplayer/aviplayer.h"
+#include "back_scene/back_scene.h"
+#include "ball_splash.h"
+#include "blood.h"
+#include "blots.h"
+#include "character_animation_kipper.h"
+#include "characters_groups.h"
+#include "debug_entity.h"
+#include "deck_camera.h"
+#include "dialog.hpp"
+#include "fader.h"
+#include "flag.h"
+#include "foam.h"
+#include "free_camera.h"
+#include "geometry_r.h"
+#include "grass.h"
+#include "help_chooser/help_chooser.h"
+#include "info_handler.h"
+#include "interface_manager/interface_manager.h"
+#include "island.h"
+#include "item_entity/item_entity.h"
+#include "k2_wrapper/particles.h"
+#include "land/battle_land.h"
+#include "land/i_boarding_status.h"
+#include "lighter.h"
+#include "lightning.h"
+#include "lights.h"
+#include "lizards.h"
+#include "loc_crabs.h"
+#include "loc_eagle.h"
+#include "loc_rats.h"
+#include "location.h"
+#include "location_camera.h"
+#include "location_effects.h"
+#include "location_script_lib.h"
+#include "locator.h"
+#include "log_and_action.h"
+#include "mast.h"
+#include "model_realizer.h"
+#include "modelr.h"
+#include "np_character.h"
+#include "pcs_controls.h"
+#include "player.h"
+#include "rope.h"
+#include "s_device.h"
+#include "sail.h"
+#include "sailors.h"
+#include "sailors_editor.h"
+#include "scr_shoter/scr_shoter.h"
+#include "script_func.h"
+#include "script_libriary_test.h"
+#include "sea.h"
+#include "sea/i_battle.h"
+#include "sea/ship_pointer.h"
+#include "sea_ai.h"
+#include "sea_cameras.h"
+#include "sea_operator.h"
+#include "seafoam.h"
+#include "service/particle_service.h"
+#include "sharks.h"
+#include "ship.h"
+#include "ship_camera.h"
+#include "ship_lights.h"
+#include "sink_effect.h"
+#include "sound.h"
+#include "sound_service.h"
+#include "spyglass/spyglass.h"
+#include "storm/blade/blade.hpp"
+#include "storm/config/config_library.hpp"
+#include "storm/renderer/scene.hpp"
+#include "string_service/obj_str_service.h"
+#include "string_service/str_service.h"
+#include "sun_glow.h"
+#include "teleport.h"
+#include "texture_sequence/texture_sequence.h"
+#include "timer/timer.h"
+#include "tornado.h"
+#include "touch.h"
+#include "track.h"
+#include "vant.h"
+#include "vcollide.h"
+#include "vma.hpp"
+#include "water_flare.h"
+#include "water_rings.h"
+#include "weather.h"
+#include "wide_screen.h"
+#include "world_map.h"
+#include "world_map_interface/interface.h"
+#include "xinterface.h"
+
+#include <steam_api_script_lib.hpp>
 
 namespace
 {
@@ -120,6 +217,130 @@ void HandleWindowEvent(const storm::OSWindow::Event &event)
     }
 }
 
+CREATE_CLASS(ANIMALS)
+CREATE_CLASS(BALLSPLASH)
+CREATE_CLASS(BATTLE_INTERFACE)
+CREATE_CLASS(ILogAndActions)
+CREATE_CLASS(IBoardingStatus)
+CREATE_CLASS(BATTLE_LAND_INTERFACE)
+CREATE_CLASS(ISPYGLASS)
+CREATE_CLASS(SHIPPOINTER)
+CREATE_CLASS(ActivePerkShower)
+CREATE_CLASS(BITimer)
+CREATE_CLASS(ItemEntity)
+CREATE_CLASS(WM_INTERFACE)
+CREATE_CLASS(BI_InterfaceManager)
+CREATE_CLASS(BLADE)
+CREATE_CLASS(Blots)
+CREATE_CLASS(DIALOG)
+CREATE_CLASS(ISLAND)
+CREATE_CLASS(CoastFoam)
+CREATE_CLASS(Lighter)
+CREATE_CLASS(Location)
+CREATE_CLASS(NPCharacter)
+CREATE_CLASS(Player)
+CREATE_CLASS(LocationCamera)
+CREATE_CLASS(Fader)
+CREATE_CLASS(Grass)
+CREATE_CLASS(Lights)
+CREATE_CLASS(WideScreen)
+CREATE_CLASS(CharacterAnimationKipper)
+CREATE_CLASS(LocationEffects)
+CREATE_CLASS(CharactersGroups)
+CREATE_CLASS(LocEagle)
+CREATE_CLASS(Lizards)
+CREATE_CLASS(LocRats)
+CREATE_CLASS(LocCrabs)
+CREATE_CLASS(LocModelRealizer)
+CREATE_CLASS(Blood)
+CREATE_CLASS(LOCATOR)
+CREATE_CLASS(BLAST)
+CREATE_CLASS(MAST)
+CREATE_CLASS(HULL)
+CREATE_CLASS(MODELR)
+CREATE_CLASS(PARTICLES)
+namespace storm
+{
+CREATE_CLASS(Scene)
+}
+CREATE_CLASS(SAIL)
+CREATE_CLASS(FLAG)
+CREATE_CLASS(ROPE)
+CREATE_CLASS(VANT)
+CREATE_CLASS(VANTL)
+CREATE_CLASS(VANTZ)
+CREATE_CLASS(Sailors)
+CREATE_CLASS(SailorsEditor)
+CREATE_CLASS(SEA)
+CREATE_CLASS(AISeaGoods)
+CREATE_CLASS(SEA_AI)
+CREATE_CLASS(AIFort)
+CREATE_CLASS(AIBalls)
+CREATE_CLASS(SEA_CAMERAS)
+CREATE_CLASS(FREE_CAMERA)
+CREATE_CLASS(SHIP_CAMERA)
+CREATE_CLASS(DECK_CAMERA)
+CREATE_CLASS(Sharks)
+CREATE_CLASS(SEAFOAM)
+CREATE_CLASS(SEA_OPERATOR)
+#include "shadow.h"
+CREATE_CLASS(Shadow)
+
+CREATE_CLASS(SHIP)
+CREATE_CLASS(ShipLights)
+CREATE_CLASS(ShipTracks)
+CREATE_CLASS(SOUND)
+CREATE_CLASS(SINKEFFECT)
+CREATE_CLASS(SoundVisualisationEntity)
+CREATE_CLASS(TMPTELEPORT)
+CREATE_CLASS(FINDFILESINTODIRECTORY)
+CREATE_CLASS(FINDDIALOGNODES)
+CREATE_CLASS(Tornado)
+CREATE_CLASS(TOUCH)
+CREATE_CLASS(WaterRings)
+CREATE_CLASS(WEATHER)
+CREATE_CLASS(RAIN)
+CREATE_CLASS(SUNGLOW)
+CREATE_CLASS(LIGHTNING)
+CREATE_CLASS(SKY)
+CREATE_CLASS(WATERFLARE)
+CREATE_CLASS(Astronomy)
+CREATE_CLASS(WorldMap)
+CREATE_CLASS(OBJ_STRSERVICE)
+CREATE_CLASS(TextureSequence)
+CREATE_CLASS(XINTERFACE)
+CREATE_CLASS(SCRSHOTER)
+CREATE_CLASS(HELPCHOOSER)
+CREATE_CLASS(InfoHandler)
+CREATE_CLASS(CONTROLS_CONTAINER)
+CREATE_CLASS(InterfaceBackScene)
+CREATE_CLASS(CAviPlayer)
+
+CREATE_SCRIPTLIBRIARY(ScriptLocationLibrary)
+CREATE_SCRIPTLIBRIARY(DX9RENDER_SCRIPT_LIBRIARY)
+CREATE_SCRIPTLIBRIARY(SCRIPT_LIBRIARY_TEST)
+CREATE_SCRIPTLIBRIARY(SCRIPT_RIGGING_FILES)
+namespace storm
+{
+using Config = ConfigLibrary;
+CREATE_SCRIPTLIBRIARY(Config)
+}
+CREATE_SCRIPTLIBRIARY(SCRIPT_INTERFACE_FUNCTIONS)
+
+CREATE_SERVICE(PCS_CONTROLS)
+CREATE_SERVICE(DX9RENDER)
+CREATE_SERVICE(ParticleService)
+CREATE_SERVICE(AnimationServiceImp)
+CREATE_SERVICE(COLL)
+CREATE_SERVICE(SoundService)
+CREATE_SERVICE(LostDeviceSentinel)
+CREATE_SERVICE(GEOMETRY)
+CREATE_SERVICE(STRSERVICE)
+namespace steamapi
+{
+CREATE_SCRIPTLIBRIARY(SteamApiScriptLib)
+}
+
 int main(int argc, char *argv[])
 {
     CLI::App app("Storm Engine");
@@ -222,16 +443,13 @@ int main(int argc, char *argv[])
         else {
             bSoundInBackground = false;
         }
-        bSteam = ini->GetInt(nullptr, "Steam", 1) != 0;
+        // bSteam = ini->GetInt(nullptr, "Steam", 1) != 0;
     }
 
     // initialize SteamApi through evaluating its singleton
     try
     {
-        /**
-         * TODO: hide for a while
-         */
-        // steamapi::SteamApi::getInstance(!bSteam);
+        steamapi::SteamApi::getInstance(!bSteam);
     }
     catch (const std::exception &e)
     {
@@ -263,8 +481,8 @@ int main(int argc, char *argv[])
             }
         }
 
-        if (bActive || run_in_background)
-        {
+        // if (bActive || run_in_background)
+        // {
             if (dwMaxFPS)
             {
                 const auto dwMS = 1000u / dwMaxFPS;
@@ -275,11 +493,11 @@ int main(int argc, char *argv[])
             }
 
             RunFrameWithOverflowCheck();
-        }
-        else
-        {
-            std::this_thread::sleep_for(std::chrono::milliseconds(50));
-        }
+        // }
+        // else
+        // {
+            // std::this_thread::sleep_for(std::chrono::milliseconds(50));
+        // }
 
         if (core.Controls && core.Controls->GetDebugAsyncKeyState(VK_F1) && core.Controls->GetDebugAsyncKeyState(VK_SHIFT))
         {

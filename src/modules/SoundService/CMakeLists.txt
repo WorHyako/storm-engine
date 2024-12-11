@@ -11,7 +11,7 @@ target_sources(sound_service
         PRIVATE ${Sources})
 
 target_include_directories(sound_service
-        PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
+        PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include src)
 
 target_link_libraries(sound_service
         PUBLIC

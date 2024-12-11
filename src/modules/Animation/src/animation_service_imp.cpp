@@ -17,8 +17,6 @@
 #include "string_compare.hpp"
 #include "file_service.h"
 
-CREATE_SERVICE(AnimationServiceImp)
-
 //============================================================================================
 
 // Unused animation unload time

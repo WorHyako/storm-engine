@@ -1,4 +1,3 @@
-#ifdef STORM_ENABLE_STEAM
 #include "achievements.hpp"
 #include "core.h"
 
@@ -479,4 +478,3 @@ bool CSteamDLC::activateGameOverlay(uint32_t nAppId)
 
     return true;
 }
-#endif

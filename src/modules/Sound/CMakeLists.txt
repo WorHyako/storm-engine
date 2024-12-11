@@ -10,5 +10,6 @@ file(GLOB_RECURSE Sources ${CMAKE_CURRENT_SOURCE_DIR}/*.cpp)
 target_sources(sound
         PRIVATE ${Sources})
 
+target_include_directories(sound PUBLIC src)
 target_link_libraries(sound
         PUBLIC storm::sound_service)

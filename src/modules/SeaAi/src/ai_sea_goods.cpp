@@ -1,8 +1,6 @@
 #include "ai_sea_goods.h"
 #include "shared/sea_ai/script_defines.h"
 
-CREATE_CLASS(AISeaGoods)
-
 AISeaGoods::AISeaGoods()
     : TmpItem(), fDistanceMultiply(0)
 {

@@ -42,10 +42,7 @@ EngineEditor::EngineEditor(SDL_Window *window, IDirect3DDevice9 *device)
     impl_->imgui_ = ImGui::CreateContext();
     ImGuiIO &io = ImGui::GetIO();
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
-    /**
-     * TODO: hide for a while
-     */
-    // io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+    io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
 
     ImGui_ImplSDL2_InitForD3D(window);
 #ifdef _WIN32

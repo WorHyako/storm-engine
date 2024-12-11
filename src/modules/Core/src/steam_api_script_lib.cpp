@@ -2,13 +2,11 @@
 
 #include "steam_api.hpp"
 #include "core.h"
-#include "vma.hpp"
 #include "s_import_func.h"
 #include "v_s_stack.h"
 
 namespace steamapi
 {
-CREATE_SCRIPTLIBRIARY(SteamApiScriptLib)
 
 namespace
 {

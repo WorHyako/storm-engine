@@ -1,8 +1,6 @@
 #include "core.h"
 #include "vcollide.h"
 
-CREATE_SERVICE(COLL)
-
 entid_t last_trace_eid;
 
 //----------------------------------------------------------------------------------
