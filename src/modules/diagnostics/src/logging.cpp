@@ -3,10 +3,8 @@
 #include <spdlog/spdlog.h>
 
 #include "spdlog_sinks/syncable_sink.hpp"
-/**
- * TODO: Should be smth like "Engine constants"
- */
-#include "storm/engine_settings.hpp"
+
+#include "Filesystem/Paths.hpp"
 
 namespace
 {
@@ -28,7 +26,7 @@ logger_ptr getOrCreateLogger(const std::string &name, const spdlog::level::level
         return logger;
     }
 
-    auto path = GetEngineSettings().GetEnginePath(EngineSettingsPathType::Logs) / name;
+    auto path = std::filesystem::path(Storm::Filesystem::Paths::logs()) / name;
     path += kLogExtension;
 
     logger = spdlog::create<sinks::syncable_sink>(name, path.string(), truncate);

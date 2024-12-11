@@ -3,6 +3,8 @@
 #include "core.h"
 #include "string_compare.hpp"
 
+#include "Filesystem/ConfigNames.hpp"
+
 #include "file_service.h"
 
 #include <input.hpp>
@@ -28,7 +30,7 @@ PCS_CONTROLS::PCS_CONTROLS()
     nMouseWheel = 0;
     memset(&ControlsTab[0], 0, sizeof(ControlsTab));
 
-    auto pIni = fio->OpenIniFile(core.EngineIniFileName());
+    auto pIni = fio->OpenIniFile(Storm::Filesystem::ConfigNames::engine().c_str());
     if (pIni)
     {
         m_bIsOffDebugKeys = pIni->GetInt("controls", "ondebugkeys", 0) == 0;

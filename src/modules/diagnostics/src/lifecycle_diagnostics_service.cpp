@@ -10,15 +10,10 @@
  */
 #include "file_service.h"
 
-/**
- * TODO: header
- */
-#include "storm/engine_settings.hpp"
+#include "Filesystem/Paths.hpp"
 
 #include <spdlog/spdlog.h>
 
-#include "fs.h"
-// #include "file_service.h"
 #include "spdlog_sinks/syncable_sink.hpp"
 #include "watermark.hpp"
 
@@ -36,7 +31,6 @@
 #ifdef _WIN32
 #include "logging.hpp"
 #include "seh_extractor.hpp"
-#include "storm/engine_settings.hpp"
 #endif
 
 namespace
@@ -48,7 +42,7 @@ auto& getExecutableDir()
 }
 auto &getLogsArchive()
 {
-    static const auto logsArchive = storm::GetEngineSettings().GetEnginePath(storm::EngineSettingsPathType::Logs).replace_extension(".7z");
+    static const auto logsArchive = std::filesystem::path(Storm::Filesystem::Paths::logs()).replace_extension(".7z");
     return logsArchive;
 }
 
@@ -60,7 +54,7 @@ std::string assembleArchiveCmd()
      */
     constexpr auto archiverBin = "7za.exe";
     return "call \"" + (getExecutableDir() / archiverBin).string() + ("\" a \"\\\\?\\") +
-           getLogsArchive().string() + ("\" \"\\\\?\\") + storm::GetEngineSettings().GetEnginePath(storm::EngineSettingsPathType::Logs).string() + ("\"");
+           getLogsArchive().string() + ("\" \"\\\\?\\") + Storm::Filesystem::Paths::logs() + ("\"");
 }
 #endif
 
@@ -121,7 +115,7 @@ class LoggingService final
             /**
              * TODO: fix func naming
              */
-            std::filesystem::create_directories(storm::GetEngineSettings().GetEnginePath(storm::EngineSettingsPathType::Logs));
+            std::filesystem::create_directories({Storm::Filesystem::Paths::logs()});
 
             std::thread worker{[this] { loggingThread(); }};
             worker.detach();
@@ -218,21 +212,12 @@ LifecycleDiagnosticsService::Guard LifecycleDiagnosticsService::initialize(const
         sentry_options_set_logger(options, log_sentry, nullptr);
         sentry_options_set_dsn(options, "https://8ae9220bf1ee1d13a6b3bfe1fe1c8894@o4506010910654464.ingest.sentry.io/4506010914652160");
         sentry_options_set_release(options, STORM_BUILD_WATERMARK_STRING);
-        /**
-         * TODO: fix wstring
-         */
-        sentry_options_set_database_path(options, storm::GetEngineSettings().GetEnginePath(storm::EngineSettingsPathType::Sentry).string().c_str());
+        sentry_options_set_database_path(options, Storm::Filesystem::Paths::sentry_db().c_str());
 #ifdef _WIN32
-        /**
-         * TODO: fix wstring
-         */
         sentry_options_set_handler_path(options, (getExecutableDir() / "crashpad_handler.exe").string().c_str());
 #else
         sentry_options_set_handler_path(options, (getExecutableDir() / "crashpad_handler").c_str());
 #endif
-        /**
-         * TODO: fix wstring
-         */
         sentry_options_add_attachment(options, getLogsArchive().string().c_str());
         sentry_options_set_on_crash(options, beforeCrash, this);
         sentry_options_set_system_crash_reporter_enabled(options, enableCrashReports);

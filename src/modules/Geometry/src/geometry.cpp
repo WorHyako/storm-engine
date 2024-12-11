@@ -1,5 +1,7 @@
 #include "core.h"
 
+#include "Filesystem/ConfigNames.hpp"
+
 #include "geometry_r.h"
 #include "string_compare.hpp"
 
@@ -60,7 +62,7 @@ bool GEOMETRY::Init()
     }
     GSR.SetRenderService(RenderService);
 
-    auto ini = fio->OpenIniFile(core.EngineIniFileName());
+    auto ini = fio->OpenIniFile(Storm::Filesystem::ConfigNames::engine().c_str());
     if (ini)
     {
         geoLog = ini->GetInt(nullptr, "geometry_log", 0) == 1;

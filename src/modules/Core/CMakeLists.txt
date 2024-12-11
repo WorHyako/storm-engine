@@ -25,7 +25,6 @@ target_link_libraries(core
         storm::window
         storm::script_library
         storm::input
-        storm::shadow
         storm::imgui
         storm::diagnostics
         storm::math

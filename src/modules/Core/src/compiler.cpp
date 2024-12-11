@@ -3,6 +3,9 @@
 #include <chrono>
 #include <cstdio>
 
+#include "Filesystem/Paths.hpp"
+#include "Filesystem/ConfigNames.hpp"
+
 #include <zlib.h>
 
 #ifdef _WIN32 // S_DEBUG
@@ -11,10 +14,8 @@
 #include "core_impl.h"
 #endif
 #include "debug-trap.h"
-#include "fs.h"
 #include "logging.hpp"
 #include "script_cache.h"
-#include "storm/engine_settings.hpp"
 #include "storm_assert.h"
 
 #include <SDL_timer.h>
@@ -50,7 +51,7 @@ enum CacheMode : int
 
 auto GetCacheFolder()
 {
-    static std::filesystem::path cache_folder = storm::GetEngineSettings().GetEnginePath(storm::EngineSettingsPathType::ScriptCache);
+    static std::filesystem::path cache_folder{ Storm::Filesystem::Paths::script_cache() };
     return cache_folder;
 }
 constexpr auto kCacheStateFile = "state";
@@ -431,7 +432,7 @@ void COMPILER::SetWarning(const char *data_PTR, ...)
 
 void COMPILER::LoadPreprocess()
 {
-    auto engine_ini = fio->OpenIniFile(core_internal.EngineIniFileName());
+    auto engine_ini = fio->OpenIniFile(Storm::Filesystem::ConfigNames::engine().c_str());
     if (engine_ini)
     {
         if (engine_ini->GetInt("script", "debuginfo", 0) == 0)

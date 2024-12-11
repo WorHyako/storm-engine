@@ -4,6 +4,8 @@
 #include <execution>
 #include <thread>
 
+#include "Filesystem/ConfigNames.hpp"
+
 #include "core.h"
 #include "math3d.h"
 #include "math_inlines.h"
@@ -191,7 +193,7 @@ bool SEA::Init()
     rs = static_cast<VDX9RENDER *>(core.GetService("dx9render"));
     CreateVertexDeclaration();
     {
-        auto pEngineIni = fio->OpenIniFile(core.EngineIniFileName());
+        auto pEngineIni = fio->OpenIniFile(Storm::Filesystem::ConfigNames::engine().c_str());
         bIniFoamEnable = (pEngineIni) ? pEngineIni->GetInt("Sea", "FoamEnable", 1) != 0 : false;
     }
 

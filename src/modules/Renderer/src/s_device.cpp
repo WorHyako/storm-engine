@@ -4,14 +4,15 @@
 
 #include "debug-trap.h"
 #include "entity.h"
-#include "fs.h"
 #include "math_inlines.h"
 #include "s_import_func.h"
-#include "storm/engine_settings.hpp"
 #include "storm/font_loading.hpp"
 #include "string_compare.hpp"
 #include "texture.h"
 #include "v_s_stack.h"
+
+#include "Filesystem/Paths.hpp"
+#include "Filesystem/ConfigNames.hpp"
 
 #include <fmt/chrono.h>
 #include <SDL_timer.h>
@@ -483,9 +484,9 @@ bool DX9RENDER::Init()
     d3d = nullptr;
     d3d9 = nullptr;
 
-    create_directories(storm::GetEngineSettings().GetEnginePath(storm::EngineSettingsPathType::Screenshots));
+    std::filesystem::create_directories(Storm::Filesystem::Paths::screenshots());
 
-    auto ini = fio->OpenIniFile(core.EngineIniFileName());
+    auto ini = fio->OpenIniFile(Storm::Filesystem::ConfigNames::engine().c_str());
     if (ini)
     {
         // bPostProcessEnabled = ini->GetInt(0, "PostProcess", 0) == 1;
@@ -3281,9 +3282,9 @@ void DX9RENDER::MakeScreenShot()
     }
 
     const auto screenshot_base_filename = fmt::format("{:%Y-%m-%d_%H-%M-%S}", fmt::localtime(std::time(nullptr)));
-    auto screenshot_path = storm::GetEngineSettings().GetEnginePath(storm::EngineSettingsPathType::Screenshots) / screenshot_base_filename;
+    auto screenshot_path = std::filesystem::path(Storm::Filesystem::Paths::screenshots()) / screenshot_base_filename;
     screenshot_path.replace_extension(screenshotExt);
-    for(size_t i = 0; exists(screenshot_path); ++i)
+    for(size_t i = 0; std::filesystem::exists(screenshot_path); ++i)
     {
         screenshot_path.replace_filename(screenshot_base_filename + "_" + std::to_string(i));
         screenshot_path.replace_extension(screenshotExt);

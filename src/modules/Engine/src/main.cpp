@@ -6,13 +6,14 @@
 #include <spdlog/spdlog.h>
 #include <CLI/CLI.hpp>
 
+#include "Filesystem/Paths.hpp"
+#include "Filesystem/ConfigNames.hpp"
+
 #include "core_private.h"
-#include "fs.h"
 #include "lifecycle_diagnostics_service.hpp"
 #include "logging.hpp"
 #include "os_window.hpp"
 #include "steam_api.hpp"
-#include "storm/engine_settings.hpp"
 #include "v_sound_service.h"
 #include "watermark.hpp"
 
@@ -159,7 +160,7 @@ void mimalloc_fun(const char *msg, void *arg)
     static std::filesystem::path mimalloc_log_path;
     if (mimalloc_log_path.empty())
     {
-        mimalloc_log_path =storm::GetEngineSettings().GetEnginePath(storm::EngineSettingsPathType::Logs) / "mimalloc.log";
+        mimalloc_log_path = std::filesystem::path(Storm::Filesystem::Paths::logs()) / "mimalloc.log";
         std::error_code ec;
         remove(mimalloc_log_path, ec);
     }
@@ -399,7 +400,7 @@ int main(int argc, char *argv[])
     }
 
     // Init stash
-    create_directories(storm::GetEngineSettings().GetEnginePath(storm::EngineSettingsPathType::SaveData));
+    std::filesystem::create_directories(Storm::Filesystem::Paths::save_data());
 
     // Init logging
     spdlog::set_default_logger(storm::logging::getOrCreateLogger(defaultLoggerName));
@@ -412,7 +413,7 @@ int main(int argc, char *argv[])
     core_private->Init();
 
     // Read config
-    auto ini = fio->OpenIniFile(fs::ENGINE_INI_FILE_NAME);
+    auto ini = fio->OpenIniFile(Storm::Filesystem::ConfigNames::engine().c_str());
 
     uint32_t dwMaxFPS = 0;
     bool bSteam = false;

@@ -2,13 +2,14 @@
 
 #include "compiler.h"
 #include "controls.h"
-#include "fs.h"
 #include "steam_api.hpp"
 
 #include <fstream>
 
 #include "string_compare.hpp"
 #include <SDL.h>
+
+#include "Filesystem/ConfigNames.hpp"
 
 Core &core = core_internal;
 
@@ -273,7 +274,7 @@ void CoreImpl::ProcessEngineIniFile()
 
     bEngineIniProcessed = true;
 
-    auto engine_ini = fio->OpenIniFile(fs::ENGINE_INI_FILE_NAME);
+    auto engine_ini = fio->OpenIniFile(Storm::Filesystem::ConfigNames::engine().c_str());
     if (!engine_ini)
         throw std::runtime_error("no 'engine.ini' file");
 
@@ -908,11 +909,6 @@ bool CoreImpl::SetSaveData(const char *file_name, void *data_ptr, int32_t data_s
 uint32_t CoreImpl::SetScriptFunction(IFUNCINFO *pFuncInfo)
 {
     return Compiler->SetScriptFunction(pFuncInfo);
-}
-
-const char *CoreImpl::EngineIniFileName()
-{
-    return fs::ENGINE_INI_FILE_NAME;
 }
 
 void *CoreImpl::GetScriptVariable(const char *pVariableName, uint32_t *pdwVarIndex)
