@@ -1,8 +1,12 @@
 #include "t_butterflies.h"
 
+
 #include "core.h"
 #include "shared/messages.h"
-#include "file_service.h"
+
+#include "Filesystem/Config/Config.hpp"
+#include "Filesystem/Constants/ConfigNames.hpp"
+#include "Filesystem/Constants/ConfigSections.hpp"
 
 #pragma warning(disable : 4244)
 
@@ -22,12 +26,9 @@ TButterflies::~TButterflies()
 //--------------------------------------------------------------------
 void TButterflies::LoadSettings()
 {
-    auto ini = fio->OpenIniFile(ANIMALS_INI_FILENAME);
-    if (!ini)
-        return;
-
-    butterfliesCount = ini->GetInt(ANIMALS_BUTTERFLIES_SECTION, "count", BUTTERFLY_COUNT);
-    maxDistance = ini->GetFloat(ANIMALS_BUTTERFLIES_SECTION, "distance", BUTTERFLY_DISTANCE);
+    auto config = Storm::Filesystem::Config::load(Storm::Filesystem::Constants::ConfigNames::animals());
+    butterfliesCount = config.get<int>(ANIMALS_BUTTERFLIES_SECTION, "count", BUTTERFLY_COUNT);
+    maxDistance = config.get<int>(ANIMALS_BUTTERFLIES_SECTION, "distance", BUTTERFLY_DISTANCE);
 
     // DEBUG!
     // butterfliesCount = 1;

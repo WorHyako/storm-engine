@@ -3,8 +3,8 @@
 #include <chrono>
 #include <cstdio>
 
-#include "Filesystem/Paths.hpp"
-#include "Filesystem/ConfigNames.hpp"
+#include "Filesystem/Config/Config.hpp"
+#include "Filesystem/Constants/ConfigNames.hpp"
 
 #include <zlib.h>
 
@@ -49,9 +49,9 @@ enum CacheMode : int
                                     // changes(e.g. in the interface scripts) are expected during the session
 };
 
-auto GetCacheFolder()
+std::filesystem::path GetCacheFolder()
 {
-    static std::filesystem::path cache_folder{ Storm::Filesystem::Paths::script_cache() };
+    static const std::filesystem::path cache_folder{ Storm::Filesystem::Constants::Paths::script_cache() };
     return cache_folder;
 }
 constexpr auto kCacheStateFile = "state";
@@ -432,51 +432,25 @@ void COMPILER::SetWarning(const char *data_PTR, ...)
 
 void COMPILER::LoadPreprocess()
 {
-    auto engine_ini = fio->OpenIniFile(Storm::Filesystem::ConfigNames::engine().c_str());
-    if (engine_ini)
-    {
-        if (engine_ini->GetInt("script", "debuginfo", 0) == 0)
-        {
-            bDebugInfo = false;
-            // FuncTab.KeepNameMode(false);
-            // VarTab.KeepNameMode(false);
-            // DefTab.KeepNameMode(false);
-            // EventTab.KeepNameMode(false);
-        }
-        else
-        {
-            bDebugInfo = true;
-            // FuncTab.KeepNameMode(true);
-            // VarTab.KeepNameMode(true);
-            // DefTab.KeepNameMode(true);
-            // EventTab.KeepNameMode(true);
-        }
-        if (engine_ini->GetInt("script", "codefiles", 0) == 0)
-            bWriteCodeFile = false;
-        else
-            bWriteCodeFile = true;
+    auto config = Storm::Filesystem::Config::load(Storm::Filesystem::Constants::ConfigNames::engine());
+    bDebugInfo = config.get<int>("script", "debuginfo", 0) == 0;
+    bWriteCodeFile = config.get<int>("script", "codefiles", 0) == 0;
+    bRuntimeLog = config.get<int>("script", "runtimelog", 0) == 0;
+    script_cache_mode_ = config.get<int>("script", "cache_mode", kCacheDisabled);
 
-        if (engine_ini->GetInt("script", "runtimelog", 0) == 0)
-            bRuntimeLog = false;
-        else
-            bRuntimeLog = true;
-
-        script_cache_mode_ = engine_ini->GetInt("script", "cache_mode", kCacheDisabled);
-        if (script_cache_mode_ < kCacheDisabled || script_cache_mode_ > kCacheEnabledNoRuntimeCheck)
-        {
-            script_cache_mode_ = kCacheDisabled;
-        }
+    if (script_cache_mode_ < kCacheDisabled || script_cache_mode_ > kCacheEnabledNoRuntimeCheck) {
+        script_cache_mode_ = kCacheDisabled;
+    }
 
         // if(engine_ini->GetInt("script","tracefiles",0) == 0) bScriptTrace = false;
         // else bScriptTrace = true;
-    }
 
 #ifdef _WIN32 // S_DEBUG
-    auto ini = fio->OpenIniFile(PROJECT_NAME);
-    if (ini)
-    {
-        bBreakOnError = (ini->GetInt("options", "break_on_error", 0) == 1);
-    }
+    // auto ini = fio->OpenIniFile(PROJECT_NAME);
+    // if (ini)
+    // {
+        // bBreakOnError = (ini->GetInt("options", "break_on_error", 0) == 1);
+    // }
 #endif
 }
 

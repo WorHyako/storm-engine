@@ -4,7 +4,7 @@
 
 #include "spdlog_sinks/syncable_sink.hpp"
 
-#include "Filesystem/Paths.hpp"
+#include "Filesystem/Constants/Paths.hpp"
 
 namespace
 {
@@ -26,7 +26,7 @@ logger_ptr getOrCreateLogger(const std::string &name, const spdlog::level::level
         return logger;
     }
 
-    auto path = std::filesystem::path(Storm::Filesystem::Paths::logs()) / name;
+    auto path = std::filesystem::path(Storm::Filesystem::Constants::Paths::logs()) / name;
     path += kLogExtension;
 
     logger = spdlog::create<sinks::syncable_sink>(name, path.string(), truncate);

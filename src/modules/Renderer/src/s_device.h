@@ -478,7 +478,7 @@ private:
     std::unique_ptr<CTechnique> pTechnique;
 #endif
 
-    char *fontIniFileName;
+    std::string fontIniFileName;
     std::vector<FONTEntity> FontList{};
     int32_t idFontCurrent;
 

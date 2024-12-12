@@ -11,8 +11,9 @@
 #include "texture.h"
 #include "v_s_stack.h"
 
-#include "Filesystem/Paths.hpp"
-#include "Filesystem/ConfigNames.hpp"
+#include "Filesystem/Config/Config.hpp"
+#include "Filesystem/Constants/Paths.hpp"
+#include "Filesystem/Constants/ConfigNames.hpp"
 
 #include <fmt/chrono.h>
 #include <SDL_timer.h>
@@ -417,7 +418,6 @@ DX9RENDER::DX9RENDER()
     numAniVerteces = 0;
     pVTL = nullptr;
     idFontCurrent = 0;
-    fontIniFileName = nullptr;
 
     bLoadTextureEnabled = true;
 
@@ -470,156 +470,134 @@ DX9RENDER::DX9RENDER()
 static bool texLog = false;
 static float fSin = 0.0f;
 
-bool DX9RENDER::Init()
-{
+bool DX9RENDER::Init() {
     if (auto *sentinelService = core.GetService("LostDeviceSentinel"); !sentinelService)
     {
         throw std::runtime_error("Cannot create LostDeviceSentinel! Abort");
     }
 
-    char str[256];
     for (int32_t i = 0; i < MAX_STEXTURES; i++)
         Textures[i].ref = NULL;
 
     d3d = nullptr;
     d3d9 = nullptr;
 
-    std::filesystem::create_directories(Storm::Filesystem::Paths::screenshots());
+    std::filesystem::create_directories(Storm::Filesystem::Constants::Paths::screenshots());
 
-    auto ini = fio->OpenIniFile(Storm::Filesystem::ConfigNames::engine().c_str());
-    if (ini)
-    {
-        // bPostProcessEnabled = ini->GetInt(0, "PostProcess", 0) == 1;
-        bPostProcessEnabled = false; //~!~
+    auto config = Storm::Filesystem::Config::load(Storm::Filesystem::Constants::ConfigNames::engine());
 
-        // screenshot format and extension
-        ini->ReadString(nullptr, "screenshot_format", str, sizeof(str), "jpg");
-        screenshotExt = str;
-        std::ranges::transform(screenshotExt, screenshotExt.begin(),
-                               [](const unsigned char c) { return std::tolower(c); });
+    // bPostProcessEnabled = ini->GetInt(0, "PostProcess", 0) == 1;
+    bPostProcessEnabled = false; //~!~
+
+    // screenshot format and extension
+    screenshotExt = config.get<std::string>("settings", "screenshot_format", "jpg");
+    screenshotFormat = GetScreenshotFormat(screenshotExt);
+    std::ranges::transform(screenshotExt, screenshotExt.begin(),
+                           [](const unsigned char c) { return std::tolower(c); });
 #ifdef _WIN32 // Screenshot
-        screenshotFormat = GetScreenshotFormat(str);
-        if (screenshotFormat == D3DXIFF_FORCE_DWORD)
-        {
-            screenshotExt = "jpg";
-            screenshotFormat = D3DXIFF_JPG;
-        }
+    if (screenshotFormat == D3DXIFF_FORCE_DWORD)
+    {
+        screenshotExt = "jpg";
+        screenshotFormat = D3DXIFF_JPG;
+    }
 #endif
 
-        bShowFps = ini->GetInt(nullptr, "show_fps", 0) == 1;
-        bShowExInfo = ini->GetInt(nullptr, "show_exinfo", 0) == 1;
-        bSafeRendering = ini->GetInt(nullptr, "safe_render", 0) == 0;
-        bDropVideoConveyor = ini->GetInt(nullptr, "DropVideoConveyor", 0) != 0;
-        texLog = ini->GetInt(nullptr, "texture_log", 0) == 1;
-        bUseLargeBackBuffer = ini->GetInt(nullptr, "UseLargeBackBuffer", 0) != 0;
+    bShowFps = config.get<int>("settings", "show_fps", 0) == 1;
+    bShowExInfo = config.get<int>("settings", "show_exinfo", 0) == 1;
+    bSafeRendering = config.get<int>("settings", "safe_render", 0) == 0;
+    bDropVideoConveyor = config.get<int>("settings", "DropVideoConveyor", 0) != 0;
+    texLog = config.get<int>("settings", "texture_log", 0) == 1;
+    bUseLargeBackBuffer = config.get<int>("settings", "UseLargeBackBuffer", 0) != 0;
+    bWindow = config.get<int>("settings", "full_screen", 0) == 0;
+    nTextureDegradation = config.get<int>("settings", "texture_degradation", 0);
+    FovMultiplier = config.get<float>("settings", "fov_multiplier", 1.0f);
+    screen_size.x = config.get<int>("settings", "screen_x", 1024);
+    screen_size.y = config.get<int>("settings", "screen_y", 768);
+    fNearClipPlane = config.get<float>("settings", "NearClipPlane", 0.1f);
+    fFarClipPlane = config.get<float>("settings", "FarClipPlane", 4000.0f);
+    bBackBufferCanLock = config.get<int>("settings", "lockable_back_buffer", 0) != 0;
 
-        bWindow = ini->GetInt(nullptr, "full_screen", 1) == 0;
+    auto back_buffer = config.get<std::string>("settings", "lockable_back_buffer", "D3DFMT_R5G6B5");
 
-        nTextureDegradation = ini->GetInt(nullptr, "texture_degradation", 0);
-
-        FovMultiplier = ini->GetFloat(nullptr, "fov_multiplier", 1.0f);
-
-        screen_size.x = ini->GetInt(nullptr, "screen_x", 1024);
-        screen_size.y = ini->GetInt(nullptr, "screen_y", 768);
-        fNearClipPlane = ini->GetFloat(nullptr, "NearClipPlane", 0.1f);
-        fFarClipPlane = ini->GetFloat(nullptr, "FarClipPlane", 4000.0f);
-        bBackBufferCanLock = ini->GetInt(nullptr, "lockable_back_buffer", 0) != 0;
-        ini->ReadString(nullptr, "screen_bpp", str, sizeof(str), "D3DFMT_R5G6B5");
+    screen_bpp = D3DFMT_R5G6B5;
+    stencil_format = D3DFMT_D16;
+    if (storm::iEquals(back_buffer, "D3DFMT_A8R8G8B8"))
+    {
+        screen_bpp = D3DFMT_A8R8G8B8;
+        stencil_format = D3DFMT_D24S8;
+    }
+    if (storm::iEquals(back_buffer, "D3DFMT_X8R8G8B8"))
+    {
+        screen_bpp = D3DFMT_X8R8G8B8;
+        stencil_format = D3DFMT_D24S8;
+    }
+    if (storm::iEquals(back_buffer, "D3DFMT_R5G6B5"))
+    {
         screen_bpp = D3DFMT_R5G6B5;
         stencil_format = D3DFMT_D16;
-        if (storm::iEquals(str, "D3DFMT_A8R8G8B8"))
-        {
-            screen_bpp = D3DFMT_A8R8G8B8;
-            stencil_format = D3DFMT_D24S8;
-        }
-        if (storm::iEquals(str, "D3DFMT_X8R8G8B8"))
-        {
-            screen_bpp = D3DFMT_X8R8G8B8;
-            stencil_format = D3DFMT_D24S8;
-        }
-        if (storm::iEquals(str, "D3DFMT_R5G6B5"))
-        {
-            screen_bpp = D3DFMT_R5G6B5;
-            stencil_format = D3DFMT_D16;
-        }
+    }
 
-        // new renderer settings
-        vSyncEnabled = ini->GetInt(nullptr, "vsync", 0);
+    // new renderer settings
+    vSyncEnabled = config.get<int>("settings", "vsync", 0);
 
-        msaa = ini->GetInt(nullptr, "msaa", D3DMULTISAMPLE_NONE);
-        if (msaa != D3DMULTISAMPLE_NONE)
+    msaa = config.get<int>("settings", "msaa", D3DMULTISAMPLE_NONE);
+
+    if (msaa != D3DMULTISAMPLE_NONE)
+    {
+        if (msaa < D3DMULTISAMPLE_2_SAMPLES || msaa > D3DMULTISAMPLE_16_SAMPLES)
         {
-            if (msaa < D3DMULTISAMPLE_2_SAMPLES || msaa > D3DMULTISAMPLE_16_SAMPLES)
-            {
-                msaa = D3DMULTISAMPLE_16_SAMPLES;
-            }
+            msaa = D3DMULTISAMPLE_16_SAMPLES;
         }
+    }
 
-        videoAdapterIndex = ini->GetInt(nullptr, "adapter", std::numeric_limits<int32_t>::max());
+    videoAdapterIndex = config.get<int>("settings", "adapter", std::numeric_limits<std::int32_t>::max());
 
-        // stencil_format = D3DFMT_D24S8;
-        if (!InitDevice(bWindow, static_cast<HWND>(core.GetWindow()->OSHandle()), screen_size.x, screen_size.y))
-            return false;
+    // stencil_format = D3DFMT_D24S8;
+    if (!InitDevice(bWindow, static_cast<HWND>(core.GetWindow()->OSHandle()), screen_size.x, screen_size.y))
+        return false;
 
 #ifdef _WIN32 // Effects
-        RecompileEffects();
+    RecompileEffects();
 #else
-        pTechnique = std::make_unique<CTechnique>(this);
-        pTechnique->DecodeFiles();
+    pTechnique = std::make_unique<CTechnique>(this);
+    pTechnique->DecodeFiles();
 #endif
 
-        // get start ini file for fonts
-        if (!ini->ReadString(nullptr, "startFontIniFile", str, sizeof(str) - 1, ""))
-        {
-            core.Trace("Not finded 'startFontIniFile' parameter into ENGINE.INI file");
-            sprintf_s(str, "resource\\ini\\fonts.ini");
-        }
-        const auto len = strlen(str) + 1;
-        if ((fontIniFileName = new char[len]) == nullptr)
-            throw std::runtime_error("allocate memory error");
-        strcpy_s(fontIniFileName, len, str);
-        // get start font quantity
-        if (!ini->ReadString(nullptr, "font", str, sizeof(str) - 1, ""))
-        {
-            core.Trace("Start font not defined");
-            sprintf_s(str, "normal");
-        }
-        if (LoadFont(str) == -1L)
-            core.Trace("can not init start font: %s", str);
-        idFontCurrent = 0L;
+    auto font_ini_file_opt = config.get<std::string>("settings", "startFontIniFile");
+    // get start ini file for fonts
 
-        // Progress image parameters
-        progressFramesPosX = ini->GetFloat("ProgressImage", "RelativePosX", 0.85f);
-        progressFramesPosY = ini->GetFloat("ProgressImage", "RelativePosY", 0.8f);
-        progressFramesWidth = ini->GetFloat("ProgressImage", "RelativeWidth", 0.0625f);
-        if (progressFramesWidth < 0.0f)
-            progressFramesWidth = 0.0f;
-        if (progressFramesWidth > 10.0f)
-            progressFramesWidth = 10.0f;
-        progressFramesHeight = ini->GetFloat("ProgressImage", "RelativeHeight", 0.0625f);
-        if (progressFramesHeight < 0.0f)
-            progressFramesHeight = 0.0f;
-        if (progressFramesHeight > 10.0f)
-            progressFramesHeight = 10.0f;
-        progressFramesCountX = static_cast<int32_t>(ini->GetFloat("ProgressImage", "HorisontalFramesCount", 8));
-        if (progressFramesCountX < 1)
-            progressFramesCountX = 1;
-        if (progressFramesCountX > 64)
-            progressFramesCountX = 64;
-        progressFramesCountY = static_cast<int32_t>(ini->GetFloat("ProgressImage", "VerticalFramesCount", 8));
-        if (progressFramesCountY < 1)
-            progressFramesCountY = 1;
-        if (progressFramesCountY > 64)
-            progressFramesCountY = 64;
+    fontIniFileName = font_ini_file_opt.has_value() ? font_ini_file_opt.value() : "resource\\ini\\fonts.ini";
+    auto font_opt = config.get<std::string>("settings", "font");
+    // get start font quantity
+    std::string font_name = font_opt.has_value() ?font_opt.value() : "normal";
 
-        CreateSphere();
-        auto *pScriptRender = static_cast<VDATA *>(core.GetScriptVariable("Render"));
-        ATTRIBUTES *pARender = pScriptRender->GetAClass();
+    if (LoadFont(font_name) == -1L)
+        core.Trace("can not init start font");
+    idFontCurrent = 0L;
 
-        pARender->SetAttributeUseDword("full_screen", !bWindow);
-        pARender->SetAttributeUseDword("screen_x", screen_size.x);
-        pARender->SetAttributeUseDword("screen_y", screen_size.y);
-    }
+    // Progress image parameters
+    progressFramesPosX = config.get<float>("ProgressImage", "RelativePosX", 0.85f);
+    progressFramesPosY = config.get<float>("ProgressImage", "RelativePosY", 0.8f);
+
+    progressFramesWidth = config.get<float>("ProgressImage", "RelativeWidth", 0.0625f);
+    progressFramesWidth = std::clamp(progressFramesWidth, 0.f, 10.f);
+
+    progressFramesHeight = config.get<float>("ProgressImage", "RelativeHeight", 0.0625f);
+    progressFramesHeight = std::clamp(progressFramesHeight, 0.f, 10.f);
+
+    progressFramesCountX = static_cast<std::int32_t>(config.get<float>("ProgressImage", "HorisontalFramesCount", 8));
+    progressFramesCountX = std::clamp(progressFramesCountX, 1, 64);
+
+    progressFramesCountY = static_cast<std::int32_t>(config.get<float>("ProgressImage", "VerticalFramesCount", 8));
+    progressFramesCountY = std::clamp(progressFramesCountY, 1, 64);
+
+    CreateSphere();
+    auto *pScriptRender = static_cast<VDATA *>(core.GetScriptVariable("Render"));
+    ATTRIBUTES *pARender = pScriptRender->GetAClass();
+
+    pARender->SetAttributeUseDword("full_screen", !bWindow);
+    pARender->SetAttributeUseDword("screen_x", screen_size.x);
+    pARender->SetAttributeUseDword("screen_y", screen_size.y);
 
     pDropConveyorVBuffer = nullptr;
     rectsVBuffer = nullptr;
@@ -679,8 +657,6 @@ DX9RENDER::~DX9RENDER()
     progressBackImage = nullptr;
     delete progressTipsImage;
     progressTipsImage = nullptr;
-
-    delete fontIniFileName;
 
     STORM_DELETE(DX9sphereVertex);
     ReleaseDevice();
@@ -3081,24 +3057,19 @@ int32_t DX9RENDER::GetCurFont()
 
 char *DX9RENDER::GetFontIniFileName()
 {
-    return fontIniFileName;
+    return fontIniFileName.data();
 }
 
 bool DX9RENDER::SetFontIniFileName(const char *iniName)
 {
-    if (fontIniFileName != nullptr && iniName != nullptr && storm::iEquals(fontIniFileName, iniName))
+    if (!fontIniFileName.empty() && iniName != nullptr && storm::iEquals(fontIniFileName, iniName))
         return true;
 
-    delete fontIniFileName;
     if (iniName == nullptr)
     {
-        fontIniFileName = nullptr;
         return false;
     }
-    const auto len = strlen(iniName) + 1;
-    if ((fontIniFileName = new char[len]) == nullptr)
-        throw std::runtime_error("allocate memory error");
-    strcpy_s(fontIniFileName, len, iniName);
+    fontIniFileName = std::string(iniName);
 
     for (int n = 0; n < FontList.size(); n++)
     {
@@ -3282,7 +3253,7 @@ void DX9RENDER::MakeScreenShot()
     }
 
     const auto screenshot_base_filename = fmt::format("{:%Y-%m-%d_%H-%M-%S}", fmt::localtime(std::time(nullptr)));
-    auto screenshot_path = std::filesystem::path(Storm::Filesystem::Paths::screenshots()) / screenshot_base_filename;
+    auto screenshot_path = std::filesystem::path(Storm::Filesystem::Constants::Paths::screenshots()) / screenshot_base_filename;
     screenshot_path.replace_extension(screenshotExt);
     for(size_t i = 0; std::filesystem::exists(screenshot_path); ++i)
     {

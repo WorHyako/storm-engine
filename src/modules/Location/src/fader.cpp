@@ -13,7 +13,8 @@
 #include "entity.h"
 #include "shared/messages.h"
 
-#include "Filesystem/ConfigNames.hpp"
+#include "Filesystem/Constants/ConfigNames.hpp"
+#include "Filesystem/Config/Config.hpp"
 
 // ============================================================================================
 // Construction, destruction
@@ -153,17 +154,10 @@ bool Fader::Init()
     // read the number of tips, if necessary
     if (!numberOfTips)
     {
-        auto ini = fio->OpenIniFile(Storm::Filesystem::ConfigNames::engine().c_str());
-        if (ini)
-        {
-            numberOfTips = ini->GetInt(nullptr, "ProgressFrame", 1);
-        }
-        else
-            numberOfTips = -1;
-        if (numberOfTips > 1)
-            numberOfTips = 1;
-        if (numberOfTips < 0)
-            numberOfTips = 0;
+        auto config = Storm::Filesystem::Config::load(Storm::Filesystem::Constants::ConfigNames::engine());
+
+        numberOfTips = config.get<int>("settings", "ProgressFrame", 1);
+        numberOfTips = std::clamp(numberOfTips, 0, 1);
     }
     return true;
 }

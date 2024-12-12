@@ -150,9 +150,6 @@ class CoreImpl final : public CorePrivate
     bool Exit_flag; // true if the program closing
 
 private:
-    void loadCompatibilitySettings(INIFILE &inifile);
-    void determineScreenSize(INIFILE &inifile);
-
     EntityManager entity_manager_;
 
     std::unique_ptr<storm::editor::EngineEditor> editor_;

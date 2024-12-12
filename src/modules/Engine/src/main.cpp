@@ -6,8 +6,8 @@
 #include <spdlog/spdlog.h>
 #include <CLI/CLI.hpp>
 
-#include "Filesystem/Paths.hpp"
-#include "Filesystem/ConfigNames.hpp"
+#include "Filesystem/Constants/Paths.hpp"
+#include "Filesystem/Constants/ConfigNames.hpp"
 
 #include "core_private.h"
 #include "lifecycle_diagnostics_service.hpp"
@@ -113,6 +113,7 @@
 #include "xinterface.h"
 
 #include <steam_api_script_lib.hpp>
+#include <Filesystem/Config/Config.hpp>
 
 namespace
 {
@@ -160,7 +161,7 @@ void mimalloc_fun(const char *msg, void *arg)
     static std::filesystem::path mimalloc_log_path;
     if (mimalloc_log_path.empty())
     {
-        mimalloc_log_path = std::filesystem::path(Storm::Filesystem::Paths::logs()) / "mimalloc.log";
+        mimalloc_log_path = std::filesystem::path(Storm::Filesystem::Constants::Paths::logs()) / "mimalloc.log";
         std::error_code ec;
         remove(mimalloc_log_path, ec);
     }
@@ -400,7 +401,7 @@ int main(int argc, char *argv[])
     }
 
     // Init stash
-    std::filesystem::create_directories(Storm::Filesystem::Paths::save_data());
+    std::filesystem::create_directories(Storm::Filesystem::Constants::Paths::save_data());
 
     // Init logging
     spdlog::set_default_logger(storm::logging::getOrCreateLogger(defaultLoggerName));
@@ -412,8 +413,6 @@ int main(int argc, char *argv[])
     core_private->EnableEditor(enable_editor);
     core_private->Init();
 
-    // Read config
-    auto ini = fio->OpenIniFile(Storm::Filesystem::ConfigNames::engine().c_str());
 
     uint32_t dwMaxFPS = 0;
     bool bSteam = false;
@@ -421,30 +420,35 @@ int main(int argc, char *argv[])
     int preferred_display = 0;
     bool fullscreen = false;
     bool show_borders = false;
+    bool bDebugWindow = false;
+    bool bAcceleration = false;
     bool run_in_background = false;
-
-    if (ini)
     {
-        dwMaxFPS = static_cast<uint32_t>(ini->GetInt(nullptr, "max_fps", 0));
-        auto bDebugWindow = ini->GetInt(nullptr, "DebugWindow", 0) == 1;
-        auto bAcceleration = ini->GetInt(nullptr, "Acceleration", 0) == 1;
-        if (ini->GetInt(nullptr, "logs", 1) == 0) // disable logging
-        {
+        auto config =  Storm::Filesystem::Config::load(Storm::Filesystem::Constants::ConfigNames::engine());
+
+        dwMaxFPS = config.get<std::uint32_t>("settings", "max_fps", 0);
+        bDebugWindow = config.get<std::uint32_t>("settings", "DebugWindow", 0) == 1;
+        bAcceleration = config.get<std::uint32_t>("settings", "Acceleration", 0) == 1;
+
+        auto log = config.get<std::uint32_t>("settings", "logs", 0);
+        if (log == 0) {
             spdlog::set_level(spdlog::level::off);
         }
-        width = ini->GetInt(nullptr, "screen_x", 1024);
-        height = ini->GetInt(nullptr, "screen_y", 768);
-        preferred_display = ini->GetInt(nullptr, "display", 0);
-        fullscreen = ini->GetInt(nullptr, "full_screen", false);
-        show_borders = ini->GetInt(nullptr, "window_borders", false);
-        run_in_background = ini->GetInt(nullptr, "run_in_background", false);
+
+        width = config.get<int>("settings", "screen_x", 1024);
+        height = config.get<int>("settings", "screen_y", 768);
+        preferred_display = config.get<int>("settings", "display", 0);
+        fullscreen = config.get<int>("settings", "full_screen", 0);
+        show_borders = config.get<int>("settings", "window_borders", 0);
+        run_in_background = config.get<int>("settings", "run_in_background", 0);
+
         if (run_in_background) {
-            bSoundInBackground = ini->GetInt(nullptr, "sound_in_background", true);
-        }
-        else {
+            bSoundInBackground = config.get<int>("settings", "sound_in_background", 1);
+        } else {
             bSoundInBackground = false;
         }
-        // bSteam = ini->GetInt(nullptr, "Steam", 1) != 0;
+
+        bSteam = config.get<int>("settings", "Steam", 1) != 0;
     }
 
     // initialize SteamApi through evaluating its singleton

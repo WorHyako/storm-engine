@@ -9,7 +9,8 @@
 #include "string_compare.hpp"
 #include <SDL.h>
 
-#include "Filesystem/ConfigNames.hpp"
+#include "Filesystem/Constants/ConfigNames.hpp"
+#include "Filesystem/Config/Config.hpp"
 
 Core &core = core_internal;
 
@@ -270,24 +271,16 @@ bool CoreImpl::Initialize()
 
 void CoreImpl::ProcessEngineIniFile()
 {
-    char String[MAX_PATH];
-
     bEngineIniProcessed = true;
 
-    auto engine_ini = fio->OpenIniFile(Storm::Filesystem::ConfigNames::engine().c_str());
-    if (!engine_ini)
-        throw std::runtime_error("no 'engine.ini' file");
+    auto config = Storm::Filesystem::Config::load(Storm::Filesystem::Constants::ConfigNames::engine());;
+    const auto program_dir = config.get<std::string>("settings", "program_directory", "");
 
-    auto res = engine_ini->ReadString(nullptr, "program_directory", String, sizeof(String), "");
-    if (res)
-    {
-        Compiler->SetProgramDirectory(String);
-    }
+    Compiler->SetProgramDirectory(program_dir.c_str());
 
-    res = engine_ini->ReadString(nullptr, "controls", String, sizeof(String), "");
-    if (res)
-    {
-        core_internal.Controls = static_cast<CONTROLS *>(MakeClass(String));
+    const auto controls_opt = config.get<std::string>("settings", "controls");
+    if (controls_opt.has_value()) {
+        core_internal.Controls = static_cast<CONTROLS *>(MakeClass(controls_opt.value().c_str()));
         if (core_internal.Controls == nullptr)
             core_internal.Controls = static_cast<CONTROLS *>(MakeClass("controls"));
     }
@@ -299,13 +292,27 @@ void CoreImpl::ProcessEngineIniFile()
         core_internal.Controls = new CONTROLS;
     }
 
-    loadCompatibilitySettings(*engine_ini);
-    determineScreenSize(*engine_ini);
+    const auto target_engine_version = config.get<std::string>("compatibility", "target_version", "latest");
+    targetVersion_ = storm::getTargetEngineVersion(target_engine_version);
+    // if (targetVersion_ == ENGINE_VERSION::UNKNOWN)
+    // {
+    // spdlog::warn("Unknown target version '{}' in engine compatibility settings", target_engine_version);
+    targetVersion_ = storm::ENGINE_VERSION::TO_EACH_HIS_OWN;
+    // }
+    if (targetVersion_ <= storm::ENGINE_VERSION::PIRATES_OF_THE_CARIBBEAN) {
+        screenSize_ = {640, 480};
+    }
+    else {
+        screenSize_ = {800, 600};
+    }
 
-    res = engine_ini->ReadString(nullptr, "run", String, sizeof(String), "");
-    if (res)
+    screenSize_.width = config.get<int>("interface", "screen_width", screenSize_.width);
+    screenSize_.height = config.get<int>("interface", "screen_height", screenSize_.height);
+
+    const auto run = config.get<std::string>("settings", "run");
+    if (run.has_value())
     {
-        if (!Compiler->CreateProgram(String))
+        if (!Compiler->CreateProgram(run.value().c_str()))
             throw std::runtime_error("fail to create program");
         if (!Compiler->Run())
             throw std::runtime_error("fail to run program");
@@ -1036,33 +1043,4 @@ storm::editor::EngineEditor *CoreImpl::GetEditor()
 void CoreImpl::collectCrashInfo() const
 {
     Compiler->CollectCallStack();
-}
-
-void CoreImpl::loadCompatibilitySettings(INIFILE &inifile)
-{
-    using namespace storm;
-
-    std::array<char, 128> strBuffer{};
-    inifile.ReadString("compatibility", "target_version", strBuffer.data(), strBuffer.size(), "latest");
-    const std::string_view target_engine_version = strBuffer.data();
-
-    targetVersion_ = getTargetEngineVersion(target_engine_version);
-    // if (targetVersion_ == ENGINE_VERSION::UNKNOWN)
-    // {
-        // spdlog::warn("Unknown target version '{}' in engine compatibility settings", target_engine_version);
-        targetVersion_ = ENGINE_VERSION::TO_EACH_HIS_OWN;
-    // }
-}
-
-void CoreImpl::determineScreenSize(INIFILE &inifile)
-{
-    if (targetVersion_ <= storm::ENGINE_VERSION::PIRATES_OF_THE_CARIBBEAN) {
-        screenSize_ = {640, 480};
-    }
-    else {
-        screenSize_ = {800, 600};
-    }
-
-    screenSize_.width = inifile.GetInt("interface", "screen_width", screenSize_.width);
-    screenSize_.height = inifile.GetInt("interface", "screen_height", screenSize_.height);
 }

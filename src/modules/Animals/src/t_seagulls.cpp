@@ -5,7 +5,12 @@
 #include "model.h"
 #include "rands.h"
 #include "shared/messages.h"
-#include "file_service.h"
+
+#include "Filesystem/Config/Config.hpp"
+#include "Filesystem/Constants/ConfigNames.hpp"
+
+#include <algorithm>
+
 //#pragma warning (disable : 4244)
 
 //--------------------------------------------------------------------
@@ -22,33 +27,18 @@ TSeagulls::~TSeagulls()
 //--------------------------------------------------------------------
 void TSeagulls::LoadSettings()
 {
-    auto ini = fio->OpenIniFile(ANIMALS_INI_FILENAME);
-    if (!ini)
-    {
-        countAdd = SEAGULL_ADD_COUNT;
-        maxRadius = SEAGULL_MAX_RADIUS;
-        maxAngleSpeed = SEAGULL_MAX_SPEED;
-        maxHeight = SEAGULL_MAX_HEIGHT;
-        maxCircleTime = SEAGULL_MAX_CIRCLE_TIME;
-        farChoiceChance = SEAGULL_LONG_DISTANCE_CHANCE;
-        maxDistance = SEAGULL_DISTANCE;
-        relaxTime = SEAGULL_RELAX_TIME;
-        screamTime = SEAGULL_SCREAM_TIME;
-        strcpy_s(screamFilename, ANIMALS_SEAGULLS_SCREAM_FILENAME);
-
-        return;
-    }
-
-    maxRadius = ini->GetFloat(ANIMALS_SEAGULLS_SECTION, "radius", SEAGULL_MAX_RADIUS);
-    maxAngleSpeed = ini->GetFloat(ANIMALS_SEAGULLS_SECTION, "angle speed", SEAGULL_MAX_SPEED);
-    maxDistance = ini->GetFloat(ANIMALS_SEAGULLS_SECTION, "distance", SEAGULL_DISTANCE);
-    maxHeight = ini->GetFloat(ANIMALS_SEAGULLS_SECTION, "height", SEAGULL_MAX_HEIGHT);
-    maxCircleTime = ini->GetInt(ANIMALS_SEAGULLS_SECTION, "circle time", SEAGULL_MAX_CIRCLE_TIME);
-    farChoiceChance = ini->GetInt(ANIMALS_SEAGULLS_SECTION, "far choice", SEAGULL_LONG_DISTANCE_CHANCE);
-    relaxTime = ini->GetInt(ANIMALS_SEAGULLS_SECTION, "relax time", SEAGULL_RELAX_TIME);
-    screamTime = ini->GetInt(ANIMALS_SEAGULLS_SECTION, "scream time", SEAGULL_SCREAM_TIME);
-    countAdd = ini->GetInt(ANIMALS_SEAGULLS_SECTION, "add count", SEAGULL_ADD_COUNT);
-    ini->ReadString(ANIMALS_SEAGULLS_SECTION, "scream file", screamFilename, 256, ANIMALS_SEAGULLS_SCREAM_FILENAME);
+    auto config = Storm::Filesystem::Config::load(Storm::Filesystem::Constants::ConfigNames::animals());
+    maxRadius = config.get<float>(ANIMALS_SEAGULLS_SECTION, "radius", SEAGULL_MAX_RADIUS);
+    maxAngleSpeed = config.get<float>(ANIMALS_SEAGULLS_SECTION, "angle", SEAGULL_MAX_SPEED);
+    maxDistance = config.get<float>(ANIMALS_SEAGULLS_SECTION, "distance", SEAGULL_DISTANCE);
+    maxHeight = config.get<float>(ANIMALS_SEAGULLS_SECTION, "height", SEAGULL_MAX_HEIGHT);
+    maxCircleTime = config.get<int>(ANIMALS_SEAGULLS_SECTION, "circle_time", SEAGULL_MAX_CIRCLE_TIME);
+    farChoiceChance = config.get<int>(ANIMALS_SEAGULLS_SECTION, "far_choice", SEAGULL_LONG_DISTANCE_CHANCE);
+    relaxTime = config.get<int>(ANIMALS_SEAGULLS_SECTION, "relax_time", SEAGULL_RELAX_TIME);
+    screamTime = config.get<int>(ANIMALS_SEAGULLS_SECTION, "scream_time", SEAGULL_SCREAM_TIME);
+    countAdd = config.get<int>(ANIMALS_SEAGULLS_SECTION, "add_count", SEAGULL_ADD_COUNT);
+    std::string screamFilename_str = config.get<std::string>(ANIMALS_SEAGULLS_SECTION, "scream_file", ANIMALS_SEAGULLS_SCREAM_FILENAME).c_str();
+    std::copy(std::begin(screamFilename_str), std::begin(screamFilename_str), screamFilename);
 }
 
 //--------------------------------------------------------------------
