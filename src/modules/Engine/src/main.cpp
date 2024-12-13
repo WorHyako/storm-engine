@@ -426,35 +426,35 @@ int main(int argc, char *argv[])
     {
         auto config =  Storm::Filesystem::Config::load(Storm::Filesystem::Constants::ConfigNames::engine());
 
-        dwMaxFPS = config.get<std::uint32_t>("settings", "max_fps", 0);
-        bDebugWindow = config.get<std::uint32_t>("settings", "DebugWindow", 0) == 1;
-        bAcceleration = config.get<std::uint32_t>("settings", "Acceleration", 0) == 1;
+        dwMaxFPS = config.get<std::uint32_t>("Main", "max_fps", 0);
+        bDebugWindow = config.get<std::uint32_t>("Main", "DebugWindow", 0) == 1;
+        bAcceleration = config.get<std::uint32_t>("Main", "Acceleration", 0) == 1;
 
-        auto log = config.get<std::uint32_t>("settings", "logs", 0);
+        auto log = config.get<std::uint32_t>("Main", "logs", 0);
         if (log == 0) {
             spdlog::set_level(spdlog::level::off);
         }
 
-        width = config.get<int>("settings", "screen_x", 1024);
-        height = config.get<int>("settings", "screen_y", 768);
-        preferred_display = config.get<int>("settings", "display", 0);
-        fullscreen = config.get<int>("settings", "full_screen", 0);
-        show_borders = config.get<int>("settings", "window_borders", 0);
-        run_in_background = config.get<int>("settings", "run_in_background", 0);
+        width = config.get<int>("Main", "screen_x", 1024);
+        height = config.get<int>("Main", "screen_y", 768);
+        preferred_display = config.get<int>("Main", "display", 0);
+        fullscreen = config.get<int>("Main", "full_screen", 0);
+        show_borders = config.get<int>("Main", "window_borders", 0);
+        run_in_background = config.get<int>("Main", "run_in_background", 0);
 
         if (run_in_background) {
-            bSoundInBackground = config.get<int>("settings", "sound_in_background", 1);
+            bSoundInBackground = config.get<int>("Main", "sound_in_background", 1);
         } else {
             bSoundInBackground = false;
         }
 
-        bSteam = config.get<int>("settings", "Steam", 1) != 0;
+        bSteam = config.get<int>("Main", "Steam", 0);
     }
 
     // initialize SteamApi through evaluating its singleton
     try
     {
-        steamapi::SteamApi::getInstance(!bSteam);
+        // steamapi::SteamApi::getInstance(!bSteam);
     }
     catch (const std::exception &e)
     {

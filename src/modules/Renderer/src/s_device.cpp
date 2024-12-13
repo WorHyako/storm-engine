@@ -490,7 +490,7 @@ bool DX9RENDER::Init() {
     bPostProcessEnabled = false; //~!~
 
     // screenshot format and extension
-    screenshotExt = config.get<std::string>("settings", "screenshot_format", "jpg");
+    screenshotExt = config.get<std::string>("Main", "screenshot_format", "jpg");
     screenshotFormat = GetScreenshotFormat(screenshotExt);
     std::ranges::transform(screenshotExt, screenshotExt.begin(),
                            [](const unsigned char c) { return std::tolower(c); });
@@ -502,22 +502,22 @@ bool DX9RENDER::Init() {
     }
 #endif
 
-    bShowFps = config.get<int>("settings", "show_fps", 0) == 1;
-    bShowExInfo = config.get<int>("settings", "show_exinfo", 0) == 1;
-    bSafeRendering = config.get<int>("settings", "safe_render", 0) == 0;
-    bDropVideoConveyor = config.get<int>("settings", "DropVideoConveyor", 0) != 0;
-    texLog = config.get<int>("settings", "texture_log", 0) == 1;
-    bUseLargeBackBuffer = config.get<int>("settings", "UseLargeBackBuffer", 0) != 0;
-    bWindow = config.get<int>("settings", "full_screen", 0) == 0;
-    nTextureDegradation = config.get<int>("settings", "texture_degradation", 0);
-    FovMultiplier = config.get<float>("settings", "fov_multiplier", 1.0f);
-    screen_size.x = config.get<int>("settings", "screen_x", 1024);
-    screen_size.y = config.get<int>("settings", "screen_y", 768);
-    fNearClipPlane = config.get<float>("settings", "NearClipPlane", 0.1f);
-    fFarClipPlane = config.get<float>("settings", "FarClipPlane", 4000.0f);
-    bBackBufferCanLock = config.get<int>("settings", "lockable_back_buffer", 0) != 0;
+    bShowFps = config.get<int>("Main", "show_fps", 0) == 1;
+    bShowExInfo = config.get<int>("Main", "show_exinfo", 0) == 1;
+    bSafeRendering = config.get<int>("Main", "safe_render", 0) == 0;
+    bDropVideoConveyor = config.get<int>("Main", "DropVideoConveyor", 0) != 0;
+    texLog = config.get<int>("Main", "texture_log", 0) == 1;
+    bUseLargeBackBuffer = config.get<int>("Main", "UseLargeBackBuffer", 0) != 0;
+    bWindow = config.get<int>("Main", "full_screen", 0) == 0;
+    nTextureDegradation = config.get<int>("Main", "texture_degradation", 0);
+    FovMultiplier = config.get<float>("Main", "fov_multiplier", 1.0f);
+    screen_size.x = config.get<int>("Main", "screen_x", 1024);
+    screen_size.y = config.get<int>("Main", "screen_y", 768);
+    fNearClipPlane = config.get<float>("Main", "NearClipPlane", 0.1f);
+    fFarClipPlane = config.get<float>("Main", "FarClipPlane", 4000.0f);
+    bBackBufferCanLock = config.get<int>("Main", "lockable_back_buffer", 0) != 0;
 
-    auto back_buffer = config.get<std::string>("settings", "lockable_back_buffer", "D3DFMT_R5G6B5");
+    auto back_buffer = config.get<std::string>("Main", "lockable_back_buffer", "D3DFMT_R5G6B5");
 
     screen_bpp = D3DFMT_R5G6B5;
     stencil_format = D3DFMT_D16;
@@ -538,9 +538,9 @@ bool DX9RENDER::Init() {
     }
 
     // new renderer settings
-    vSyncEnabled = config.get<int>("settings", "vsync", 0);
+    vSyncEnabled = config.get<int>("Main", "vsync", 0);
 
-    msaa = config.get<int>("settings", "msaa", D3DMULTISAMPLE_NONE);
+    msaa = config.get<int>("Main", "msaa", D3DMULTISAMPLE_NONE);
 
     if (msaa != D3DMULTISAMPLE_NONE)
     {
@@ -550,7 +550,7 @@ bool DX9RENDER::Init() {
         }
     }
 
-    videoAdapterIndex = config.get<int>("settings", "adapter", std::numeric_limits<std::int32_t>::max());
+    videoAdapterIndex = config.get<int>("Main", "adapter", std::numeric_limits<std::int32_t>::max());
 
     // stencil_format = D3DFMT_D24S8;
     if (!InitDevice(bWindow, static_cast<HWND>(core.GetWindow()->OSHandle()), screen_size.x, screen_size.y))
@@ -563,11 +563,11 @@ bool DX9RENDER::Init() {
     pTechnique->DecodeFiles();
 #endif
 
-    auto font_ini_file_opt = config.get<std::string>("settings", "startFontIniFile");
+    auto font_ini_file_opt = config.get<std::string>("Main", "startFontIniFile");
     // get start ini file for fonts
 
     fontIniFileName = font_ini_file_opt.has_value() ? font_ini_file_opt.value() : "resource\\ini\\fonts.ini";
-    auto font_opt = config.get<std::string>("settings", "font");
+    auto font_opt = config.get<std::string>("Main", "font");
     // get start font quantity
     std::string font_name = font_opt.has_value() ?font_opt.value() : "normal";
 

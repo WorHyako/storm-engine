@@ -14,6 +14,9 @@
 
 #include "entity.h"
 #include "string_compare.hpp"
+
+#include "Filesystem/Config/Config.hpp"
+#include "Filesystem/Constants/ConfigNames.hpp"
 // ============================================================================================
 // Construction, destruction
 // ============================================================================================
@@ -34,14 +37,14 @@ Lighter::~Lighter()
 bool Lighter::Init()
 {
     // Checking if ini file exists
-    auto ini = fio->OpenIniFile("resource\\ini\\loclighter.ini");
-    if (!ini)
-        return false;
-    const auto isLoading = ini->GetInt(nullptr, "loading", 0);
-    autoTrace = ini->GetInt(nullptr, "autotrace", 0) != 0;
-    autoSmooth = ini->GetInt(nullptr, "autosmooth", 0) != 0;
-    window.isSmallSlider = ini->GetInt(nullptr, "smallslider", 0) != 0;
-    geometry.useColor = ini->GetInt(nullptr, "usecolor", 0) != 0;
+    auto config = Storm::Filesystem::Config::load("resource\\ini\\loclighter.toml");
+
+    const auto isLoading = config.get<int>("setings", "loading", 0);
+    autoTrace = config.get<int>("setings", "autotrace", 0) != 0;
+    autoSmooth = config.get<int>("setings", "autosmooth", 0) != 0;
+    window.isSmallSlider = config.get<int>("setings", "smallslider", 0) != 0;
+    geometry.useColor = config.get<int>("setings", "usecolor", 0) != 0;
+
     if (isLoading)
         return false;
     // DX9 render

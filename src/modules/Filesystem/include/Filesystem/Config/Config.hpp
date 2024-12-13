@@ -21,6 +21,10 @@ namespace Storm::Filesystem {
         [[nodiscard]]
         bool set(const std::string &section_name, const std::string &key, T value) noexcept;
 
+        template<class T>
+        [[nodiscard]]
+        std::optional<std::vector<T> > getArray(const std::string &section_name, const std::string &key) noexcept;
+
     private:
         /**
          * @brief   Ctor.
@@ -38,8 +42,34 @@ namespace Storm::Filesystem {
     };
 
     template<class T>
+    std::optional<std::vector<T> > Config::getArray(const std::string &section_name, const std::string &key) noexcept {
+        const auto section_node = section(section_name);
+        if (section_node == nullptr) {
+            return {};
+        }
+        toml::array* array_node = section_node->get(key)->as_array();
+        if (array_node == nullptr) {
+            return {};
+        }
+        std::vector<T> result;
+        result.reserve(std::size(*array_node));
+        for (auto &&element: *array_node) {
+            toml::impl::wrap_node<T> *value = element.as<T>();
+            if (value == nullptr) {
+                return {};
+            }
+            result.push_back(static_cast<T>(value->get()));
+        }
+
+        return result;
+    }
+
+    template<class T>
     std::optional<T> Config::get(const std::string &section_name, const std::string &key) noexcept {
         const auto section_node = section(section_name);
+        if (section_node == nullptr) {
+            return {};
+        }
         const auto value_node = section_node->get(key);
         return value_node == nullptr ? std::nullopt : value_node->value<T>();
     }

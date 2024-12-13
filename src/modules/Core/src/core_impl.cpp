@@ -274,11 +274,11 @@ void CoreImpl::ProcessEngineIniFile()
     bEngineIniProcessed = true;
 
     auto config = Storm::Filesystem::Config::load(Storm::Filesystem::Constants::ConfigNames::engine());;
-    const auto program_dir = config.get<std::string>("settings", "program_directory", "");
+    const auto program_dir = config.get<std::string>("Main", "program_directory", "");
 
     Compiler->SetProgramDirectory(program_dir.c_str());
 
-    const auto controls_opt = config.get<std::string>("settings", "controls");
+    const auto controls_opt = config.get<std::string>("Main", "controls");
     if (controls_opt.has_value()) {
         core_internal.Controls = static_cast<CONTROLS *>(MakeClass(controls_opt.value().c_str()));
         if (core_internal.Controls == nullptr)
@@ -309,7 +309,7 @@ void CoreImpl::ProcessEngineIniFile()
     screenSize_.width = config.get<int>("interface", "screen_width", screenSize_.width);
     screenSize_.height = config.get<int>("interface", "screen_height", screenSize_.height);
 
-    const auto run = config.get<std::string>("settings", "run");
+    const auto run = config.get<std::string>("Main", "run");
     if (run.has_value())
     {
         if (!Compiler->CreateProgram(run.value().c_str()))
