@@ -67,12 +67,46 @@ def repair_option_duplicating(file_path):
         file.writelines(content)
 
 
-def repair_section_duplicating():
-    ...
+def repair_section_duplicating(file_path):
+    with open(file_path, 'r', encoding='utf-8') as file:
+        content = file.readlines()
+
+    for i in range(len(content) - 1):
+        section_open_bracket = content[i].find('[')
+        section_close_bracket = content[i].find(']')
+        if section_open_bracket == -1 and section_close_bracket == -1:
+            continue
+        section_name = content[i][section_open_bracket + 1:section_close_bracket]
+        for j in range(i + 1, len(content) - 1):
+            if content[j].find(f'[{section_name}]') == -1:
+                continue
+            content.pop(j)
+            new_options = []
+            k = j
+            while content[k].find('[') == -1 and k < len(content) - 1:
+                new_options.append(content[k])
+                content.pop(k)
+            for new_option in new_options:
+                content.insert(i + 1, new_option)
+
+            with open(file_path, 'w', encoding='utf-8') as file:
+                file.writelines(content)
+            return
+
+
+def repair_symbols(file_path):
+    with open(file_path, 'r', encoding='utf-8') as file:
+        content = file.read()
+
+    percent_symbol_idx = content.find('%')
+    if percent_symbol_idx != -1:
+        content = content.replace('%', '%%')
+
+    with open(file_path, 'w', encoding='utf-8') as file:
+        file.write(content)
 
 
 def repair_header_missing(file_path):
-    print("Fixing file header.")
     with open(file_path, 'r', encoding='utf-8') as file:
         content = file.readlines()
 
@@ -88,13 +122,19 @@ for root, dirs, files in os.walk(os.getcwd(), topdown=False):
         if file_extension != ".ini" or filename.endswith("_new"):
             continue
 
+        if filename == 'fonts' or filename == 'fonts_rus':
+            print('Skipping font file')
+            continue
+
         ini_file = f'{root}\\{filename}_new{file_extension}'
         print(f'Work with - {ini_file}')
+
 
         shutil.copy(file_full_path, ini_file)
 
         repaired = False
         parser = configparser.ConfigParser()
+        repair_symbols(ini_file)
         while not repaired:
             try:
                 parser.read(ini_file, 'utf-8')
@@ -108,6 +148,10 @@ for root, dirs, files in os.walk(os.getcwd(), topdown=False):
             except configparser.DuplicateOptionError:
                 print("Fixing file option duplicating.")
                 repair_option_duplicating(ini_file)
+
+            except configparser.DuplicateSectionError:
+                print("Fixing file section duplicating.")
+                repair_section_duplicating(ini_file)
 
         toml_doc = tomlkit.document()
 
