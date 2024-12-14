@@ -120,8 +120,6 @@ class Window
     void Checker(float x, float y, const char *text, bool &res);
     int32_t SelPreset();
 
-    char *GenerateName(const char *f, const char *n);
-
     void UpdateColors();
     void UpdateLight(int32_t idxLight, bool isCos, bool isAtt, bool isSdw);
 

@@ -4,6 +4,7 @@
 #include <execution>
 #include <thread>
 
+#include "Filesystem/Config/Config.hpp"
 #include "Filesystem/Constants/ConfigNames.hpp"
 
 #include "core.h"
@@ -12,7 +13,6 @@
 #include "shared/sea_ai/script_defines.h"
 #include "sse.h"
 #include "tga.h"
-#include "file_service.h"
 
 #include <imgui.h>
 
@@ -193,8 +193,8 @@ bool SEA::Init()
     rs = static_cast<VDX9RENDER *>(core.GetService("dx9render"));
     CreateVertexDeclaration();
     {
-        auto pEngineIni = fio->OpenIniFile(Storm::Filesystem::Constants::ConfigNames::engine().c_str());
-        bIniFoamEnable = (pEngineIni) ? pEngineIni->GetInt("Sea", "FoamEnable", 1) != 0 : false;
+        auto config = Storm::Filesystem::Config::load(Storm::Filesystem::Constants::ConfigNames::engine());
+        bIniFoamEnable = config.get<int>("Sea", "FoamEnable", 1) != 0;
     }
 
     iFoamTexture = rs->TextureCreate("weather\\sea\\pena\\pena.tga");

@@ -18,8 +18,7 @@ namespace Storm::Filesystem {
         T get(const std::string &section_name, const std::string &key, T default_value) noexcept;
 
         template<class T>
-        [[nodiscard]]
-        bool set(const std::string &section_name, const std::string &key, T value) noexcept;
+        void set(const std::string &section_name, const std::string &key, T value) noexcept;
 
         template<class T>
         [[nodiscard]]
@@ -44,10 +43,9 @@ namespace Storm::Filesystem {
     template<class T>
     std::optional<std::vector<T> > Config::getArray(const std::string &section_name, const std::string &key) noexcept {
         const auto section_node = section(section_name);
-        if (section_node == nullptr) {
-            return {};
-        }
-        toml::array* array_node = section_node->get(key)->as_array();
+        toml::array *array_node = section_node == nullptr
+                                      ? nullptr
+                                      : section_node->get(key)->as_array();
         if (array_node == nullptr) {
             return {};
         }
@@ -67,38 +65,39 @@ namespace Storm::Filesystem {
     template<class T>
     std::optional<T> Config::get(const std::string &section_name, const std::string &key) noexcept {
         const auto section_node = section(section_name);
-        if (section_node == nullptr) {
-            return {};
-        }
-        const auto value_node = section_node->get(key);
-        return value_node == nullptr ? std::nullopt : value_node->value<T>();
+        const auto value_node = section_node == nullptr
+                                    ? nullptr
+                                    : section_node->get(key);
+        return value_node == nullptr
+                   ? std::nullopt
+                   : value_node->value<T>();
     }
 
     template<class T>
     T Config::get(const std::string &section_name, const std::string &key, T default_value) noexcept {
         const auto section_node = section(section_name);
-        if (section_node == nullptr) {
-            return default_value;
-        }
-        const auto value_node = section_node->get(key);
+        const auto value_node = section_node == nullptr
+                                    ? nullptr
+                                    : section_node->get(key);
         if (value_node == nullptr) {
             return default_value;
         }
         auto value = value_node->value<T>();
-        return value == std::nullopt ? default_value : value_node->value<T>().value();
+        return value == std::nullopt
+                   ? default_value
+                   : value_node->value<T>().value();
     }
 
     template<class T>
-    bool Config::set(const std::string &section_name, const std::string &key, T value) noexcept {
+    void Config::set(const std::string &section_name, const std::string &key, T value) noexcept {
         auto section_node = section(section_name);
         if (section_node == nullptr) {
-            return false;
+            return;
         }
         auto it = section_node->insert_or_assign(key, value);
         const auto result = it.first != section_node->end();
         if (result) {
             write();
         }
-        return result;
     }
 }
