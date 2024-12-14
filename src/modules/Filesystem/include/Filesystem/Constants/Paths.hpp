@@ -1,31 +1,28 @@
 #pragma once
 
 #include <shlobj_core.h>
-#include <string>
 #include <filesystem>
 
 #ifndef PROJECT_ROOT_DIR
-#define PROJECT_ROOT_DIR "."
+#define PROJECT_ROOT_DIR ""
 #endif
 
 namespace Storm::Filesystem::Constants::Paths {
     [[nodiscard]]
-    constexpr std::string root() noexcept {
-        return std::string(PROJECT_ROOT_DIR);
+    inline std::filesystem::path root() noexcept {
+        return {PROJECT_ROOT_DIR};
     }
 
     [[nodiscard]]
-    inline std::string stash() noexcept {
-        std::filesystem::path path;
-        if (path.empty()) {
+    inline std::filesystem::path stash() noexcept {
 #ifdef _WIN32 // SHGetKnownFolderPath
-            wchar_t *str = nullptr;
-            if (SHGetKnownFolderPath(FOLDERID_Documents, KF_FLAG_SIMPLE_IDLIST, nullptr, &str) != S_OK || str ==
-                nullptr) {
-                return {};
-            }
-            path = std::filesystem::path(str) / "My Games" / "Sea Dogs";
-            CoTaskMemFree(str);
+        wchar_t *str = nullptr;
+        if (SHGetKnownFolderPath(FOLDERID_Documents, KF_FLAG_SIMPLE_IDLIST, nullptr, &str) != S_OK
+            || str == nullptr) {
+            return {};
+        }
+        std::filesystem::path path{std::filesystem::path(str) / "My Games" / "Sea Dogs"};
+        CoTaskMemFree(str);
 #else
             char *pref_path = nullptr;
             pref_path = SDL_GetPrefPath("Akella", "Sea Dogs");
@@ -34,42 +31,46 @@ namespace Storm::Filesystem::Constants::Paths {
             }
             path = pref_path;
 #endif
-        }
-        return path.string();
+        return path;
     }
 
     [[nodiscard]]
-    constexpr std::string resources() noexcept {
-        return root() + "/Resources";
+    inline std::filesystem::path resources() noexcept {
+        return {root() / "RESOURCE"};
     }
 
     [[nodiscard]]
-    constexpr std::string sentry_db() noexcept {
-        return stash() + "/sentry-db";
+    inline std::filesystem::path ini() noexcept {
+        return {resources() / "INI"};
     }
 
     [[nodiscard]]
-    constexpr std::string logs() noexcept {
-        return stash() + "\\Logs";
+    inline std::filesystem::path sentry_db() noexcept {
+        return {stash() / "sentry-db"};
     }
 
     [[nodiscard]]
-    constexpr std::string screenshots() noexcept {
-        return stash() + "/Screenshots";
+    inline std::filesystem::path logs() noexcept {
+        return {stash() / "Logs"};
     }
 
     [[nodiscard]]
-    constexpr std::string script_cache() noexcept {
-        return stash() + "/Cache";
+    inline std::filesystem::path screenshots() noexcept {
+        return {stash() / "Screenshots"};
     }
 
     [[nodiscard]]
-    constexpr std::string save_data() noexcept {
-        return stash() + "/SaveData";
+    inline std::filesystem::path script_cache() noexcept {
+        return {stash() / "Cache"};
     }
 
     [[nodiscard]]
-    constexpr std::string program() noexcept {
-        return root() + "/Program";
+    inline std::filesystem::path save_data() noexcept {
+        return {stash() / "SaveData"};
+    }
+
+    [[nodiscard]]
+    inline std::filesystem::path program() noexcept {
+        return {root() / "Program"};
     }
 }

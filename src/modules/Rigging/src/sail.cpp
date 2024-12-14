@@ -12,24 +12,11 @@
 #include "shared/sea_ai/script_defines.h"
 #include "ship_base.h"
 #include "string_compare.hpp"
-#include "file_service.h"
 
-namespace {
-
-D3DCOLORVALUE ColorToD3D(uint32_t color) {
-    return D3DCOLORVALUE{
-        static_cast<float>(color >> 24 & 0xff) / 255.0f,
-        static_cast<float>(color >> 16 & 0xff) / 255.0f,
-        static_cast<float>(color >> 8 & 0xff) / 255.0f,
-        static_cast<float>(color & 0xff) / 255.0f,
-    };
-}
-
-} // namespace
+#include "Filesystem/Config/Config.hpp"
+#include "Filesystem/Constants/ConfigNames.hpp"
 
 #define WIND_SPEED_MAX 12.f
-
-static const char *RIGGING_INI_FILE = "resource\\ini\\rigging.ini";
 
 void sailPrint(VDX9RENDER *rs, const CVECTOR &pos3D, float rad, int32_t line, const char *format, ...);
 int traceSail = -1;
@@ -144,10 +131,10 @@ void SAIL::SetDevice()
 
     if (windVectors_.empty() )
     {
-        windVectors_.resize(sailConfig_.WINDVECTOR_QUANTITY);
+        windVectors_.resize(WINDVECTOR_QUANTITY);
         for (size_t i = 0; i < windVectors_.size(); i++)
         {
-            windVectors_[i] = sinf(static_cast<float>(i) / static_cast<float>(sailConfig_.WINDVECTOR_QUANTITY) * 2.f * PI);
+            windVectors_[i] = sinf(static_cast<float>(i) / static_cast<float>(WINDVECTOR_QUANTITY) * 2.f * PI);
         }
     }
 }
@@ -218,13 +205,13 @@ void SAIL::Execute(uint32_t Delta_Time)
         wFirstIndx = sailQuantity;
     }
 
-    auto fMaxTurnAngl = Delta_Time * sailConfig_.TURNSTEPANGL;
+    auto fMaxTurnAngl = Delta_Time * TURNSTEPANGL;
 
     auto bSailUpdate = false;
     m_nLastUpdate -= Delta_Time;
     if (m_nLastUpdate <= 0)
     {
-        m_nLastUpdate = sailConfig_.GROUP_UPDATE_TIME;
+        m_nLastUpdate = GROUP_UPDATE_TIME;
         bSailUpdate = true;
     }
 
@@ -233,12 +220,12 @@ void SAIL::Execute(uint32_t Delta_Time)
         int i;
         // ====================================================
         // If the ini-file has been changed, read the info from it
-        if (fio->_FileOrDirectoryExists(RIGGING_INI_FILE))
+        if (fio->_FileOrDirectoryExists("resource\\ini\\rigging.ini"))
         {
-            auto ft_new = fio->_GetLastWriteTime(RIGGING_INI_FILE);
+            auto ft_new = fio->_GetLastWriteTime("resource\\ini\\rigging.ini");
             if (ft_old != ft_new)
             {
-                const int wind_vector_quantity = sailConfig_.WINDVECTOR_QUANTITY;
+                const int wind_vector_quantity = WINDVECTOR_QUANTITY;
                 int oldWindQnt = wind_vector_quantity;
                 LoadSailIni();
                 if (oldWindQnt != wind_vector_quantity) // if changed the size of the wind table
@@ -251,7 +238,7 @@ void SAIL::Execute(uint32_t Delta_Time)
                 }
                 for (i = 0; i < sailQuantity; i++)
                 {
-                    slist[i]->MaxSumWind = slist[i]->sailHeight * sailConfig_.MAXSUMWIND;
+                    slist[i]->MaxSumWind = slist[i]->sailHeight * MAXSUMWIND;
                     // correct the current indices for the new size of the vector table
                     while (slist[i]->VertIdx >= wind_vector_quantity)
                         slist[i]->VertIdx -= wind_vector_quantity;
@@ -291,9 +278,9 @@ void SAIL::Execute(uint32_t Delta_Time)
             gdata[i].bFinalSailDo = false;
             VDATA *pvdat = core.Event("evntGetSRollSpeed", "l", GetCharacterForGroup(i));
             if (pvdat == nullptr)
-                gdata[i].fRollingSpeed = sailConfig_.ROLLINGSPEED;
+                gdata[i].fRollingSpeed = ROLLINGSPEED;
             else
-                gdata[i].fRollingSpeed = pvdat->GetFloat() * sailConfig_.ROLLINGSPEED;
+                gdata[i].fRollingSpeed = pvdat->GetFloat() * ROLLINGSPEED;
         }
 
         CVECTOR pos, ang;
@@ -594,7 +581,7 @@ uint64_t SAIL::ProcessMessage(MESSAGE &message)
         gdata[groupQuantity - 1].fSpeedMul = 1.f;
         gdata[groupQuantity - 1].speed_m = 0;
         gdata[groupQuantity - 1].speed_c = 0;
-        gdata[groupQuantity - 1].fRollingSpeed = sailConfig_.ROLLINGSPEED;
+        gdata[groupQuantity - 1].fRollingSpeed = ROLLINGSPEED;
         gdata[groupQuantity - 1].dwSailsColor = 0xFFFFFFFF;
         gdata[groupQuantity - 1].maxSP = 100;
         bool bSailUp = (message.Long() != 0);
@@ -1233,7 +1220,7 @@ void SAIL::SetAllSails()
 
         // for square sail
         pt[27] = pt[42] = pt[51] = 0;                                                                             // 0
-        const auto sailCols = sailConfig_.SSailRollForm.size();
+        const auto sailCols = SSailRollForm.size();
         pt[28] = pt[31] = pt[40] = pt[43] = pt[52] = SAIL_ROW_MAX * sailCols - SAIL_ROW_MAX;                  // 3
         pt[29] = pt[30] = pt[33] = pt[39] = pt[44] = pt[48] = pt[53] = SAIL_ROW_MAX / 2;                          // 1
         pt[32] = pt[34] = pt[37] = pt[41] = pt[46] = pt[49] = SAIL_ROW_MAX * sailCols - SAIL_ROW_MAX / 2 - 1; // 4
@@ -1246,28 +1233,124 @@ void SAIL::SetAllSails()
 
 void SAIL::LoadSailIni()
 {
-    if (fio->_FileOrDirectoryExists(RIGGING_INI_FILE))
-    {
-        ft_old = fio->_GetLastWriteTime(RIGGING_INI_FILE);
+    auto config = Storm::Filesystem::Config::load("resource\\ini\\rigging.toml");
+    std::ignore = config.selectSection("SAILS");
+
+    g_fSailHoleDepend = config.get<double>("fHoleDepend", 1.0f);
+
+    const auto diffuse_opt = config.getArray<double>("Diffuse");
+    if (diffuse_opt.has_value()) {
+        auto& diffuse = diffuse_opt.value();
+        mat.Diffuse.r = diffuse[0];
+        mat.Diffuse.g = diffuse[1];
+        mat.Diffuse.b = diffuse[2];
+        mat.Diffuse.a = diffuse[3];
+    }
+    const auto ambient_opt = config.getArray<double>("Ambient");
+    if (ambient_opt.has_value()) {
+        auto& ambient = ambient_opt.value();
+        mat.Ambient.r = ambient[0];
+        mat.Ambient.g = ambient[1];
+        mat.Ambient.b = ambient[2];
+        mat.Ambient.a = ambient[3];
+    }
+    const auto specular_opt = config.getArray<double>("Specular");
+    if (specular_opt.has_value()) {
+        auto& specular = specular_opt.value();
+        mat.Specular.r = specular[0];
+        mat.Specular.g = specular[1];
+        mat.Specular.b = specular[2];
+        mat.Specular.a = specular[3];
+    }
+    const auto emissive_opt = config.getArray<double>("Emissive");
+    if (emissive_opt.has_value()) {
+        auto& emissive = emissive_opt.value();
+        mat.Emissive.r = emissive[0];
+        mat.Emissive.g = emissive[1];
+        mat.Emissive.b = emissive[2];
+        mat.Emissive.a = emissive[3];
+    }
+    mat.Power = config.get<float>("Power", 0.5f);
+    WINDVECTOR_QUANTITY = config.get<int>("WINDVECTOR_QNT", 60);
+    TURNSTEPANGL = config.get<double>("TURNSTEPANGL", 0.002);
+    GROUP_UPDATE_TIME = config.get<double>("msecSailUpdateTime", 0.002);
+    MAXSUMWIND = config.get<double>("MAXSUMWIND", 0.02);
+    ROLLINGSPEED = config.get<double>("ROLLINGSPEED", 0.02);
+    WINDVECTOR_TINCR = config.get<int>("WINDVECTOR_TINCR", 3);
+    WINDVECTOR_TADD = config.get<int>("WINDVECTOR_TADD", 3);
+    WINDVECTOR_SINCR = config.get<int>("WINDVECTOR_SINCR", 6);
+    WINDVECTOR_SADD = config.get<int>("WINDVECTOR_SADD", 3);
+    FLEXSPEED = config.get<double>("FLEXSPEED", 0.001);
+    WINDANGL_DISCRETE = config.get<double>("WINDANGLDISCRETE", 0.01);
+    TR_FORM_MUL = config.get<double>("tr_form_mul", 0.01);
+    ROLL_Z_VAL = config.get<double>("ROLL_Z_VAL", 0.01);
+    ROLL_Z_DELTA = config.get<double>("ROLL_Z_DELTA", 0.001);
+    ROLL_Y_VAL = config.get<double>("ROLL_Y_VAL", 0.04);
+    ROLL_Y_DELTA = config.get<double>("ROLL_Y_DELTA", 0.001);
+    MAXTURNANGL = config.get<double>("MAXTURNANGL", 0.6);
+    SsailWindDepend = config.get<double>("fSsailWindDepend", 0.05);
+    TsailWindDepend = config.get<double>("TsailWindDepend", 0.5);
+    fWindAdding = config.get<double>("fWindAdding", 0.5);
+    FALL_SSAIL_ADD_MIN = config.get<double>("fFallSSailAddMin", 0.2);
+    FALL_SSAIL_ADD_RAND = config.get<double>("fFallSSailAddRand", 0.2);
+    FALL_TSAIL_ADD_MIN = config.get<double>("fFallTSailAddMin", 0.2);
+    FALL_TSAIL_ADD_RAND = config.get<double>("fFallTSailAddRand", 0.2);
+    fTHoleFlexDepend = config.get<double>("fTHoleFlexDepend", 0.01);
+    if (fTHoleFlexDepend > 0.1) {
+        fTHoleFlexDepend = 0.1;
+    }
+    fSHoleFlexDepend = config.get<double>("fSHoleFlexDepend", 0.01);
+    if (fSHoleFlexDepend > 0.1) {
+        fSHoleFlexDepend = 0.1;
     }
 
-    const auto opt_config = storm::LoadConfig(RIGGING_INI_FILE);
-
-    if (!opt_config) {
-        throw std::runtime_error("rigging.ini file not found!");
+    auto roll_form_opt = config.getArray<double>("rollSSailForm");
+    if (roll_form_opt.has_value()) {
+        auto& roll_form = roll_form_opt.value();
+        SSailRollForm.resize(std::size(roll_form));
+        std::move(std::begin(roll_form), std::end(roll_form), std::begin(SSailRollForm));
+    } else {
+        SSailRollForm = {0.2, 0.8, 1.0, 0.8, 0.4, 1.0, 1.3, 1.0, 0.4, 0.8, 1.0, 0.8, 0.2};
     }
 
-    const auto &config = *opt_config;
+    auto ts_opt = config.getArray<double>("TriangleWindSpeed");
+    if (ts_opt.has_value()) {
+        auto& ts_val = ts_opt.value();
+        ts = {static_cast<float>(ts_val.at(0)),
+            static_cast<float>(ts_val.at(1)),
+            static_cast<float>(ts_val.at(2))};
+    } else {
+        ts = {0.2, 0.6, 0.8};
+    }
 
-    sailConfig_ = config.value<storm::rigging::SailConfig>("SAILS", {});
+    auto fs_opt = config.getArray<double>("TrapecidalWindSpeed");
+    if (fs_opt.has_value()) {
+        auto& fs_val = fs_opt.value();
+        fs = {static_cast<float>(fs_val.at(0)),
+            static_cast<float>(fs_val.at(1)),
+            static_cast<float>(fs_val.at(2))};
+    } else {
+        fs = {0.4, 0.5, 0.6};
+    }
 
-    g_fSailHoleDepend = sailConfig_.holeDepend;
+    auto ss_opt = config.getArray<double>("SquareWindSpeed");
+    if (ss_opt.has_value()) {
+        auto& ss_val = ss_opt.value();
+        ss = {static_cast<float>(ss_val.at(0)),
+            static_cast<float>(ss_val.at(1)),
+            static_cast<float>(ss_val.at(2))};
+    } else {
+        ss = {0.4, 0.5, 0.6};
+    }
 
-    mat.Diffuse = ColorToD3D(sailConfig_.diffuseColor);
-    mat.Ambient = ColorToD3D(sailConfig_.ambientColor);
-    mat.Specular = ColorToD3D(sailConfig_.specularColor);
-    mat.Emissive = ColorToD3D(sailConfig_.emissiveColor);
-    mat.Power = static_cast<float>(sailConfig_.materialPower);
+    auto TSailRollForm_opt = config.getArray<double>("rollSSailForm");
+    if (TSailRollForm_opt.has_value()) {
+        auto& TSailRollForm_temp = TSailRollForm_opt.value();
+        TSailRollForm.resize(std::size(TSailRollForm_temp));
+        std::move(std::begin(TSailRollForm_temp), std::end(TSailRollForm_temp), std::begin(TSailRollForm));
+    } else {
+    TSailRollForm = {0.2, 0.8, 1.0, 0.8, 0.4, 1.0, 1.3, 1.0, 0.4, 0.8, 1.0, 0.8, 0.2};
+    }
 }
 
 float SAIL::Trace(const CVECTOR &src, const CVECTOR &dst)
@@ -2064,7 +2147,7 @@ void SAIL::RestoreRender()
 
         // for square sail
         pt[27] = pt[42] = pt[51] = 0;                                                                             // 0
-        const auto sailCols = sailConfig_.SSailRollForm.size();
+        const auto sailCols = SSailRollForm.size();
         pt[28] = pt[31] = pt[40] = pt[43] = pt[52] = SAIL_ROW_MAX * sailCols - SAIL_ROW_MAX;                  // 3
         pt[29] = pt[30] = pt[33] = pt[39] = pt[44] = pt[48] = pt[53] = SAIL_ROW_MAX / 2;                          // 1
         pt[32] = pt[34] = pt[37] = pt[41] = pt[46] = pt[49] = SAIL_ROW_MAX * sailCols - SAIL_ROW_MAX / 2 - 1; // 4
@@ -2115,7 +2198,7 @@ uint32_t SAIL::ScriptProcessing(const char *name, MESSAGE &message)
         const float fSpeed = message.Float();
         const int gn = FindGroupForCharacter(chrIdx);
         if (gn >= 0 && gn < groupQuantity)
-            gdata[gn].fRollingSpeed = fSpeed * sailConfig_.ROLLINGSPEED;
+            gdata[gn].fRollingSpeed = fSpeed * ROLLINGSPEED;
     }
 
     if (storm::iEquals(name, "GetSailStatus"))

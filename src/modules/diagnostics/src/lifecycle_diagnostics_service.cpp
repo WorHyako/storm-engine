@@ -42,7 +42,7 @@ auto& getExecutableDir()
 }
 auto &getLogsArchive()
 {
-    static const auto logsArchive = std::filesystem::path(Storm::Filesystem::Constants::Paths::logs()).replace_extension(".7z");
+    static const auto logsArchive = Storm::Filesystem::Constants::Paths::logs().replace_extension(".7z");
     return logsArchive;
 }
 
@@ -54,7 +54,7 @@ std::string assembleArchiveCmd()
      */
     constexpr auto archiverBin = "7za.exe";
     return "call \"" + (getExecutableDir() / archiverBin).string() + ("\" a \"\\\\?\\") +
-           getLogsArchive().string() + ("\" \"\\\\?\\") + Storm::Filesystem::Constants::Paths::logs() + ("\"");
+           getLogsArchive().string() + ("\" \"\\\\?\\") + Storm::Filesystem::Constants::Paths::logs().string() + ("\"");
 }
 #endif
 
@@ -115,7 +115,7 @@ class LoggingService final
             /**
              * TODO: fix func naming
              */
-            std::filesystem::create_directories({Storm::Filesystem::Constants::Paths::logs()});
+            std::filesystem::create_directories(Storm::Filesystem::Constants::Paths::logs());
 
             std::thread worker{[this] { loggingThread(); }};
             worker.detach();
@@ -212,7 +212,7 @@ LifecycleDiagnosticsService::Guard LifecycleDiagnosticsService::initialize(const
         sentry_options_set_logger(options, log_sentry, nullptr);
         sentry_options_set_dsn(options, "https://8ae9220bf1ee1d13a6b3bfe1fe1c8894@o4506010910654464.ingest.sentry.io/4506010914652160");
         sentry_options_set_release(options, STORM_BUILD_WATERMARK_STRING);
-        sentry_options_set_database_path(options, Storm::Filesystem::Constants::Paths::sentry_db().c_str());
+        sentry_options_set_database_path(options, Storm::Filesystem::Constants::Paths::sentry_db().string().c_str());
 #ifdef _WIN32
         sentry_options_set_handler_path(options, (getExecutableDir() / "crashpad_handler.exe").string().c_str());
 #else

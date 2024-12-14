@@ -38,12 +38,12 @@ bool Lighter::Init()
 {
     // Checking if ini file exists
     auto config = Storm::Filesystem::Config::load("resource\\ini\\loclighter.toml");
-
-    const auto isLoading = config.get<int>("setings", "loading", 0);
-    autoTrace = config.get<int>("setings", "autotrace", 0) != 0;
-    autoSmooth = config.get<int>("setings", "autosmooth", 0) != 0;
-    window.isSmallSlider = config.get<int>("setings", "smallslider", 0) != 0;
-    geometry.useColor = config.get<int>("setings", "usecolor", 0) != 0;
+    std::ignore = config.selectSection("Main");
+    auto isLoading = config.get<int>("loading", 0);
+    autoTrace = config.get<int>("autotrace", 0) != 0;
+    autoSmooth = config.get<int>("autosmooth", 0) != 0;
+    window.isSmallSlider = config.get<int>("smallslider", 0) != 0;
+    geometry.useColor = config.get<int>("usecolor", 0) != 0;
 
     if (isLoading)
         return false;

@@ -1,13 +1,10 @@
 #pragma once
 
-#include "sail_config.hpp"
-
 #include "sailone.h"
 #include "dx9render.h"
 #include "geos.h"
 #include "model.h"
 #include "sail_base.h"
-#include "vma.hpp"
 
 #include <filesystem>
 
@@ -94,15 +91,43 @@ class SAIL : public SAIL_BASE
     SAILGROUP sg;
 
   private:
-    storm::rigging::SailConfig sailConfig_;
-
     SAILTIME tm;
     // list of all sails
     int sailQuantity;
     SAILONE **slist;
     // list of all sail groups
     int groupQuantity;
-
+    std::vector<double> SSailRollForm{};
+    std::vector<double> TSailRollForm{};
+    double ROLLINGSPEED = 0.0003;
+    int WINDVECTOR_QUANTITY = 60;
+    double TURNSTEPANGL = 0.002;
+    double FALL_SSAIL_ADD_MIN = 0.2;
+    Vector ts;
+    Vector fs;
+    Vector ss;
+    double FALL_SSAIL_ADD_RAND = 0.2;
+    int GROUP_UPDATE_TIME = 4000;
+    double MAXSUMWIND = 0.02;
+    double FALL_TSAIL_ADD_MIN = 0.2;
+    double FALL_TSAIL_ADD_RAND = 0.2;
+    int WINDVECTOR_TINCR = 3;
+    int WINDVECTOR_TADD = 3;
+    int WINDVECTOR_SADD = 3;
+    int WINDVECTOR_SINCR = 6;
+    double FLEXSPEED = 0.001;
+    double MAXTURNANGL = 0.6;
+    double TsailWindDepend = 0.5;
+    double fTHoleFlexDepend = 0.01;
+    double fSHoleFlexDepend = 0.01;
+    double WINDANGL_DISCRETE = 0.01;
+    double SsailWindDepend = 0.05;
+    double fWindAdding = 0.3;
+    double ROLL_Z_VAL = 0.01;
+    double ROLL_Z_DELTA = 0.001;
+    double ROLL_Y_VAL = 0.04;
+    double ROLL_Y_DELTA = 0.001;
+    double TR_FORM_MUL = 2.0;
     struct GROUPDATA
     {
         bool bDeleted;

@@ -25,19 +25,19 @@ TSeagulls::~TSeagulls()
 }
 
 //--------------------------------------------------------------------
-void TSeagulls::LoadSettings()
-{
+void TSeagulls::LoadSettings() {
     auto config = Storm::Filesystem::Config::load(Storm::Filesystem::Constants::ConfigNames::animals());
-    maxRadius = config.get<float>(ANIMALS_SEAGULLS_SECTION, "radius", SEAGULL_MAX_RADIUS);
-    maxAngleSpeed = config.get<float>(ANIMALS_SEAGULLS_SECTION, "angle", SEAGULL_MAX_SPEED);
-    maxDistance = config.get<float>(ANIMALS_SEAGULLS_SECTION, "distance", SEAGULL_DISTANCE);
-    maxHeight = config.get<float>(ANIMALS_SEAGULLS_SECTION, "height", SEAGULL_MAX_HEIGHT);
-    maxCircleTime = config.get<int>(ANIMALS_SEAGULLS_SECTION, "circle_time", SEAGULL_MAX_CIRCLE_TIME);
-    farChoiceChance = config.get<int>(ANIMALS_SEAGULLS_SECTION, "far_choice", SEAGULL_LONG_DISTANCE_CHANCE);
-    relaxTime = config.get<int>(ANIMALS_SEAGULLS_SECTION, "relax_time", SEAGULL_RELAX_TIME);
-    screamTime = config.get<int>(ANIMALS_SEAGULLS_SECTION, "scream_time", SEAGULL_SCREAM_TIME);
-    countAdd = config.get<int>(ANIMALS_SEAGULLS_SECTION, "add_count", SEAGULL_ADD_COUNT);
-    std::string screamFilename_str = config.get<std::string>(ANIMALS_SEAGULLS_SECTION, "scream_file", ANIMALS_SEAGULLS_SCREAM_FILENAME).c_str();
+    std::ignore = config.selectSection(ANIMALS_SEAGULLS_SECTION);
+    maxRadius = config.get<float>("radius", SEAGULL_MAX_RADIUS);
+    maxAngleSpeed = config.get<float>("angle", SEAGULL_MAX_SPEED);
+    maxDistance = config.get<float>("distance", SEAGULL_DISTANCE);
+    maxHeight = config.get<float>("height", SEAGULL_MAX_HEIGHT);
+    maxCircleTime = config.get<int>("circle_time", SEAGULL_MAX_CIRCLE_TIME);
+    farChoiceChance = config.get<int>("far_choice", SEAGULL_LONG_DISTANCE_CHANCE);
+    relaxTime = config.get<int>("relax_time", SEAGULL_RELAX_TIME);
+    screamTime = config.get<int>("scream_time", SEAGULL_SCREAM_TIME);
+    countAdd = config.get<int>("add_count", SEAGULL_ADD_COUNT);
+    std::string screamFilename_str = config.get<std::string>("scream_file", ANIMALS_SEAGULLS_SCREAM_FILENAME).c_str();
     std::copy(std::begin(screamFilename_str), std::begin(screamFilename_str), screamFilename);
 }
 

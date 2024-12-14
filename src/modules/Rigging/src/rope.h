@@ -44,7 +44,7 @@ class ROPE : public ROPE_BASE
     bool bYesDeleted;
     int wRopeLast;
 
-    char *TextureName;
+    std::string TextureName;
     int32_t texl;
 
     VDX9RENDER *RenderService;

@@ -5,6 +5,9 @@
 #include "shared/sail_msg.h"
 #include "ship_base.h"
 
+#include "Filesystem/Config/Config.hpp"
+#include "Filesystem/Constants/ConfigNames.hpp"
+
 extern void sailPrint(VDX9RENDER *rs, const CVECTOR &pos3D, float rad, int32_t line, const char *format, ...);
 
 ROPE::ROPE()
@@ -18,7 +21,6 @@ ROPE::ROPE()
     rlist = nullptr;
     ropeQuantity = 0;
 
-    TextureName = nullptr;
     texl = -1;
     bFirstRun = true;
     
@@ -53,7 +55,6 @@ ROPE::~ROPE()
     }
     // removing textures
     TEXTURE_RELEASE(RenderService, texl);
-    STORM_DELETE(TextureName);
 
     VERTEX_BUFFER_RELEASE(RenderService, vBuf);
     INDEX_BUFFER_RELEASE(RenderService, iBuf);
@@ -79,7 +80,7 @@ void ROPE::SetDevice()
 
     LoadIni();
 
-    texl = RenderService->TextureCreate(TextureName);
+    texl = RenderService->TextureCreate(TextureName.c_str());
 }
 
 bool ROPE::CreateState(ENTITY_STATE_GEN *state_gen)
@@ -787,62 +788,52 @@ void ROPE::GetEndPoint(CVECTOR *cv, int ropenum, entid_t mdl_id)
 void ROPE::LoadIni()
 {
     // GUARD(ROPE::LoadIni());
-    char section[256];
-    char param[256];
 
-    auto ini = fio->OpenIniFile("resource\\ini\\rigging.ini");
-    if (!ini)
-        throw std::runtime_error("rigging.ini file not found!");
+    auto config = Storm::Filesystem::Config::load("resource\\ini\\rigging.toml");
 
-    sprintf_s(section, "ROPES");
+    std::ignore = config.selectSection("ROPES");
 
-    // texture name
-    ini->ReadString(section, "TextureName", param, sizeof(param) - 1, "sail_rope.tga");
+    auto texture_name = config.get<std::string>("TextureName", "sail_rope.tga");
     if (texl != -1)
     {
-        if (strcmp(TextureName, param))
-            if (RenderService)
+        if (texture_name != TextureName)
+            if (RenderService != nullptr)
             {
-                const auto len = strlen(param) + 1;
-                delete TextureName;
-                TextureName = new char[len];
-                memcpy(TextureName, param, len);
+                TextureName = std::move(texture_name);
                 RenderService->TextureRelease(texl);
-                texl = RenderService->TextureCreate(TextureName);
+                texl = RenderService->TextureCreate(TextureName.c_str());
             }
     }
     else
     {
-        const auto len = strlen(param) + 1;
-        TextureName = new char[len];
-        memcpy(TextureName, param, len);
+        TextureName = std::move(texture_name);
     }
     // length of one rope segment
-    ROPE_SEG_LENGTH = ini->GetFloat(section, "fSEG_LENGTH", 2.f);
+    ROPE_SEG_LENGTH = config.get<float>("fSEG_LENGTH", 2.0f);
     // rope thickness
-    ROPE_WIDTH = ini->GetFloat(section, "fWIDTH", 0.025f);
+    ROPE_WIDTH = config.get<float>("fWIDTH", 0.025f);
     // rope (head) thickness
-    STAY_WIDTH = ini->GetFloat(section, "fSTAY_WIDTH", 0.12f);
+    STAY_WIDTH = config.get<float>("fSTAY_WIDTH", 0.12f);
     // the length of the rope (triangle) at the point of connection with the sail in relation to the total length
-    ROPE_END_LENGTH = ini->GetFloat(section, "fEND_LENGTH", 0.05f);
+    ROPE_END_LENGTH = config.get<float>("fEND_LENGTH", 0.05f);
     // amplitude of rope vibration in absolute values
-    ROPE_WAVE = ini->GetFloat(section, "fWAVE", 0.1f);
+    ROPE_WAVE = config.get<float>("fWAVE", 0.1f);
     // maximum coordinate change at which the entire rope is recalculated
-    MaxCh = ini->GetFloat(section, "fMaxCh", .1f);
+    MaxCh = config.get<float>("fMaxCh", 0.1f);
     // the length of the rope on which the texture applies
-    ROPE_TEX_LEN = ini->GetFloat(section, "fTexHeight", .5f);
+    ROPE_TEX_LEN = config.get<float>("fTexHeight", 0.5f);
     // maximum distance from which the ropes are visible
-    fMaxRopeDist = ini->GetFloat(section, "fMaxDist", 5000.f);
+    fMaxRopeDist = config.get<float>("fMaxDist", 5000.0f);
     // the rate of change in the depth of the rope deflection
-    DEEP_CHANGE_SPEED = ini->GetFloat(section, "fDeepChangeSpeed", 0.15f);
+    DEEP_CHANGE_SPEED = config.get<float>("fDeepChangeSpeed", 0.15f);
     // rope swing speed
-    ROTATE_SPEED = ini->GetFloat(section, "fRotateSpeed", 0.08f);
+    ROTATE_SPEED = config.get<float>("fRotateSpeed", 0.08f);
     // the minimum value of the coefficient of use of the deflection of the rope
-    MIN_DEEP_MUL = ini->GetFloat(section, "fMinDeepMul", 1.f);
+    MIN_DEEP_MUL = config.get<float>("fMinDeepMul", 1.0f);
     // limit of variation of the coefficient of use of rope deflection
-    VAR_DEEP_MUL = ini->GetFloat(section, "fVarDeepMul", .7f);
+    VAR_DEEP_MUL = config.get<float>("fVarDeepMul", 0.7f);
     // rope swing angle
-    VAR_ROTATE_ANGL = ini->GetFloat(section, "fRotateAng", .1f);
+    VAR_ROTATE_ANGL = config.get<float>("fRotateAng", 0.1f);
 
     // UNGUARD
 }

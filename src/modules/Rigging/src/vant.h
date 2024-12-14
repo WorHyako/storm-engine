@@ -83,7 +83,7 @@ class VANT_BASE : public Entity
     bool bRunFirstTime;
     bool bYesDeleted;
     int wVantLast;
-    char *TextureName;
+    std::string TextureName;
     int32_t texl;
     int VantId;
 

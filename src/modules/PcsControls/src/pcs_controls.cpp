@@ -10,8 +10,7 @@
 
 using namespace storm;
 
-PCS_CONTROLS::PCS_CONTROLS()
-{
+PCS_CONTROLS::PCS_CONTROLS() {
     m_bLockAll = false;
     m_bIsOffDebugKeys = false;
 
@@ -30,8 +29,8 @@ PCS_CONTROLS::PCS_CONTROLS()
     memset(&ControlsTab[0], 0, sizeof(ControlsTab));
 
     auto config = Storm::Filesystem::Config::load(Storm::Filesystem::Constants::ConfigNames::engine());
-
-    m_bIsOffDebugKeys = config.get<int>("controls", "ondebugkeys", 0) == 0;
+    std::ignore = config.selectSection("controls");
+    m_bIsOffDebugKeys = config.get<int>("ondebugkeys", 0) == 0;
 
     input_ = Input::Create();
     inputHandlerID_ = input_->Subscribe([this](const InputEvent &evt) { HandleEvent(evt); });

@@ -485,12 +485,13 @@ bool DX9RENDER::Init() {
     std::filesystem::create_directories(Storm::Filesystem::Constants::Paths::screenshots());
 
     auto config = Storm::Filesystem::Config::load(Storm::Filesystem::Constants::ConfigNames::engine());
+    std::ignore = config.selectSection("Main");
 
     // bPostProcessEnabled = ini->GetInt(0, "PostProcess", 0) == 1;
     bPostProcessEnabled = false; //~!~
 
     // screenshot format and extension
-    screenshotExt = config.get<std::string>("Main", "screenshot_format", "jpg");
+    screenshotExt = config.get<std::string>("screenshot_format", "jpg");
     screenshotFormat = GetScreenshotFormat(screenshotExt);
     std::ranges::transform(screenshotExt, screenshotExt.begin(),
                            [](const unsigned char c) { return std::tolower(c); });
@@ -502,22 +503,22 @@ bool DX9RENDER::Init() {
     }
 #endif
 
-    bShowFps = config.get<int>("Main", "show_fps", 0) == 1;
-    bShowExInfo = config.get<int>("Main", "show_exinfo", 0) == 1;
-    bSafeRendering = config.get<int>("Main", "safe_render", 0) == 0;
-    bDropVideoConveyor = config.get<int>("Main", "DropVideoConveyor", 0) != 0;
-    texLog = config.get<int>("Main", "texture_log", 0) == 1;
-    bUseLargeBackBuffer = config.get<int>("Main", "UseLargeBackBuffer", 0) != 0;
-    bWindow = config.get<int>("Main", "full_screen", 0) == 0;
-    nTextureDegradation = config.get<int>("Main", "texture_degradation", 0);
-    FovMultiplier = config.get<float>("Main", "fov_multiplier", 1.0f);
-    screen_size.x = config.get<int>("Main", "screen_x", 1024);
-    screen_size.y = config.get<int>("Main", "screen_y", 768);
-    fNearClipPlane = config.get<float>("Main", "NearClipPlane", 0.1f);
-    fFarClipPlane = config.get<float>("Main", "FarClipPlane", 4000.0f);
-    bBackBufferCanLock = config.get<int>("Main", "lockable_back_buffer", 0) != 0;
+    bShowFps = config.get<int>("show_fps", 0) == 1;
+    bShowExInfo = config.get<int>("show_exinfo", 0) == 1;
+    bSafeRendering = config.get<int>("safe_render", 0) == 0;
+    bDropVideoConveyor = config.get<int>("DropVideoConveyor", 0) != 0;
+    texLog = config.get<int>("texture_log", 0) == 1;
+    bUseLargeBackBuffer = config.get<int>("UseLargeBackBuffer", 0) != 0;
+    bWindow = config.get<int>("full_screen", 0) == 0;
+    nTextureDegradation = config.get<int>("texture_degradation", 0);
+    FovMultiplier = config.get<float>("fov_multiplier", 1.0f);
+    screen_size.x = config.get<int>("screen_x", 1024);
+    screen_size.y = config.get<int>("screen_y", 768);
+    fNearClipPlane = config.get<float>("NearClipPlane", 0.1f);
+    fFarClipPlane = config.get<float>("FarClipPlane", 4000.0f);
+    bBackBufferCanLock = config.get<int>("lockable_back_buffer", 0) != 0;
 
-    auto back_buffer = config.get<std::string>("Main", "lockable_back_buffer", "D3DFMT_R5G6B5");
+    auto back_buffer = config.get<std::string>("lockable_back_buffer", "D3DFMT_R5G6B5");
 
     screen_bpp = D3DFMT_R5G6B5;
     stencil_format = D3DFMT_D16;
@@ -538,9 +539,9 @@ bool DX9RENDER::Init() {
     }
 
     // new renderer settings
-    vSyncEnabled = config.get<int>("Main", "vsync", 0);
+    vSyncEnabled = config.get<int>("vsync", 0);
 
-    msaa = config.get<int>("Main", "msaa", D3DMULTISAMPLE_NONE);
+    msaa = config.get<int>("msaa", D3DMULTISAMPLE_NONE);
 
     if (msaa != D3DMULTISAMPLE_NONE)
     {
@@ -550,7 +551,7 @@ bool DX9RENDER::Init() {
         }
     }
 
-    videoAdapterIndex = config.get<int>("Main", "adapter", std::numeric_limits<std::int32_t>::max());
+    videoAdapterIndex = config.get<int>("adapter", std::numeric_limits<std::int32_t>::max());
 
     // stencil_format = D3DFMT_D24S8;
     if (!InitDevice(bWindow, static_cast<HWND>(core.GetWindow()->OSHandle()), screen_size.x, screen_size.y))
@@ -563,11 +564,11 @@ bool DX9RENDER::Init() {
     pTechnique->DecodeFiles();
 #endif
 
-    auto font_ini_file_opt = config.get<std::string>("Main", "startFontIniFile");
+    auto font_ini_file_opt = config.get<std::string>("startFontIniFile");
     // get start ini file for fonts
 
     fontIniFileName = font_ini_file_opt.has_value() ? font_ini_file_opt.value() : "resource\\ini\\fonts.ini";
-    auto font_opt = config.get<std::string>("Main", "font");
+    auto font_opt = config.get<std::string>("font");
     // get start font quantity
     std::string font_name = font_opt.has_value() ?font_opt.value() : "normal";
 
@@ -575,22 +576,22 @@ bool DX9RENDER::Init() {
         core.Trace("can not init start font");
     idFontCurrent = 0L;
 
+    std::ignore = config.selectSection("ProgressImage");
     // Progress image parameters
-    progressFramesPosX = config.get<float>("ProgressImage", "RelativePosX", 0.85f);
-    progressFramesPosY = config.get<float>("ProgressImage", "RelativePosY", 0.8f);
+    progressFramesPosX = config.get<float>("RelativePosX", 0.85f);
+    progressFramesPosY = config.get<float>("RelativePosY", 0.8f);
 
-    progressFramesWidth = config.get<float>("ProgressImage", "RelativeWidth", 0.0625f);
-    progressFramesWidth = std::clamp(progressFramesWidth, 0.f, 10.f);
+    progressFramesWidth = config.get<float>("RelativeWidth", 0.0625f);
+    progressFramesWidth = std::clamp(progressFramesWidth, 0.0f, 10.0f);
 
-    progressFramesHeight = config.get<float>("ProgressImage", "RelativeHeight", 0.0625f);
-    progressFramesHeight = std::clamp(progressFramesHeight, 0.f, 10.f);
+    progressFramesHeight = config.get<float>("RelativeHeight", 0.0625f);
+    progressFramesHeight = std::clamp(progressFramesHeight, 0.0f, 10.0f);
 
-    progressFramesCountX = static_cast<std::int32_t>(config.get<float>("ProgressImage", "HorisontalFramesCount", 8));
+    progressFramesCountX = static_cast<std::int32_t>(config.get<float>("HorisontalFramesCount", 8));
     progressFramesCountX = std::clamp(progressFramesCountX, 1, 64);
 
-    progressFramesCountY = static_cast<std::int32_t>(config.get<float>("ProgressImage", "VerticalFramesCount", 8));
+    progressFramesCountY = static_cast<std::int32_t>(config.get<float>("VerticalFramesCount", 8));
     progressFramesCountY = std::clamp(progressFramesCountY, 1, 64);
-
     CreateSphere();
     auto *pScriptRender = static_cast<VDATA *>(core.GetScriptVariable("Render"));
     ATTRIBUTES *pARender = pScriptRender->GetAClass();
@@ -3253,7 +3254,7 @@ void DX9RENDER::MakeScreenShot()
     }
 
     const auto screenshot_base_filename = fmt::format("{:%Y-%m-%d_%H-%M-%S}", fmt::localtime(std::time(nullptr)));
-    auto screenshot_path = std::filesystem::path(Storm::Filesystem::Constants::Paths::screenshots()) / screenshot_base_filename;
+    auto screenshot_path = Storm::Filesystem::Constants::Paths::screenshots() / screenshot_base_filename;
     screenshot_path.replace_extension(screenshotExt);
     for(size_t i = 0; std::filesystem::exists(screenshot_path); ++i)
     {

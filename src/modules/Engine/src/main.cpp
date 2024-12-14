@@ -161,7 +161,7 @@ void mimalloc_fun(const char *msg, void *arg)
     static std::filesystem::path mimalloc_log_path;
     if (mimalloc_log_path.empty())
     {
-        mimalloc_log_path = std::filesystem::path(Storm::Filesystem::Constants::Paths::logs()) / "mimalloc.log";
+        mimalloc_log_path = Storm::Filesystem::Constants::Paths::logs() / "mimalloc.log";
         std::error_code ec;
         remove(mimalloc_log_path, ec);
     }
@@ -425,30 +425,30 @@ int main(int argc, char *argv[])
     bool run_in_background = false;
     {
         auto config =  Storm::Filesystem::Config::load(Storm::Filesystem::Constants::ConfigNames::engine());
+        std::ignore = config.selectSection("Main");
+        dwMaxFPS = config.get<std::uint32_t>("max_fps", 0);
+        bDebugWindow = config.get<std::uint32_t>("DebugWindow", 0) == 1;
+        bAcceleration = config.get<std::uint32_t>("Acceleration", 0) == 1;
 
-        dwMaxFPS = config.get<std::uint32_t>("Main", "max_fps", 0);
-        bDebugWindow = config.get<std::uint32_t>("Main", "DebugWindow", 0) == 1;
-        bAcceleration = config.get<std::uint32_t>("Main", "Acceleration", 0) == 1;
-
-        auto log = config.get<std::uint32_t>("Main", "logs", 0);
+        auto log = config.get<std::uint32_t>("logs", 0);
         if (log == 0) {
             spdlog::set_level(spdlog::level::off);
         }
 
-        width = config.get<int>("Main", "screen_x", 1024);
-        height = config.get<int>("Main", "screen_y", 768);
-        preferred_display = config.get<int>("Main", "display", 0);
-        fullscreen = config.get<int>("Main", "full_screen", 0);
-        show_borders = config.get<int>("Main", "window_borders", 0);
-        run_in_background = config.get<int>("Main", "run_in_background", 0);
+        width = config.get<int>("screen_x", 1024);
+        height = config.get<int>("screen_y", 768);
+        preferred_display = config.get<int>("display", 0);
+        fullscreen = config.get<int>("full_screen", 0);
+        show_borders = config.get<int>("window_borders", 0);
+        run_in_background = config.get<int>("run_in_background", 0);
 
         if (run_in_background) {
-            bSoundInBackground = config.get<int>("Main", "sound_in_background", 1);
+            bSoundInBackground = config.get<int>("sound_in_background", 1);
         } else {
             bSoundInBackground = false;
         }
 
-        bSteam = config.get<int>("Main", "Steam", 0);
+        bSteam = config.get<int>("Steam", 0);
     }
 
     // initialize SteamApi through evaluating its singleton

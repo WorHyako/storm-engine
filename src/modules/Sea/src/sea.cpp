@@ -194,7 +194,8 @@ bool SEA::Init()
     CreateVertexDeclaration();
     {
         auto config = Storm::Filesystem::Config::load(Storm::Filesystem::Constants::ConfigNames::engine());
-        bIniFoamEnable = config.get<int>("Sea", "FoamEnable", 1) != 0;
+        std::ignore = config.selectSection("Sea");
+        bIniFoamEnable = config.get<int>("FoamEnable", 1) != 0;
     }
 
     iFoamTexture = rs->TextureCreate("weather\\sea\\pena\\pena.tga");

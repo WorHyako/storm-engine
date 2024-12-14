@@ -4,15 +4,14 @@
 #include "math_inlines.h"
 #include "shared/sail_msg.h"
 #include "ship_base.h"
-#include "file_service.h"
 
-static const char *RIGGING_INI_FILE = "resource\\ini\\rigging.ini";
+#include "Filesystem/Config/Config.hpp"
+#include "Filesystem/Constants/ConfigNames.hpp"
 
 VANT_BASE::VANT_BASE()
 {
     bUse = false;
     RenderService = nullptr;
-    TextureName = nullptr;
     texl = -1;
     bRunFirstTime = true;
     bYesDeleted = false;
@@ -29,7 +28,6 @@ VANT_BASE::VANT_BASE()
 VANT_BASE::~VANT_BASE()
 {
     TEXTURE_RELEASE(RenderService, texl);
-    STORM_DELETE(TextureName);
     while (groupQuantity > 0)
     {
         groupQuantity--;
@@ -67,7 +65,7 @@ void VANT_BASE::SetDevice()
     LoadIni();
 
     if (texl == -1)
-        texl = RenderService->TextureCreate(TextureName);
+        texl = RenderService->TextureCreate(TextureName.c_str());
 }
 
 bool VANT_BASE::CreateState(ENTITY_STATE_GEN *state_gen)
@@ -91,9 +89,9 @@ void VANT_BASE::Execute(uint32_t Delta_Time)
     {
         // ====================================================
         // If the ini-file has been changed, read the info from it
-        if (fio->_FileOrDirectoryExists(RIGGING_INI_FILE))
+        if (fio->_FileOrDirectoryExists("resource\\ini\\rigging.toml"))
         {
-            auto ft_new = fio->_GetLastWriteTime(RIGGING_INI_FILE);
+            auto ft_new = fio->_GetLastWriteTime("resource\\ini\\rigging.toml");
             if (ft_old != ft_new)
             {
                 LoadIni();
@@ -622,79 +620,67 @@ void VANT_BASE::SetAll()
 void VANT::LoadIni()
 {
     // GUARD(VANT::LoadIni());
-    char section[256];
-    char param[256];
-
-    if (fio->_FileOrDirectoryExists(RIGGING_INI_FILE))
+    if (fio->_FileOrDirectoryExists("resource\\ini\\rigging.toml"))
     {
-        ft_old = fio->_GetLastWriteTime(RIGGING_INI_FILE);
-    }
-    auto ini = fio->OpenIniFile("resource\\ini\\rigging.ini");
-    if (!ini)
-    {
-        throw std::runtime_error("rigging.ini file not found!");
+        ft_old = fio->_GetLastWriteTime("resource\\ini\\rigging.toml");
     }
 
-    sprintf_s(section, "VANTS");
+    auto config = Storm::Filesystem::Config::load("resource\\ini\\rigging.toml");
+    std::ignore = config.selectSection("VANTS");
 
-    // texture name
-    ini->ReadString(section, "TextureName", param, sizeof(param) - 1, "vant.tga");
+    auto texture_name = config.get<std::string>("TextureName", "vant.tga");
     if (texl != -1)
     {
-        if (strcmp(TextureName, param))
-            if (RenderService)
+        if (texture_name != TextureName)
+            if (RenderService != nullptr)
             {
-                delete TextureName;
-                const auto len = strlen(param) + 1;
-                TextureName = new char[len];
-                memcpy(TextureName, param, len);
+                TextureName = std::move(texture_name);
                 RenderService->TextureRelease(texl);
-                texl = RenderService->TextureCreate(TextureName);
+                texl = RenderService->TextureCreate(TextureName.c_str());
             }
     }
     else
     {
-        const auto len = strlen(param) + 1;
-        TextureName = new char[len];
-        memcpy(TextureName, param, len);
+        TextureName = std::move(texture_name);
     }
+
     // rope thickness
-    ROPE_WIDTH = ini->GetFloat(section, "fWidth", 0.1f);
+    ROPE_WIDTH = config.get<float>("fWIDTH", 0.025f);
     // number of ropes
-    ROPE_QUANT = static_cast<int>(ini->GetInt(section, "fRopeQuant", 5));
+    ROPE_WIDTH = config.get<int>("fRopeQuant", 5);
     if (ROPE_QUANT < 2)
         ROPE_QUANT = 2;
     // xBeg horizontal rope texture coordinates
-    ropeXl = ini->GetFloat(section, "fHRopeXbeg", 0.5f);
-    ropeXr = ini->GetFloat(section, "fHRopeXend", 1.f);
+    ropeXl = config.get<float>("fHRopeXbeg", 0.5f);
+    ropeXr = config.get<float>("fHRopeXend", 1.0f);
     // triangle texture coordinates
-    treangXl = ini->GetFloat(section, "fTreangXbeg", 0.f);
-    treangXr = ini->GetFloat(section, "fTreangXend", 0.5f);
-    treangYu = ini->GetFloat(section, "fTreangYbeg", 0.f);
-    treangYd = ini->GetFloat(section, "fTreangYend", 1.f);
+    treangXl = config.get<float>("fTreangXbeg", 0.0f);
+    treangXr = config.get<float>("fTreangXend", 0.5f);
+    treangYu = config.get<float>("fTreangYbeg", 0.0f);
+    treangYd = config.get<float>("fTreangYend", 1.0f);
     // beam texture coordinates
-    balkYu = ini->GetFloat(section, "fBalkYbeg", 0.6f);
-    balkYd = ini->GetFloat(section, "fBalkYend", 1.f);
+    balkYu = config.get<float>("fBalkYbeg", 0.6f);
+    balkYd = config.get<float>("fBalkYend", 1.0f);
     // vertical rope texture coordinates
-    vRopeXl = ini->GetFloat(section, "fVRopeXbeg", 0.f);
-    vRopeXr = ini->GetFloat(section, "fVRopeXend", 0.1f);
+    vRopeXl = config.get<float>("fVRopeXbeg", 0.0f);
+    vRopeXr = config.get<float>("fVRopeXend", 0.1f);
     // upper triangle width
-    upWidth = ini->GetFloat(section, "fTreangWidth", 1.f);
+    upWidth = config.get<float>("fTreangWidth", 1.0f);
     // the height of the upper triangle
-    upHeight = ini->GetFloat(section, "fTreangHeight", 1.f);
+    upHeight = config.get<float>("fTreangHeight", 1.0f);
     // vertical rope height
-    vRopeHeight = ini->GetFloat(section, "fVRopeHeight", 1.f);
+    vRopeHeight = config.get<float>("fVRopeHeight", 1.0f);
     // horizontal rope height
-    hRopeHeight = ini->GetFloat(section, "fHRopeHeight", 1.f);
+    hRopeHeight = config.get<float>("fHRopeHeight", 1.0f);
     // beam height relative to triangle height
-    fBalkHeight = ini->GetFloat(section, "fBalkHeight", 0.1f);
-    fBalkWidth = ini->GetFloat(section, "fBalkWidth", 1.2f);
+    fBalkHeight = config.get<float>("fBalkHeight", 0.1f);
+    fBalkWidth = config.get<float>("fBalkWidth", 1.2f);
     // the square of the distance from which the cables are not visible
-    fVantMaxDist = ini->GetFloat(section, "fVantMaxDist", 10000.f);
+    fVantMaxDist = config.get<float>("fVantMaxDist", 10000.0f);
     // Guy motion sampling step
-    ZERO_CMP_VAL = ini->GetFloat(section, "fDiscrValue", 0.01f);
+    ZERO_CMP_VAL = config.get<float>("fDiscrValue", 0.01f);
     // the maximum change in the guy position at which the guy stops being displayed
-    MAXFALL_CMP_VAL = ini->GetFloat(section, "fDisapearValue", 5.f);
+    MAXFALL_CMP_VAL = config.get<float>("fDisapearValue", 5.0f);
 
     VantId = 0;
     // UNGUARD
@@ -703,162 +689,140 @@ void VANT::LoadIni()
 void VANTL::LoadIni()
 {
     // GUARD(VANT::LoadIni());
-    char section[256];
-    char param[256];
 
-    if (fio->_FileOrDirectoryExists(RIGGING_INI_FILE))
+    if (fio->_FileOrDirectoryExists("resource\\ini\\rigging.toml"))
     {
-        ft_old = fio->_GetLastWriteTime(RIGGING_INI_FILE);
-    }
-    auto ini = fio->OpenIniFile("resource\\ini\\rigging.ini");
-    if (!ini)
-    {
-        throw std::runtime_error("rigging.ini file not found!");
+        ft_old = fio->_GetLastWriteTime("resource\\ini\\rigging.toml");
     }
 
-    sprintf(section, "VANTS_L");
+    auto config = Storm::Filesystem::Config::load("resource\\ini\\rigging.toml");
+    std::ignore = config.selectSection("VANTS_L");
 
-    // texture name
-    ini->ReadString(section, "TextureName", param, sizeof(param) - 1, "vant.tga");
+    auto texture_name = config.get<std::string>("TextureName", "vant.tga");
     if (texl != -1)
     {
-        if (strcmp(TextureName, param))
-            if (RenderService)
+        if (texture_name != TextureName)
+            if (RenderService != nullptr)
             {
-                delete TextureName;
-                const auto len = strlen(param) + 1;
-                TextureName = new char[len];
-                memcpy(TextureName, param, len);
+                TextureName = std::move(texture_name);
                 RenderService->TextureRelease(texl);
-                texl = RenderService->TextureCreate(TextureName);
+                texl = RenderService->TextureCreate(TextureName.c_str());
             }
     }
     else
     {
-        const auto len = strlen(param) + 1;
-        TextureName = new char[len];
-        memcpy(TextureName, param, len);
+        TextureName = std::move(texture_name);
     }
-    // rope thickness
-    ROPE_WIDTH = ini->GetFloat(section, "fWidth", 0.1f);
+        // rope thickness
+    ROPE_WIDTH = config.get<float>("fWidth", 0.1f);
     // number of ropes
-    ROPE_QUANT = (int)ini->GetInt(section, "fRopeQuant", 5);
+    ROPE_WIDTH = config.get<int>("fRopeQuant", 5);
     if (ROPE_QUANT < 2)
         ROPE_QUANT = 2;
     // xBeg horizontal rope texture coordinates
-    ropeXl = ini->GetFloat(section, "fHRopeXbeg", 0.5f);
-    ropeXr = ini->GetFloat(section, "fHRopeXend", 1.f);
+    ropeXl = config.get<float>("fHRopeXbeg", 0.5f);
+    ropeXr = config.get<float>("fHRopeXend", 1.0f);
     // triangle texture coordinates
-    treangXl = ini->GetFloat(section, "fTreangXbeg", 0.f);
-    treangXr = ini->GetFloat(section, "fTreangXend", 0.5f);
-    treangYu = ini->GetFloat(section, "fTreangYbeg", 0.f);
-    treangYd = ini->GetFloat(section, "fTreangYend", 1.f);
+    treangXl = config.get<float>("fTreangXbeg", 0.0f);
+    treangXr = config.get<float>("fTreangXend", 0.5f);
+    treangYu = config.get<float>("fTreangYbeg", 0.0f);
+    treangYd = config.get<float>("fTreangYend", 1.0f);
     // beam texture coordinates
-    balkYu = ini->GetFloat(section, "fBalkYbeg", 0.6f);
-    balkYd = ini->GetFloat(section, "fBalkYend", 1.f);
+    balkYu = config.get<float>("fBalkYbeg", 0.6f);
+    balkYd = config.get<float>("fBalkYend", 1.0f);
     // vertical rope texture coordinates
-    vRopeXl = ini->GetFloat(section, "fVRopeXbeg", 0.f);
-    vRopeXr = ini->GetFloat(section, "fVRopeXend", 0.1f);
+    vRopeXl = config.get<float>("fVRopeXbeg", 0.0f);
+    vRopeXr = config.get<float>("fVRopeXend", 0.1f);
     // upper triangle width
-    upWidth = ini->GetFloat(section, "fTreangWidth", 1.f);
+    upWidth = config.get<float>("fTreangWidth", 1.0f);
     // the height of the upper triangle
-    upHeight = ini->GetFloat(section, "fTreangHeight", 1.f);
+    upHeight = config.get<float>("fTreangHeight", 1.0f);
     // vertical rope height
-    vRopeHeight = ini->GetFloat(section, "fVRopeHeight", 1.f);
+    vRopeHeight = config.get<float>("fVRopeHeight", 1.0f);
     // horizontal rope height
-    hRopeHeight = ini->GetFloat(section, "fHRopeHeight", 1.f);
+    hRopeHeight = config.get<float>("fHRopeHeight", 1.0f);
     // beam height relative to triangle height
-    fBalkHeight = ini->GetFloat(section, "fBalkHeight", 0.1f);
-    fBalkWidth = ini->GetFloat(section, "fBalkWidth", 1.2f);
+    fBalkHeight = config.get<float>("fBalkHeight", 0.1f);
+    fBalkWidth = config.get<float>("fBalkWidth", 1.2f);
     // the square of the distance from which the cables are not visible
-    fVantMaxDist = ini->GetFloat(section, "fVantMaxDist", 10000.f);
+    fVantMaxDist = config.get<float>("fVantMaxDist", 10000.0f);
     // Guy motion sampling step
-    ZERO_CMP_VAL = ini->GetFloat(section, "fDiscrValue", 0.01f);
+    ZERO_CMP_VAL = config.get<float>("fDiscrValue", 0.01f);
     // the maximum change in the guy position at which the guy stops being displayed
-    MAXFALL_CMP_VAL = ini->GetFloat(section, "fDisapearValue", 5.f);
+    MAXFALL_CMP_VAL = config.get<float>("fDisapearValue", 5.0f);
 
     VantId = 1;
+
     // UNGUARD
 }
 
 void VANTZ::LoadIni()
 {
     // GUARD(VANT::LoadIni());
-    char section[256];
-    char param[256];
 
-    if (fio->_FileOrDirectoryExists(RIGGING_INI_FILE))
+    if (fio->_FileOrDirectoryExists("resource\\ini\\rigging.toml"))
     {
-        ft_old = fio->_GetLastWriteTime(RIGGING_INI_FILE);
-    }
-    auto ini = fio->OpenIniFile("resource\\ini\\rigging.ini");
-    if (!ini)
-    {
-        throw std::runtime_error("rigging.ini file not found!");
+        ft_old = fio->_GetLastWriteTime("resource\\ini\\rigging.toml");
     }
 
-    sprintf(section, "VANTS_Z");
+    auto config = Storm::Filesystem::Config::load("resource\\ini\\rigging.toml");
+    std::ignore = config.selectSection("VANTS_Z");
 
-    // texture name
-    ini->ReadString(section, "TextureName", param, sizeof(param) - 1, "vant.tga");
+    auto texture_name = config.get<std::string>("TextureName", "vant.tga");
     if (texl != -1)
     {
-        if (strcmp(TextureName, param))
-            if (RenderService)
+        if (texture_name != TextureName)
+            if (RenderService != nullptr)
             {
-                delete TextureName;
-                const auto len = strlen(param) + 1;
-                TextureName = new char[len];
-                memcpy(TextureName, param, len);
+                TextureName = std::move(texture_name);
                 RenderService->TextureRelease(texl);
-                texl = RenderService->TextureCreate(TextureName);
+                texl = RenderService->TextureCreate(TextureName.c_str());
             }
     }
     else
     {
-        const auto len = strlen(param) + 1;
-        TextureName = new char[len];
-        memcpy(TextureName, param, len);
+        TextureName = std::move(texture_name);
     }
-    // rope thickness
-    ROPE_WIDTH = ini->GetFloat(section, "fWidth", 0.1f);
+        // rope thickness
+    ROPE_WIDTH = config.get<float>("fWidth", 0.1f);
     // number of ropes
-    ROPE_QUANT = (int)ini->GetInt(section, "fRopeQuant", 5);
+    ROPE_WIDTH = config.get<int>("fRopeQuant", 5);
     if (ROPE_QUANT < 2)
         ROPE_QUANT = 2;
     // xBeg horizontal rope texture coordinates
-    ropeXl = ini->GetFloat(section, "fHRopeXbeg", 0.5f);
-    ropeXr = ini->GetFloat(section, "fHRopeXend", 1.f);
+    ropeXl = config.get<float>("fHRopeXbeg", 0.5f);
+    ropeXr = config.get<float>("fHRopeXend", 1.0f);
     // triangle texture coordinates
-    treangXl = ini->GetFloat(section, "fTreangXbeg", 0.f);
-    treangXr = ini->GetFloat(section, "fTreangXend", 0.5f);
-    treangYu = ini->GetFloat(section, "fTreangYbeg", 0.f);
-    treangYd = ini->GetFloat(section, "fTreangYend", 1.f);
+    treangXl = config.get<float>("fTreangXbeg", 0.0f);
+    treangXr = config.get<float>("fTreangXend", 0.5f);
+    treangYu = config.get<float>("fTreangYbeg", 0.0f);
+    treangYd = config.get<float>("fTreangYend", 1.0f);
     // beam texture coordinates
-    balkYu = ini->GetFloat(section, "fBalkYbeg", 0.6f);
-    balkYd = ini->GetFloat(section, "fBalkYend", 1.f);
+    balkYu = config.get<float>("fBalkYbeg", 0.6f);
+    balkYd = config.get<float>("fBalkYend", 1.0f);
     // vertical rope texture coordinates
-    vRopeXl = ini->GetFloat(section, "fVRopeXbeg", 0.f);
-    vRopeXr = ini->GetFloat(section, "fVRopeXend", 0.1f);
+    vRopeXl = config.get<float>("fVRopeXbeg", 0.0f);
+    vRopeXr = config.get<float>("fVRopeXend", 0.1f);
     // upper triangle width
-    upWidth = ini->GetFloat(section, "fTreangWidth", 1.f);
+    upWidth = config.get<float>("fTreangWidth", 1.0f);
     // the height of the upper triangle
-    upHeight = ini->GetFloat(section, "fTreangHeight", 1.f);
+    upHeight = config.get<float>("fTreangHeight", 1.0f);
     // vertical rope height
-    vRopeHeight = ini->GetFloat(section, "fVRopeHeight", 1.f);
+    vRopeHeight = config.get<float>("fVRopeHeight", 1.0f);
     // horizontal rope height
-    hRopeHeight = ini->GetFloat(section, "fHRopeHeight", 1.f);
+    hRopeHeight = config.get<float>("fHRopeHeight", 1.0f);
     // beam height relative to triangle height
-    fBalkHeight = ini->GetFloat(section, "fBalkHeight", 0.1f);
-    fBalkWidth = ini->GetFloat(section, "fBalkWidth", 1.2f);
+    fBalkHeight = config.get<float>("fBalkHeight", 0.1f);
+    fBalkWidth = config.get<float>("fBalkWidth", 1.2f);
     // the square of the distance from which the cables are not visible
-    fVantMaxDist = ini->GetFloat(section, "fVantMaxDist", 10000.f);
+    fVantMaxDist = config.get<float>("fVantMaxDist", 10000.0f);
     // Guy motion sampling step
-    ZERO_CMP_VAL = ini->GetFloat(section, "fDiscrValue", 0.01f);
+    ZERO_CMP_VAL = config.get<float>("fDiscrValue", 0.01f);
     // the maximum change in the guy position at which the guy stops being displayed
-    MAXFALL_CMP_VAL = ini->GetFloat(section, "fDisapearValue", 5.f);
+    MAXFALL_CMP_VAL = config.get<float>("fDisapearValue", 5.0f);
 
     VantId = 2;
+
     // UNGUARD
 }
 

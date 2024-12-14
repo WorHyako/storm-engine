@@ -27,11 +27,11 @@ TFishSchools::~TFishSchools()
 }
 
 //--------------------------------------------------------------------
-void TFishSchools::LoadSettings()
-{
+void TFishSchools::LoadSettings() {
     auto config = Storm::Filesystem::Config::load(Storm::Filesystem::Constants::ConfigNames::animals());
-    fishSchoolsCount = config.get<int>(ANIMALS_FISHSCHOOLS_SECTION, "count", FISHSCHOOL_COUNT);
-    maxDistance = config.get<float>(ANIMALS_FISHSCHOOLS_SECTION, "distance", FISHSCHOOL_DISTANCE);
+    std::ignore = config.selectSection(ANIMALS_FISHSCHOOLS_SECTION);
+    fishSchoolsCount = config.get<int>("count", FISHSCHOOL_COUNT);
+    maxDistance = config.get<float>("distance", FISHSCHOOL_DISTANCE);
 }
 
 //--------------------------------------------------------------------

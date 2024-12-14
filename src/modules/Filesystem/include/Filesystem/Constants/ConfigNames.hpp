@@ -8,12 +8,12 @@ constexpr std::string_view config_file_ext = ".toml";
 
 namespace Storm::Filesystem::Constants::ConfigNames {
     [[nodiscard]]
-    constexpr std::string engine() noexcept {
-        return "engine" + std::string(config_file_ext);
+    inline std::filesystem::path engine() noexcept {
+        return Paths::root() / std::filesystem::path("engine" + std::string(config_file_ext));
     }
 
     [[nodiscard]]
-    constexpr std::string animals() noexcept {
-        return Paths::resources() + "animals" + std::string(config_file_ext);
+    inline std::filesystem::path animals() noexcept {
+        return Paths::ini() / std::filesystem::path("animals" + std::string(config_file_ext));
     }
 }

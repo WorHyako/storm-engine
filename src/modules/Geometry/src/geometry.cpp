@@ -54,8 +54,7 @@ void GEOMETRY::SetVBConvertFunc(VERTEX_TRANSFORM _transform_func)
 
 static bool geoLog = false;
 
-bool GEOMETRY::Init()
-{
+bool GEOMETRY::Init() {
     RenderService = static_cast<VDX9RENDER *>(core.GetService(RenderServiceName));
     if (!RenderService)
     {
@@ -64,8 +63,8 @@ bool GEOMETRY::Init()
     GSR.SetRenderService(RenderService);
 
     auto config = Storm::Filesystem::Config::load(Storm::Filesystem::Constants::ConfigNames::engine());
-    geoLog = config.get<int>("Main", "geometry_log", 0) == 1;
-
+    std::ignore = config.selectSection("Main");
+    geoLog = config.get<int>("geometry_log", 0) == 1;
     return true;
 }
 

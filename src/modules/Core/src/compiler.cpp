@@ -430,26 +430,26 @@ void COMPILER::SetWarning(const char *data_PTR, ...)
     logTrace_->warn(ErrorBuffer);
 }
 
-void COMPILER::LoadPreprocess()
-{
+void COMPILER::LoadPreprocess() {
     auto config = Storm::Filesystem::Config::load(Storm::Filesystem::Constants::ConfigNames::engine());
-    bDebugInfo = config.get<int>("script", "debuginfo", 0) == 0;
-    bWriteCodeFile = config.get<int>("script", "codefiles", 0) == 0;
-    bRuntimeLog = config.get<int>("script", "runtimelog", 0) == 0;
-    script_cache_mode_ = config.get<int>("script", "cache_mode", kCacheDisabled);
+    std::ignore = config.selectSection("script");
+    bDebugInfo = config.get<int>("debuginfo", 0) == 0;
+    bWriteCodeFile = config.get<int>("codefiles", 0) == 0;
+    bRuntimeLog = config.get<int>("runtimelog", 0) == 0;
+    script_cache_mode_ = config.get<int>("cache_mode", kCacheDisabled);
 
     if (script_cache_mode_ < kCacheDisabled || script_cache_mode_ > kCacheEnabledNoRuntimeCheck) {
         script_cache_mode_ = kCacheDisabled;
     }
 
-        // if(engine_ini->GetInt("script","tracefiles",0) == 0) bScriptTrace = false;
-        // else bScriptTrace = true;
+    // if(engine_ini->GetInt("script","tracefiles",0) == 0) bScriptTrace = false;
+    // else bScriptTrace = true;
 
 #ifdef _WIN32 // S_DEBUG
     // auto ini = fio->OpenIniFile(PROJECT_NAME);
     // if (ini)
     // {
-        // bBreakOnError = (ini->GetInt("options", "break_on_error", 0) == 1);
+    // bBreakOnError = (ini->GetInt("options", "break_on_error", 0) == 1);
     // }
 #endif
 }

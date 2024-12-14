@@ -4,7 +4,6 @@
 
 #include "matrix.h"
 #include "rands.h"
-#include "file_service.h"
 #include "vma.hpp"
 #include <fmod_errors.h>
 
@@ -15,6 +14,7 @@
 #include "math3d/color.h"
 #include "math_inlines.h"
 
+#include "Filesystem/Config/Config.hpp"
 #include "Filesystem/Constants/ConfigNames.hpp"
 
 #define DISTANCEFACTOR 1.0f
@@ -97,9 +97,10 @@ bool SoundService::Init()
     CHECKFMODERR(system->init(MAX_SOUNDS_SLOTS, FMOD_INIT_NORMAL, nullptr));
     CHECKFMODERR(system->set3DSettings(1.0, DISTANCEFACTOR, 1.0f));
 
-    if (const auto ini = fio->OpenIniFile(Storm::Filesystem::Constants::ConfigNames::engine().c_str()))
     {
-        fadeTimeInSeconds = ini->GetFloat("sound", "fade_time", 0.5f);
+        auto config = Storm::Filesystem::Config::load(Storm::Filesystem::Constants::ConfigNames::engine());
+        std::ignore = config.selectSection("sound");
+        fadeTimeInSeconds = config.get<float>("fade_time", 0.5f);
     }
 
     numActiveSounds = 2; // 0 and 1 are special
