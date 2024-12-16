@@ -18,6 +18,27 @@
 
 #define WIND_SPEED_MAX 12.f
 
+namespace {
+    template<typename Type>
+    D3DCOLORVALUE toD3DCOLOR(const Storm::Math::Types::Vector4<Type>& vector) {
+        Storm::Math::Types::Vector4<float> result = vector.template to<float>();
+        return D3DCOLORVALUE{
+            .r = result.x,
+            .g = result.y,
+            .b = result.z,
+            .a = result.w};
+    }
+
+    template<typename Type>
+    Vector toVector(const Storm::Math::Types::Vector3<Type>& vector) {
+        Storm::Math::Types::Vector3<float> result = vector.template to<float>();
+        return Vector{
+            .x = result.x,
+            .y = result.y,
+            .z = result.z,};
+    }
+}
+
 void sailPrint(VDX9RENDER *rs, const CVECTOR &pos3D, float rad, int32_t line, const char *format, ...);
 int traceSail = -1;
 int32_t g_iBallOwnerIdx = -1;
@@ -220,9 +241,9 @@ void SAIL::Execute(uint32_t Delta_Time)
         int i;
         // ====================================================
         // If the ini-file has been changed, read the info from it
-        if (fio->_FileOrDirectoryExists("resource\\ini\\rigging.ini"))
+        if (fio->_FileOrDirectoryExists(Storm::Filesystem::Constants::ConfigNames::rigging().string().c_str()))
         {
-            auto ft_new = fio->_GetLastWriteTime("resource\\ini\\rigging.ini");
+            auto ft_new = fio->_GetLastWriteTime(Storm::Filesystem::Constants::ConfigNames::rigging().string().c_str());
             if (ft_old != ft_new)
             {
                 const int wind_vector_quantity = WINDVECTOR_QUANTITY;
@@ -1231,45 +1252,24 @@ void SAIL::SetAllSails()
     }
 }
 
-void SAIL::LoadSailIni()
-{
-    auto config = Storm::Filesystem::Config::load("resource\\ini\\rigging.toml");
+void SAIL::LoadSailIni() {
+    auto config = Storm::Filesystem::Config::load(Storm::Filesystem::Constants::ConfigNames::rigging());
     std::ignore = config.selectSection("SAILS");
 
     g_fSailHoleDepend = config.get<double>("fHoleDepend", 1.0f);
 
-    const auto diffuse_opt = config.getArray<double>("Diffuse");
-    if (diffuse_opt.has_value()) {
-        auto& diffuse = diffuse_opt.value();
-        mat.Diffuse.r = diffuse[0];
-        mat.Diffuse.g = diffuse[1];
-        mat.Diffuse.b = diffuse[2];
-        mat.Diffuse.a = diffuse[3];
-    }
-    const auto ambient_opt = config.getArray<double>("Ambient");
-    if (ambient_opt.has_value()) {
-        auto& ambient = ambient_opt.value();
-        mat.Ambient.r = ambient[0];
-        mat.Ambient.g = ambient[1];
-        mat.Ambient.b = ambient[2];
-        mat.Ambient.a = ambient[3];
-    }
-    const auto specular_opt = config.getArray<double>("Specular");
-    if (specular_opt.has_value()) {
-        auto& specular = specular_opt.value();
-        mat.Specular.r = specular[0];
-        mat.Specular.g = specular[1];
-        mat.Specular.b = specular[2];
-        mat.Specular.a = specular[3];
-    }
-    const auto emissive_opt = config.getArray<double>("Emissive");
-    if (emissive_opt.has_value()) {
-        auto& emissive = emissive_opt.value();
-        mat.Emissive.r = emissive[0];
-        mat.Emissive.g = emissive[1];
-        mat.Emissive.b = emissive[2];
-        mat.Emissive.a = emissive[3];
-    }
+    const auto diffuse = config.get_vector4<double>("Diffuse", {});
+    mat.Diffuse = toD3DCOLOR(diffuse);
+
+    const auto ambient = config.get_vector4<double>("Ambient", {});
+    mat.Ambient = toD3DCOLOR(ambient);
+
+    const auto specular = config.get_vector4<double>("Specular", {});
+    mat.Specular = toD3DCOLOR(specular);
+
+    const auto emissive = config.get_vector4<double>("Emissive", {});
+    mat.Emissive = toD3DCOLOR(emissive);
+
     mat.Power = config.get<float>("Power", 0.5f);
     WINDVECTOR_QUANTITY = config.get<int>("WINDVECTOR_QNT", 60);
     TURNSTEPANGL = config.get<double>("TURNSTEPANGL", 0.002);
@@ -1304,52 +1304,31 @@ void SAIL::LoadSailIni()
         fSHoleFlexDepend = 0.1;
     }
 
-    auto roll_form_opt = config.getArray<double>("rollSSailForm");
+    auto roll_form_opt = config.get_array<double>("rollSSailForm");
     if (roll_form_opt.has_value()) {
         auto& roll_form = roll_form_opt.value();
         SSailRollForm.resize(std::size(roll_form));
-        std::move(std::begin(roll_form), std::end(roll_form), std::begin(SSailRollForm));
+        std::ranges::move(roll_form, std::begin(SSailRollForm));
     } else {
         SSailRollForm = {0.2, 0.8, 1.0, 0.8, 0.4, 1.0, 1.3, 1.0, 0.4, 0.8, 1.0, 0.8, 0.2};
     }
 
-    auto ts_opt = config.getArray<double>("TriangleWindSpeed");
-    if (ts_opt.has_value()) {
-        auto& ts_val = ts_opt.value();
-        ts = {static_cast<float>(ts_val.at(0)),
-            static_cast<float>(ts_val.at(1)),
-            static_cast<float>(ts_val.at(2))};
-    } else {
-        ts = {0.2, 0.6, 0.8};
-    }
+    auto ts_vec = config.get_vector3<double>("TriangleWindSpeed", {0.2, 0.6, 0.8});
+    ts = toVector(ts_vec);
 
-    auto fs_opt = config.getArray<double>("TrapecidalWindSpeed");
-    if (fs_opt.has_value()) {
-        auto& fs_val = fs_opt.value();
-        fs = {static_cast<float>(fs_val.at(0)),
-            static_cast<float>(fs_val.at(1)),
-            static_cast<float>(fs_val.at(2))};
-    } else {
-        fs = {0.4, 0.5, 0.6};
-    }
+    auto fs_vec = config.get_vector3<double>("TrapecidalWindSpeed", {0.4, 0.5, 0.6});
+    fs = toVector(fs_vec);
 
-    auto ss_opt = config.getArray<double>("SquareWindSpeed");
-    if (ss_opt.has_value()) {
-        auto& ss_val = ss_opt.value();
-        ss = {static_cast<float>(ss_val.at(0)),
-            static_cast<float>(ss_val.at(1)),
-            static_cast<float>(ss_val.at(2))};
-    } else {
-        ss = {0.4, 0.5, 0.6};
-    }
+    auto ss_vec = config.get_vector3<double>("SquareWindSpeed", {0.4, 0.5, 0.6});
+    ss = toVector(ss_vec);
 
-    auto TSailRollForm_opt = config.getArray<double>("rollSSailForm");
+    auto TSailRollForm_opt = config.get_array<double>("rollSSailForm");
     if (TSailRollForm_opt.has_value()) {
         auto& TSailRollForm_temp = TSailRollForm_opt.value();
         TSailRollForm.resize(std::size(TSailRollForm_temp));
-        std::move(std::begin(TSailRollForm_temp), std::end(TSailRollForm_temp), std::begin(TSailRollForm));
+        std::ranges::move(TSailRollForm_temp, std::begin(TSailRollForm));
     } else {
-    TSailRollForm = {0.2, 0.8, 1.0, 0.8, 0.4, 1.0, 1.3, 1.0, 0.4, 0.8, 1.0, 0.8, 0.2};
+        TSailRollForm = {0.2, 0.8, 1.0, 0.8, 0.4, 1.0, 1.3, 1.0, 0.4, 0.8, 1.0, 0.8, 0.2};
     }
 }
 

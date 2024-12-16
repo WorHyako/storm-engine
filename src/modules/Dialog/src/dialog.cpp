@@ -4,7 +4,9 @@
 #include <core.h>
 #include <string_compare.hpp>
 #include <v_sound_service.h>
-#include <v_file_service.h>
+
+#include "Filesystem/Config/Config.hpp"
+#include "Filesystem/Constants/ConfigNames.hpp"
 
 #define CNORMAL 0xFFFFFFFF
 #define UNFADE_TIME 1000
@@ -14,6 +16,26 @@
 
 VDX9RENDER *DIALOG::RenderService = nullptr;
 FRECT DIALOG::m_frScreenData;
+
+namespace {
+    template<typename Type>
+    FRECT toFRECT(const Storm::Math::Types::Vector4<Type>& vector) {
+        Storm::Math::Types::Vector4<float> result = vector.template to<float>();
+        return FRECT{
+            .left = result.x,
+            .top = result.y,
+            .right = result.z,
+            .bottom = result.w};
+    }
+
+    template<typename Type>
+    FPOINT toFPOINT(const Storm::Math::Types::Vector2<Type>& vector) {
+        const Storm::Math::Types::Vector2<float> result = vector.template to<float>();
+        return FPOINT{
+            .x = result.x,
+            .y = result.y};
+    }
+}
 
 inline void SetVerticesForSquare(XI_TEX_VERTEX *pV, FRECT uv, float left, float top, float right, float bottom)
 {
@@ -91,8 +113,11 @@ void DIALOG::DlgTextDescribe::ChangeText(const std::string_view text)
     pageBreaks_ = storm::dialog::SplitIntoPages(asText.size(), nShowQuantity, forced_page_breaks);
 }
 
-void DIALOG::DlgTextDescribe::Init(VDX9RENDER *pRS, D3DVIEWPORT9 &vp, INIFILE *pIni)
+void DIALOG::DlgTextDescribe::Init(VDX9RENDER *pRS, D3DVIEWPORT9 &vp)
 {
+    auto config = Storm::Filesystem::Config::load(Storm::Filesystem::Constants::ConfigNames::dialog());
+    std::ignore = config.selectSection("DIALOG");
+
     Assert(pRS);
 
     offset.x = 20;
@@ -100,22 +125,16 @@ void DIALOG::DlgTextDescribe::Init(VDX9RENDER *pRS, D3DVIEWPORT9 &vp, INIFILE *p
     nWindowWidth = vp.Width - 2 * offset.x;
     offset.x += vp.X;
 
-    char FName[MAX_PATH];
-    if (pIni)
-        pIni->ReadString("DIALOG", "mainfont", FName, MAX_PATH, "DIALOG2");
-    else
-        strcpy_s(FName, "DIALOG2");
-    nFontID = pRS->LoadFont(FName);
+    nFontID = pRS->LoadFont(config.get<std::string>("mainfont", "DIALOG2"));
 
     dwColor = ARGB(255, 210, 227, 227);
-    dwColor = pIni ? pIni->GetInt("DIALOG", "mainFontColor", dwColor) : dwColor;
-    fScale = GetScrHeight(pIni ? pIni->GetFloat("DIALOG", "mainFontScale", 1.f) : 1.f);
+    dwColor = config.get<std::int64_t>("mainFontColor", dwColor);
+    fScale = GetScrHeight(config.get<double>("mainFontScale", 1.f));
     nLineInterval = static_cast<int32_t>(pRS->CharHeight(nFontID) * fScale);
 
     currentLine_ = 0;
     nShowQuantity = MAX_LINES;
-    if (pIni)
-        nShowQuantity = pIni->GetInt("DIALOG", "maxtextlines", nShowQuantity);
+    nShowQuantity = config.get<int>("maxtextlines", nShowQuantity);
 }
 
 int32_t DIALOG::DlgTextDescribe::GetShowHeight()
@@ -463,27 +482,19 @@ void DIALOG::DrawButtons()
 
 void DIALOG::LoadFromIni()
 {
-    auto pIni = fio->OpenIniFile("resource\\ini\\dialog.ini");
-    if (!pIni)
-    {
-        core.Trace("Warning! DIALOG: Can`t open ini file %s", "resource\\ini\\dialog.ini");
-        return;
-    }
+    auto config = Storm::Filesystem::Config::load(Storm::Filesystem::Constants::ConfigNames::dialog());
+    std::ignore = config.selectSection("BACKPARAM");
 
-    char param[512];
-    pIni->ReadString("BACKPARAM", "texture", param, sizeof(param) - 1, "dialog\\interface.tga");
-    m_BackParams.m_idBackTex = RenderService->TextureCreate(param);
+    const auto texture_path = config.get<std::string>("texture", "dialog\\interface.tga");
+    m_BackParams.m_idBackTex = RenderService->TextureCreate(texture_path.c_str());
 
-    FPOINT fpScrSize, fpScrOffset;
-    GetPointFromIni(pIni.get(), "BACKPARAM", "baseScreenSize", fpScrSize);
-    GetPointFromIni(pIni.get(), "BACKPARAM", "baseScreenOffset", fpScrOffset);
+    FPOINT fpScrSize = toFPOINT(config.get_vector2<std::int64_t>("baseScreenSize", {-1, -1}));
+    FPOINT fpScrOffset = toFPOINT(config.get_vector2<double>("baseScreenOffset",{}));
     const auto &screenSize = core.GetScreenSize();
-    if (fpScrSize.x <= 0)
-        fpScrSize.x = static_cast<float>(screenSize.width);
-    if (fpScrSize.y <= 0)
-        fpScrSize.y = static_cast<float>(screenSize.height);
-    m_nScrBaseWidth = static_cast<int32_t>(fpScrSize.x);
-    m_nScrBaseHeight = static_cast<int32_t>(fpScrSize.y);
+    fpScrSize.x = fpScrSize.x <= 0.0f ? static_cast<float>(screenSize.width) : fpScrSize.x;
+    fpScrSize.y = fpScrSize.y <= 0.0f ? static_cast<float>(screenSize.height) : fpScrSize.y;
+    m_nScrBaseWidth = static_cast<std::int32_t>(fpScrSize.x);
+    m_nScrBaseHeight = static_cast<std::int32_t>(fpScrSize.y);
     D3DVIEWPORT9 vp;
     RenderService->GetViewport(&vp);
     m_frScreenData.right = vp.Width / (fpScrSize.x + fpScrOffset.x);
@@ -491,88 +502,64 @@ void DIALOG::LoadFromIni()
     m_frScreenData.left = fpScrOffset.x / (fpScrSize.x + fpScrOffset.x);
     m_frScreenData.top = fpScrOffset.y / (fpScrSize.y + fpScrOffset.y);
 
-    GetRectFromIni(pIni.get(), "BACKPARAM", "uvLeftTop", m_BackParams.m_frLeftTopUV);
-    GetRectFromIni(pIni.get(), "BACKPARAM", "uvRightTop", m_BackParams.m_frRightTopUV);
-    GetRectFromIni(pIni.get(), "BACKPARAM", "uvLeftBottom", m_BackParams.m_frLeftBottomUV);
-    GetRectFromIni(pIni.get(), "BACKPARAM", "uvRightBottom", m_BackParams.m_frRightBottomUV);
-    GetRectFromIni(pIni.get(), "BACKPARAM", "uvLeft", m_BackParams.m_frLeftUV);
-    GetRectFromIni(pIni.get(), "BACKPARAM", "uvRight", m_BackParams.m_frRightUV);
-    GetRectFromIni(pIni.get(), "BACKPARAM", "uvTop", m_BackParams.m_frTopUV);
-    GetRectFromIni(pIni.get(), "BACKPARAM", "uvBottom", m_BackParams.m_frBottomUV);
-    GetRectFromIni(pIni.get(), "BACKPARAM", "uvCenter", m_BackParams.m_frCenterUV);
-    GetRectFromIni(pIni.get(), "BACKPARAM", "uvDivider", m_BackParams.m_frDividerUV);
+    m_BackParams.m_frLeftTopUV = toFRECT(config.get_vector4<double>("uvLeftTop", {0,0,1,1}));
+    m_BackParams.m_frRightTopUV = toFRECT(config.get_vector4<double>("uvRightTop", {0,0,1,1}));
+    m_BackParams.m_frLeftBottomUV = toFRECT(config.get_vector4<double>("uvLeftBottom", {0,0,1,1}));
+    m_BackParams.m_frRightBottomUV = toFRECT(config.get_vector4<double>("uvRightBottom", {0,0,1,1}));
+    m_BackParams.m_frLeftUV = toFRECT(config.get_vector4<double>("uvLeft", {0,0,1,1}));
+    m_BackParams.m_frRightUV = toFRECT(config.get_vector4<double>("uvRight", {0,0,1,1}));
+    m_BackParams.m_frTopUV = toFRECT(config.get_vector4<double>("uvTop", {0,0,1,1}));
+    m_BackParams.m_frBottomUV = toFRECT(config.get_vector4<double>("uvBottom", {0,0,1,1}));
+    m_BackParams.m_frCenterUV = toFRECT(config.get_vector4<double>("uvCenter", {0,0,1,1}));
+    m_BackParams.m_frDividerUV = toFRECT(config.get_vector4<double>("uvDivider", {0,0,1,1}));
 
-    GetRectFromIni(pIni.get(), "BACKPARAM", "uvChrNameLeft", m_BackParams.frCharacterNameRectLeftUV);
-    GetRectFromIni(pIni.get(), "BACKPARAM", "uvChrNameRight", m_BackParams.frCharacterNameRectRightUV);
-    GetRectFromIni(pIni.get(), "BACKPARAM", "uvChrNameCenter", m_BackParams.frCharacterNameRectCenterUV);
-    GetPointFromIni(pIni.get(), "BACKPARAM", "chrNameOffset", m_BackParams.fpCharacterNameOffset);
+    m_BackParams.frCharacterNameRectLeftUV = toFRECT(config.get_vector4<double>("uvChrNameLeft", {0,0,1,1}));
+    m_BackParams.frCharacterNameRectRightUV = toFRECT(config.get_vector4<double>("uvChrNameRight", {0,0,1,1}));
+    m_BackParams.frCharacterNameRectCenterUV = toFRECT(config.get_vector4<double>("uvChrNameCenter", {0,0,1,1}));
+    m_BackParams.fpCharacterNameOffset = toFPOINT(config.get_vector2<double>("chrNameOffset", {}));
     m_BackParams.fpCharacterNameOffset.x = GetScrWidth(m_BackParams.fpCharacterNameOffset.x);
     m_BackParams.fpCharacterNameOffset.y = GetScrHeight(m_BackParams.fpCharacterNameOffset.y);
-    m_BackParams.fCharacterNameRectHeight = GetScrHeight(pIni->GetFloat("BACKPARAM", "ChrNameHeight", 32.f));
-    m_BackParams.fCharacterNameRectLeftWidth = GetScrWidth(pIni->GetFloat("BACKPARAM", "ChrNameLeftWidth", 16.f));
-    m_BackParams.fCharacterNameRectCenterWidth = GetScrWidth(pIni->GetFloat("BACKPARAM", "ChrNameCenterWidth", 128.f));
-    m_BackParams.fCharacterNameRectRightWidth = GetScrWidth(pIni->GetFloat("BACKPARAM", "ChrNameRightWidth", 16.f));
+    m_BackParams.fCharacterNameRectHeight = GetScrHeight(config.get<std::int64_t>("ChrNameHeight", 32));
+    m_BackParams.fCharacterNameRectLeftWidth = GetScrWidth(config.get<std::int64_t>("ChrNameLeftWidth", 16));
+    m_BackParams.fCharacterNameRectCenterWidth = GetScrWidth(config.get<std::int64_t>("ChrNameCenterWidth", 128));
+    m_BackParams.fCharacterNameRectRightWidth = GetScrWidth(config.get<std::int64_t>("ChrNameRightWidth", 16));
 
     m_BackParams.bShowDivider = false;
-    m_BackParams.nDividerHeight = GetScrHeight(static_cast<float>(pIni->GetInt("BACKPARAM", "dividerHeight", 8)));
-    m_BackParams.nDividerOffsetX = GetScrWidth(static_cast<float>(pIni->GetInt("BACKPARAM", "dividerOffsetX", 8)));
+    m_BackParams.nDividerHeight = GetScrHeight(config.get<int>("dividerHeight", 8));
+    m_BackParams.nDividerOffsetX = GetScrWidth(config.get<int>("dividerOffsetX", 8));
     m_BackParams.nDividerOffsetY = 0;
 
-    GetRectFromIni(pIni.get(), "BACKPARAM", "backBorderOffset", m_BackParams.frBorderRect);
+    m_BackParams.frBorderRect = toFRECT(config.get_vector4<std::int64_t>("backBorderOffset", {0,0,1,1}));
     m_BackParams.frBorderRect.left = GetScrWidth(m_BackParams.frBorderRect.left);
     m_BackParams.frBorderRect.right = GetScrWidth(m_BackParams.frBorderRect.right);
     m_BackParams.frBorderRect.top = GetScrHeight(m_BackParams.frBorderRect.top);
     m_BackParams.frBorderRect.bottom = GetScrHeight(m_BackParams.frBorderRect.bottom);
 
-    GetRectFromIni(pIni.get(), "BACKPARAM", "backPosition", m_BackParams.m_frBorderExt);
+    m_BackParams.m_frBorderExt = toFRECT(config.get_vector4<std::int64_t>("backPosition", {0,0,1,1}));
     m_BackParams.m_frBorderExt.left = GetScrX(m_BackParams.m_frBorderExt.left);
     m_BackParams.m_frBorderExt.right = GetScrX(m_BackParams.m_frBorderExt.right);
     m_BackParams.m_frBorderExt.top = GetScrY(m_BackParams.m_frBorderExt.top);
     m_BackParams.m_frBorderExt.bottom = GetScrY(m_BackParams.m_frBorderExt.bottom);
 
     m_ButtonParams.m_idTexture = m_BackParams.m_idBackTex;
-    GetRectFromIni(pIni.get(), "BUTTON", "uvUpNormal", m_ButtonParams.frUpNormalButtonUV);
-    GetRectFromIni(pIni.get(), "BUTTON", "uvDownNormal", m_ButtonParams.frDownNormalButtonUV);
-    GetRectFromIni(pIni.get(), "BUTTON", "uvUpLight", m_ButtonParams.frUpLightButtonUV);
-    GetRectFromIni(pIni.get(), "BUTTON", "uvDownLight", m_ButtonParams.frDownLightButtonUV);
-    GetPointFromIni(pIni.get(), "BUTTON", "buttonSize", m_ButtonParams.fpButtonSize);
-    m_ButtonParams.fRightOffset = GetScrWidth(pIni->GetFloat("BUTTON", "rightoffset", 0.f));
-    m_ButtonParams.fTopOffset = GetScrHeight(pIni->GetFloat("BUTTON", "topoffset", 0.f));
-    m_ButtonParams.fBottomOffset = GetScrHeight(pIni->GetFloat("BUTTON", "bottomoffset", 0.f));
+    std::ignore = config.selectSection("BUTTON");
+    m_ButtonParams.frUpNormalButtonUV = toFRECT(config.get_vector4<double>("uvUpNormal", {0,0,1,1}));
+    m_ButtonParams.frDownNormalButtonUV = toFRECT(config.get_vector4<double>("uvDownNormal", {0,0,1,1}));
+    m_ButtonParams.frUpLightButtonUV = toFRECT(config.get_vector4<double>("uvUpLight", {0,0,1,1}));
+    m_ButtonParams.frDownLightButtonUV = toFRECT(config.get_vector4<double>("uvDownLight", {0,0,1,1}));
+    m_ButtonParams.fpButtonSize = toFPOINT(config.get_vector2<std::int64_t>("buttonSize", {}));
+    m_ButtonParams.fRightOffset = GetScrWidth(config.get<double>("rightoffset", 0.0));
+    m_ButtonParams.fTopOffset = GetScrHeight(config.get<double>("topoffset", 0.0));
+    m_ButtonParams.fBottomOffset = GetScrHeight(config.get<double>("bottomoffset", 0.0));
 
-    char FName[MAX_PATH];
-    pIni->ReadString("DIALOG", "charnamefont", FName, MAX_PATH, "DIALOG2");
-    m_nCharNameTextFont = RenderService->LoadFont(FName);
-    m_dwCharNameTextColor = pIni->GetInt("DIALOG", "charnamecolor", 0xFFFFFFFF);
-    m_fCharNameTextScale = pIni->GetFloat("DIALOG", "charnamescale", 1.f);
-    GetPointFromIni(pIni.get(), "DIALOG", "charnameoffset", m_fpCharNameTextOffset);
+    std::ignore = config.selectSection("DIALOG");
+    m_nCharNameTextFont = RenderService->LoadFont(config.get<std::string>("charnamefont", "DIALOG2"));
+    m_dwCharNameTextColor = config.get<std::int64_t>("charnamecolor", 0xFFFFFFFF);
+    m_fCharNameTextScale = config.get<double>("charnamescale", 1.0);
+
+    m_fpCharNameTextOffset = toFPOINT(config.get_vector2<std::int64_t>("charnameoffset", {}));
     m_fpCharNameTextOffset.x = GetScrWidth(m_fpCharNameTextOffset.x);
     m_fpCharNameTextOffset.y = GetScrHeight(m_fpCharNameTextOffset.y);
-}
-
-void DIALOG::GetRectFromIni(INIFILE *ini, const char *pcSection, const char *pcKey, FRECT &frect)
-{
-    frect.left = frect.top = 0.f;
-    frect.right = frect.bottom = 1.f;
-    if (!ini)
-        return;
-
-    char param[512];
-    if (!ini->ReadString((char *)pcSection, (char *)pcKey, param, sizeof(param) - 1, ""))
-        return;
-    sscanf(param, "%f,%f,%f,%f", &frect.left, &frect.top, &frect.right, &frect.bottom);
-}
-
-void DIALOG::GetPointFromIni(INIFILE *ini, const char *pcSection, const char *pcKey, FPOINT &fpoint)
-{
-    fpoint.x = fpoint.y = 0.f;
-    if (!ini)
-        return;
-
-    char param[512];
-    if (!ini->ReadString((char *)pcSection, (char *)pcKey, param, sizeof(param) - 1, ""))
-        return;
-    sscanf(param, "%f,%f", &fpoint.x, &fpoint.y);
 }
 
 //--------------------------------------------------------------------
@@ -603,9 +590,8 @@ bool DIALOG::Init()
     textViewport.MinZ = 0.0f;
     textViewport.MaxZ = 1.0f;
 
-    auto ini = fio->OpenIniFile("Resource\\Ini\\dialog.ini");
-    m_DlgText.Init(RenderService, textViewport, ini.get());
-    InitLinks(RenderService, textViewport, ini.get());
+    m_DlgText.Init(RenderService, textViewport);
+    InitLinks(RenderService, textViewport);
 
     CreateButtons();
     FillButtons();
@@ -613,7 +599,7 @@ bool DIALOG::Init()
     return true;
 }
 
-void DIALOG::InitLinks(VDX9RENDER *pRS, D3DVIEWPORT9 &vp, INIFILE *pIni)
+void DIALOG::InitLinks(VDX9RENDER *pRS, D3DVIEWPORT9 &vp)
 {
     linkDescribe_.Init();
 
@@ -627,31 +613,22 @@ void DIALOG::InitLinks(VDX9RENDER *pRS, D3DVIEWPORT9 &vp, INIFILE *pIni)
     int32_t window_width = vp.Width - 2 * offset.x;
     linkDescribe_.SetWindowWidth(window_width);
 
-    char FName[MAX_PATH];
-    if (pIni)
-        pIni->ReadString("DIALOG", "subfont", FName, MAX_PATH, "DIALOG3");
-    else
-        strcpy_s(FName, "DIALOG3");
-    int32_t font_id = pRS->LoadFont(FName);
+    auto config = Storm::Filesystem::Config::load(Storm::Filesystem::Constants::ConfigNames::dialog());
+    std::ignore = config.selectSection("DIALOG");
+
+    int32_t font_id = pRS->LoadFont(config.get<std::string>("subfont", "DIALOG3"));
     linkDescribe_.SetFont(font_id);
 
-    float scale = GetScrHeight(pIni ? pIni->GetFloat("DIALOG", "subFontScale", 1.f) : 1.f);
+    float scale = GetScrHeight(config.get<double>("subFontScale", 1.f));
     linkDescribe_.SetFontScale(scale);
 
     int32_t line_height = static_cast<int32_t>(pRS->CharHeight(font_id) * scale * .9f);
     linkDescribe_.SetLineHeight(line_height);
 
-    int32_t lines_per_page = 5;
-    if (pIni)
-        lines_per_page = pIni->GetInt("DIALOG", "maxlinkslines", lines_per_page);
-    linkDescribe_.SetMaxLinesPerPage(lines_per_page);
+    linkDescribe_.SetMaxLinesPerPage(config.get<int>("maxlinkslines", 5));
 
-    uint32_t color = 0xFF808080;
-    uint32_t selection_color = 0xFFFFFFFF;
-    color = pIni ? pIni->GetInt("DIALOG", "subFontColor", color) : color;
-    selection_color = pIni ? pIni->GetInt("DIALOG", "subFontColorSelect", selection_color) : selection_color;
-    linkDescribe_.SetColor(color);
-    linkDescribe_.SetSelectedColor(selection_color);
+    linkDescribe_.SetColor(config.get<std::int64_t>("subFontColor", 0xFF808080));
+    linkDescribe_.SetSelectedColor(config.get<std::int64_t>("subFontColorSelect", 0xFFFFFFFF));
 }
 
 //--------------------------------------------------------------------

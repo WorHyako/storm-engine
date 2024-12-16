@@ -37,7 +37,7 @@ Lighter::~Lighter()
 bool Lighter::Init()
 {
     // Checking if ini file exists
-    auto config = Storm::Filesystem::Config::load("resource\\ini\\loclighter.toml");
+    auto config = Storm::Filesystem::Config::load(Storm::Filesystem::Constants::ConfigNames::loclighter());
     std::ignore = config.selectSection("Main");
     auto isLoading = config.get<int>("loading", 0);
     autoTrace = config.get<int>("autotrace", 0) != 0;

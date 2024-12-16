@@ -789,7 +789,7 @@ void ROPE::LoadIni()
 {
     // GUARD(ROPE::LoadIni());
 
-    auto config = Storm::Filesystem::Config::load("resource\\ini\\rigging.toml");
+    auto config = Storm::Filesystem::Config::load(Storm::Filesystem::Constants::ConfigNames::rigging());
 
     std::ignore = config.selectSection("ROPES");
 

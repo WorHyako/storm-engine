@@ -5,6 +5,7 @@
 
 #include "Filesystem/Config/Config.hpp"
 #include "Filesystem/Constants/ConfigNames.hpp"
+#include "Filesystem/Constants/Paths.hpp"
 
 #include <zlib.h>
 

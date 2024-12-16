@@ -89,9 +89,9 @@ void VANT_BASE::Execute(uint32_t Delta_Time)
     {
         // ====================================================
         // If the ini-file has been changed, read the info from it
-        if (fio->_FileOrDirectoryExists("resource\\ini\\rigging.toml"))
+        if (fio->_FileOrDirectoryExists(Storm::Filesystem::Constants::ConfigNames::rigging().string().c_str()))
         {
-            auto ft_new = fio->_GetLastWriteTime("resource\\ini\\rigging.toml");
+            auto ft_new = fio->_GetLastWriteTime(Storm::Filesystem::Constants::ConfigNames::rigging().string().c_str());
             if (ft_old != ft_new)
             {
                 LoadIni();
@@ -620,12 +620,12 @@ void VANT_BASE::SetAll()
 void VANT::LoadIni()
 {
     // GUARD(VANT::LoadIni());
-    if (fio->_FileOrDirectoryExists("resource\\ini\\rigging.toml"))
+    if (fio->_FileOrDirectoryExists(Storm::Filesystem::Constants::ConfigNames::rigging().string().c_str()))
     {
-        ft_old = fio->_GetLastWriteTime("resource\\ini\\rigging.toml");
+        ft_old = fio->_GetLastWriteTime(Storm::Filesystem::Constants::ConfigNames::rigging().string().c_str());
     }
 
-    auto config = Storm::Filesystem::Config::load("resource\\ini\\rigging.toml");
+    auto config = Storm::Filesystem::Config::load(Storm::Filesystem::Constants::ConfigNames::rigging());
     std::ignore = config.selectSection("VANTS");
 
     auto texture_name = config.get<std::string>("TextureName", "vant.tga");
@@ -690,12 +690,12 @@ void VANTL::LoadIni()
 {
     // GUARD(VANT::LoadIni());
 
-    if (fio->_FileOrDirectoryExists("resource\\ini\\rigging.toml"))
+    if (fio->_FileOrDirectoryExists(Storm::Filesystem::Constants::ConfigNames::rigging().string().c_str()))
     {
-        ft_old = fio->_GetLastWriteTime("resource\\ini\\rigging.toml");
+        ft_old = fio->_GetLastWriteTime(Storm::Filesystem::Constants::ConfigNames::rigging().string().c_str());
     }
 
-    auto config = Storm::Filesystem::Config::load("resource\\ini\\rigging.toml");
+    auto config = Storm::Filesystem::Config::load(Storm::Filesystem::Constants::ConfigNames::rigging());
     std::ignore = config.selectSection("VANTS_L");
 
     auto texture_name = config.get<std::string>("TextureName", "vant.tga");
@@ -752,7 +752,6 @@ void VANTL::LoadIni()
     MAXFALL_CMP_VAL = config.get<float>("fDisapearValue", 5.0f);
 
     VantId = 1;
-
     // UNGUARD
 }
 
@@ -760,12 +759,12 @@ void VANTZ::LoadIni()
 {
     // GUARD(VANT::LoadIni());
 
-    if (fio->_FileOrDirectoryExists("resource\\ini\\rigging.toml"))
+    if (fio->_FileOrDirectoryExists(Storm::Filesystem::Constants::ConfigNames::rigging().string().c_str()))
     {
-        ft_old = fio->_GetLastWriteTime("resource\\ini\\rigging.toml");
+        ft_old = fio->_GetLastWriteTime(Storm::Filesystem::Constants::ConfigNames::rigging().string().c_str());
     }
 
-    auto config = Storm::Filesystem::Config::load("resource\\ini\\rigging.toml");
+    auto config = Storm::Filesystem::Config::load(Storm::Filesystem::Constants::ConfigNames::rigging());
     std::ignore = config.selectSection("VANTS_Z");
 
     auto texture_name = config.get<std::string>("TextureName", "vant.tga");
@@ -822,7 +821,6 @@ void VANTZ::LoadIni()
     MAXFALL_CMP_VAL = config.get<float>("fDisapearValue", 5.0f);
 
     VantId = 2;
-
     // UNGUARD
 }
 

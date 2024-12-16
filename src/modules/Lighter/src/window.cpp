@@ -1141,10 +1141,10 @@ int32_t Window::SelPreset()
     {
         if (lastPreset != ins) {
             // Load the name
-            auto config = Storm::Filesystem::Config::load("resource\\ini\\loclighter.toml");
+            auto config = Storm::Filesystem::Config::load(Storm::Filesystem::Constants::ConfigNames::loclighter());
             std::ignore = config.selectSection("prs" + std::to_string(ins));
             auto prsComment_str = config.get<std::string>("comment", "");
-            std::move(std::begin(prsComment_str), std::end(prsComment_str), prsComment);
+            std::ranges::move(prsComment_str, prsComment);
         }
         if (prsComment[0])
             Print(textColor, winx, winx + winw, vl + 88.0f, 0.5f, true, "%.35s", prsComment);
@@ -1160,7 +1160,7 @@ void Window::SavePreset(int32_t prs)
     if (prs < 0)
         return;
     // Checking if able to work
-    auto config = Storm::Filesystem::Config::load("resource\\ini\\loclighter.toml");
+    auto config = Storm::Filesystem::Config::load(Storm::Filesystem::Constants::ConfigNames::loclighter());
     std::ignore = config.selectSection("prs" + std::to_string(prs));
 
     for (int32_t i = 0; i < numElements; i++)
@@ -1225,7 +1225,7 @@ void Window::LoadPreset(int32_t prs)
     if (prs < 0)
         return;
     // Checking if able to work
-    auto config = Storm::Filesystem::Config::load("resource\\ini\\loclighter.toml");
+    auto config = Storm::Filesystem::Config::load(Storm::Filesystem::Constants::ConfigNames::loclighter());
     std::ignore = config.selectSection("prs" + std::to_string(prs));
 
     for (int32_t i = 0; i < numElements; i++)

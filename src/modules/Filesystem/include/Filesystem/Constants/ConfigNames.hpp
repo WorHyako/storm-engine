@@ -1,19 +1,23 @@
 #pragma once
 
-#include <string>
-
-#include "Filesystem/Constants/Paths.hpp"
-
-constexpr std::string_view config_file_ext = ".toml";
+#include <filesystem>
 
 namespace Storm::Filesystem::Constants::ConfigNames {
     [[nodiscard]]
-    inline std::filesystem::path engine() noexcept {
-        return Paths::root() / std::filesystem::path("engine" + std::string(config_file_ext));
-    }
+    std::filesystem::path engine() noexcept;
 
     [[nodiscard]]
-    inline std::filesystem::path animals() noexcept {
-        return Paths::ini() / std::filesystem::path("animals" + std::string(config_file_ext));
-    }
+    std::filesystem::path animals() noexcept;
+
+    [[nodiscard]]
+    std::filesystem::path rigging() noexcept;
+
+    [[nodiscard]]
+    std::filesystem::path particles() noexcept;
+
+    [[nodiscard]]
+    std::filesystem::path loclighter() noexcept;
+
+    [[nodiscard]]
+    std::filesystem::path dialog() noexcept;
 }

@@ -9,7 +9,7 @@ Config::Config() noexcept
 Config Config::load(std::filesystem::path file_path) noexcept {
     Config config;
     config._config_path = std::move(file_path);
-    if (!std::filesystem::exists(file_path)) {
+    if (!std::filesystem::exists(config._config_path)) {
         std::printf("Can't open config file - %s\n", config._config_path.string().c_str());
         return config;
     }
@@ -41,4 +41,18 @@ void Config::write() const noexcept {
     }
     config_file << _config;
     config_file.close();
+}
+
+std::string Config::to_lowercase(std::string str) const noexcept {
+    std::ranges::transform(str, std::begin(str),
+                           [](auto &sym) {
+                               return std::tolower(sym);
+                           });
+    return str;
+}
+
+toml::node *Config::node(const std::string &key) const noexcept {
+    return _section == nullptr
+               ? nullptr
+               : _section->get(to_lowercase(key));
 }

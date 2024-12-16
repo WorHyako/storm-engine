@@ -90,11 +90,12 @@ void FLAG::Execute(uint32_t Delta_Time)
         DoSTORM_DELETE();
     if (bUse)
     {
+        const std::string config_name{Storm::Filesystem::Constants::ConfigNames::rigging().string()};
         // ====================================================
         // If the ini-file has been changed, read the info from it
-        if (fio->_FileOrDirectoryExists("resource\\ini\\rigging.ini"))
+        if (fio->_FileOrDirectoryExists(config_name.c_str()))
         {
-            auto ft_new = fio->_GetLastWriteTime("resource\\ini\\rigging.ini");
+            auto ft_new = fio->_GetLastWriteTime(config_name.c_str());
             if (ft_old != ft_new)
             {
                 LoadIni();
@@ -571,11 +572,13 @@ void FLAG::LoadIni()
 {
     // GUARD(FLAG::LoadIni());
 
-    if (fio->_FileOrDirectoryExists("resource\\ini\\rigging.toml"))
+    const std::string config_name {Storm::Filesystem::Constants::ConfigNames::rigging().string()};
+
+    if (fio->_FileOrDirectoryExists(config_name.c_str()))
     {
-        ft_old = fio->_GetLastWriteTime("resource\\ini\\rigging.toml");
+        ft_old = fio->_GetLastWriteTime(config_name.c_str());
     }
-    auto config = Storm::Filesystem::Config::load("resource\\ini\\rigging.toml");
+    auto config = Storm::Filesystem::Config::load(config_name.c_str());
     std::ignore = config.selectSection("FLAGS");
 
     // load texture parameters

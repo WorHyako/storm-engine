@@ -21,5 +21,6 @@ target_link_libraries(filesystem
         PUBLIC
         nlohmann_json
         storm::utils
+        storm::math
         tomlplusplus::tomlplusplus
         spdlog::spdlog_header_only)

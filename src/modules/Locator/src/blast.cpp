@@ -35,12 +35,12 @@ bool BLAST::Init()
         return false;
 
     //    int32_t n;
-    auto config = Storm::Filesystem::Config::load("resource\\ini\\particles\\particles.toml");
+    auto config = Storm::Filesystem::Config::load(Storm::Filesystem::Constants::ConfigNames::particles());
     std::ignore = config.selectSection("geo");
 
     const auto RandomNum = config.get<int>("randomnum", 0);
 
-    auto files = config.getArray<std::string>("file");
+    auto files = config.get_array<std::string>("file");
     if (!files.has_value()) {
         return false;
     }

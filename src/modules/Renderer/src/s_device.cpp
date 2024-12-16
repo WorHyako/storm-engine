@@ -509,7 +509,7 @@ bool DX9RENDER::Init() {
     bDropVideoConveyor = config.get<int>("DropVideoConveyor", 0) != 0;
     texLog = config.get<int>("texture_log", 0) == 1;
     bUseLargeBackBuffer = config.get<int>("UseLargeBackBuffer", 0) != 0;
-    bWindow = config.get<int>("full_screen", 0) == 0;
+    bWindow = config.get<int>("full_screen", 1) == 0;
     nTextureDegradation = config.get<int>("texture_degradation", 0);
     FovMultiplier = config.get<float>("fov_multiplier", 1.0f);
     screen_size.x = config.get<int>("screen_x", 1024);

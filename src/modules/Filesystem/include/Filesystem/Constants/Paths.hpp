@@ -1,76 +1,35 @@
 #pragma once
 
-#include <shlobj_core.h>
 #include <filesystem>
-
-#ifndef PROJECT_ROOT_DIR
-#define PROJECT_ROOT_DIR ""
-#endif
 
 namespace Storm::Filesystem::Constants::Paths {
     [[nodiscard]]
-    inline std::filesystem::path root() noexcept {
-        return {PROJECT_ROOT_DIR};
-    }
+    std::filesystem::path root() noexcept;
 
     [[nodiscard]]
-    inline std::filesystem::path stash() noexcept {
-#ifdef _WIN32 // SHGetKnownFolderPath
-        wchar_t *str = nullptr;
-        if (SHGetKnownFolderPath(FOLDERID_Documents, KF_FLAG_SIMPLE_IDLIST, nullptr, &str) != S_OK
-            || str == nullptr) {
-            return {};
-        }
-        std::filesystem::path path{std::filesystem::path(str) / "My Games" / "Sea Dogs"};
-        CoTaskMemFree(str);
-#else
-            char *pref_path = nullptr;
-            pref_path = SDL_GetPrefPath("Akella", "Sea Dogs");
-            if (pref_path == nullptr) {
-                return {};
-            }
-            path = pref_path;
-#endif
-        return path;
-    }
+    std::filesystem::path stash() noexcept;
 
     [[nodiscard]]
-    inline std::filesystem::path resources() noexcept {
-        return {root() / "RESOURCE"};
-    }
+    std::filesystem::path resources() noexcept;
 
     [[nodiscard]]
-    inline std::filesystem::path ini() noexcept {
-        return {resources() / "INI"};
-    }
+    std::filesystem::path ini() noexcept;
 
     [[nodiscard]]
-    inline std::filesystem::path sentry_db() noexcept {
-        return {stash() / "sentry-db"};
-    }
+    std::filesystem::path sentry_db() noexcept;
 
     [[nodiscard]]
-    inline std::filesystem::path logs() noexcept {
-        return {stash() / "Logs"};
-    }
+    std::filesystem::path logs() noexcept;
 
     [[nodiscard]]
-    inline std::filesystem::path screenshots() noexcept {
-        return {stash() / "Screenshots"};
-    }
+    std::filesystem::path screenshots() noexcept;
 
     [[nodiscard]]
-    inline std::filesystem::path script_cache() noexcept {
-        return {stash() / "Cache"};
-    }
+    std::filesystem::path script_cache() noexcept;
 
     [[nodiscard]]
-    inline std::filesystem::path save_data() noexcept {
-        return {stash() / "SaveData"};
-    }
+    std::filesystem::path save_data() noexcept;
 
     [[nodiscard]]
-    inline std::filesystem::path program() noexcept {
-        return {root() / "Program"};
-    }
+    std::filesystem::path program() noexcept;
 }
