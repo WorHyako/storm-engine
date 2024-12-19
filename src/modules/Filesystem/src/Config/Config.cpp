@@ -6,17 +6,16 @@ Config::Config() noexcept
     : _section(nullptr) {
 }
 
-Config Config::load(std::filesystem::path file_path) noexcept {
+Config Config::load(const std::filesystem::path& file_path) noexcept {
     Config config;
-    config._config_path = std::move(file_path);
-    if (!std::filesystem::exists(config._config_path)) {
-        std::printf("Can't open config file - %s\n", config._config_path.string().c_str());
+    if (!std::filesystem::exists(file_path)) {
+        std::printf("Can't open config file - %s\n", file_path.string().c_str());
         return config;
     }
     try {
-        config._config = toml::parse_file(config._config_path.string());
+        config._config = toml::parse_file(file_path.string());
     } catch (const toml::parse_error &err) {
-        std::printf("Can't parse config file - %s\n", config._config_path.string().c_str());
+        std::printf("Can't parse config file - %s\n", file_path.string().c_str());
         std::printf("\t\tErorr - %s\n\t\t%s\n", err.what(), std::string(err.description()).c_str());
     }
     return config;
@@ -35,7 +34,7 @@ bool Config::selectSection(const std::string &section_name) noexcept {
 }
 
 void Config::write() const noexcept {
-    std::ofstream config_file(_config_path);
+    std::ofstream config_file(_config.source().path.get()->c_str());
     if (!config_file.is_open()) {
         return;
     }

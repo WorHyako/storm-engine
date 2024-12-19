@@ -20,4 +20,7 @@ namespace Storm::Filesystem::Constants::ConfigNames {
 
     [[nodiscard]]
     std::filesystem::path dialog() noexcept;
+
+    [[nodiscard]]
+    std::filesystem::path lights() noexcept;
 }

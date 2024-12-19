@@ -13,6 +13,7 @@ namespace {
     constexpr std::string_view particles_config_name = "particles";
     constexpr std::string_view loclighter_config_name = "loclighter";
     constexpr std::string_view dialog_config_name = "dialog";
+    constexpr std::string_view lights_config_name = "lights";
 }
 
 std::filesystem::path ConfigNames::engine() noexcept {
@@ -37,4 +38,8 @@ std::filesystem::path ConfigNames::loclighter() noexcept {
 
 std::filesystem::path ConfigNames::dialog() noexcept {
     return Paths::ini() / std::filesystem::path(std::string(dialog_config_name) + std::string(config_file_ext));
+}
+
+std::filesystem::path ConfigNames::lights() noexcept {
+    return Paths::ini() / std::filesystem::path(std::string(lights_config_name) + std::string(config_file_ext));
 }

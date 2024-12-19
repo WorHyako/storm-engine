@@ -41,10 +41,10 @@ bool BLAST::Init()
     const auto RandomNum = config.get<int>("randomnum", 0);
 
     auto files = config.get_array<std::string>("file");
-    if (!files.has_value()) {
+    if (files.empty()) {
         return false;
     }
-    std::ranges::for_each(files.value(),
+    std::ranges::for_each(files,
                           [&](std::string& file) {
                               AddGeometry(file.data(), RandomNum * std::rand() / RAND_MAX + 1);
                           });

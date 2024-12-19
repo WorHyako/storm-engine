@@ -32,10 +32,7 @@ namespace {
     template<typename Type>
     Vector toVector(const Storm::Math::Types::Vector3<Type>& vector) {
         Storm::Math::Types::Vector3<float> result = vector.template to<float>();
-        return Vector{
-            .x = result.x,
-            .y = result.y,
-            .z = result.z,};
+        return Vector(result.x, result.y, result.z);
     }
 }
 
@@ -1304,9 +1301,8 @@ void SAIL::LoadSailIni() {
         fSHoleFlexDepend = 0.1;
     }
 
-    auto roll_form_opt = config.get_array<double>("rollSSailForm");
-    if (roll_form_opt.has_value()) {
-        auto& roll_form = roll_form_opt.value();
+    auto roll_form = config.get_array<double>("rollSSailForm");
+    if (!roll_form.empty()) {
         SSailRollForm.resize(std::size(roll_form));
         std::ranges::move(roll_form, std::begin(SSailRollForm));
     } else {
@@ -1322,11 +1318,10 @@ void SAIL::LoadSailIni() {
     auto ss_vec = config.get_vector3<double>("SquareWindSpeed", {0.4, 0.5, 0.6});
     ss = toVector(ss_vec);
 
-    auto TSailRollForm_opt = config.get_array<double>("rollSSailForm");
-    if (TSailRollForm_opt.has_value()) {
-        auto& TSailRollForm_temp = TSailRollForm_opt.value();
-        TSailRollForm.resize(std::size(TSailRollForm_temp));
-        std::ranges::move(TSailRollForm_temp, std::begin(TSailRollForm));
+    auto TSailRollForm_vec = config.get_array<double>("rollSSailForm");
+    if (!TSailRollForm_vec.empty()) {
+        TSailRollForm.resize(std::size(TSailRollForm_vec));
+        std::ranges::move(TSailRollForm_vec, std::begin(TSailRollForm));
     } else {
         TSailRollForm = {0.2, 0.8, 1.0, 0.8, 0.4, 1.0, 1.3, 1.0, 0.4, 0.8, 1.0, 0.8, 0.2};
     }

@@ -11,7 +11,7 @@
 namespace Storm::Filesystem {
     class Config final {
     public:
-        static Config load(std::filesystem::path file_path) noexcept;
+        static Config load(const std::filesystem::path &file_path) noexcept;
 
         [[nodiscard]]
         bool selectSection(const std::string &section_name) noexcept;
@@ -31,8 +31,6 @@ namespace Storm::Filesystem {
 
         toml::table *_section;
 
-        std::filesystem::path _config_path;
-
 #pragma region Accessors/Mutators
 
     public:
@@ -49,7 +47,11 @@ namespace Storm::Filesystem {
 
         template<class ValueType>
         [[nodiscard]]
-        std::optional<std::vector<ValueType> > get_array(const std::string &key) const noexcept;
+        std::vector<ValueType> get_array(const std::string &key) const noexcept;
+
+        template<class ValueType>
+        [[nodiscard]]
+        std::vector<std::vector<ValueType> > get_matrix(const std::string &key) const noexcept;
 
         template<typename ValueType>
         [[nodiscard]]
@@ -78,6 +80,11 @@ namespace Storm::Filesystem {
         Math::Types::Vector2<ValueType> get_vector2(const std::string &key,
                                                     Math::Types::Vector2<ValueType> default_value) const noexcept;
 
+        template<typename ValueType>
+        [[nodiscard]]
+        std::optional<Math::Types::Vector2<ValueType> >
+        get_vector2_from(const std::string &key, std::int16_t idx) const noexcept;
+
     private:
         [[nodiscard]]
         toml::node *node(const std::string &key) const noexcept;
@@ -91,7 +98,7 @@ namespace Storm::Filesystem {
 #pragma region Accessors/Mutators
 
     template<typename ValueType>
-    std::optional<std::vector<ValueType> > Config::get_array(const std::string &key) const noexcept {
+    std::vector<ValueType> Config::get_array(const std::string &key) const noexcept {
         auto config_node = node(key);
         if (config_node == nullptr) {
             std::printf("Can't find key [%s]\n", key.c_str());
@@ -104,7 +111,7 @@ namespace Storm::Filesystem {
             if (value == nullptr) {
                 std::printf(
                     "Warning:\n\tConfig - [%s]\n\tKey [%s] has different type - [%s].\n\tRequested type - [%s]\n",
-                    _config_path.filename().string().c_str(),
+                    _config.source().path.get()->c_str(),
                     key.c_str(),
                     toml::impl::node_type_friendly_names[static_cast<int>(value->type())].data(),
                     typeid(ValueType).name());
@@ -117,33 +124,61 @@ namespace Storm::Filesystem {
     }
 
     template<typename ValueType>
-    std::optional<Math::Types::Vector4<ValueType> > Config::get_vector4(const std::string &key) const noexcept {
-        auto array = get_array<ValueType>(key);
-        if (!array.has_value() || std::size(array.value()) != 4) {
+    std::vector<std::vector<ValueType> > Config::get_matrix(const std::string &key) const noexcept {
+        auto config_node = node(key);
+        if (config_node == nullptr || !config_node->is_array()) {
+            std::printf("Can't find key [%s]\n", key.c_str());
             return {};
         }
-        auto &array_value = array.value();
-        return Math::Types::Vector4<ValueType>(array_value[0], array_value[1], array_value[2], array_value[3]);
+        std::vector<std::vector<ValueType> > result{};
+        for (auto &&row: *config_node->as_array()) {
+            if (row.is_array()) {
+                std::vector<ValueType> column_array{};
+                for (auto &&column: *row.as_array()) {
+                    auto column_value = column.as<ValueType>();
+                    ValueType val_to_emplace = column_value == nullptr
+                                                   ? ValueType()
+                                                   : static_cast<ValueType>(*column_value);
+                    column_array.emplace_back(val_to_emplace);
+                }
+                result.emplace_back(column_array);
+            } else {
+                auto row_value = row.as<ValueType>();
+                ValueType val_to_emplace = row_value == nullptr
+                                               ? ValueType()
+                                               : static_cast<ValueType>(*row_value);
+                result.template emplace_back<std::vector<ValueType> >({val_to_emplace});
+            }
+        }
+
+        return result;
+    }
+
+    template<typename ValueType>
+    std::optional<Math::Types::Vector4<ValueType> > Config::get_vector4(const std::string &key) const noexcept {
+        auto array = get_array<ValueType>(key);
+        if (array.empty() || std::size(array) != 4) {
+            return {};
+        }
+        return Math::Types::Vector4<ValueType>(array[0], array[1], array[2], array[3]);
     }
 
     template<typename ValueType>
     std::optional<Math::Types::Vector3<ValueType> > Config::get_vector3(const std::string &key) const noexcept {
         auto array = get_array<ValueType>(key);
-        if (!array.has_value() || std::size(array.value()) != 3) {
+        if (array.empty() || std::size(array) != 3) {
             return {};
         }
-        auto &array_value = array.value();
-        return Math::Types::Vector3<ValueType>(array_value[0], array_value[1], array_value[2]);
+        return Math::Types::Vector3<ValueType>(array[0], array[1], array[2]);
     }
 
     template<typename ValueType>
     std::optional<Math::Types::Vector2<ValueType> > Config::get_vector2(const std::string &key) const noexcept {
         auto array = get_array<ValueType>(key);
-        if (!array.has_value() || std::size(array.value()) != 2) {
+        if (array.empty() || std::size(array) != 2) {
             return {};
         }
-        auto &array_value = array.value();
-        return Math::Types::Vector2<ValueType>(array_value[0], array_value[1]);
+        return Math::Types::Vector2<ValueType>(array[0], array[1]);
     }
 
     template<typename ValueType>
@@ -170,6 +205,16 @@ namespace Storm::Filesystem {
                    : default_value;
     }
 
+    template<typename ValueType>
+    std::optional<Math::Types::Vector2<ValueType> > Config::get_vector2_from(const std::string &key,
+                                                                             std::int16_t idx) const noexcept {
+        auto matrix = get_matrix<ValueType>(key);
+        if (std::size(matrix) < idx + 1 || std::size(matrix[idx]) != 2) {
+            return {};
+        }
+        return Math::Types::Vector2<ValueType>(matrix[idx][0], matrix[idx][1]);
+    }
+
     template<class ValueType>
     std::optional<ValueType> Config::get(const std::string &key) const noexcept {
         auto config_node = node(key);
@@ -181,10 +226,10 @@ namespace Storm::Filesystem {
         if (!value.has_value()) {
             std::printf(
                 "Warning:\n\tConfig [%s]\n\tKey [%s] has different type - [%s].\n\tRequested type - [%s]\n",
-                        _config_path.filename().string().c_str(),
-                        key.c_str(),
-                        toml::impl::node_type_friendly_names[static_cast<int>(config_node->type())].data(),
-                        typeid(ValueType).name());
+                _config.source().path.get()->c_str(),
+                key.c_str(),
+                toml::impl::node_type_friendly_names[static_cast<int>(config_node->type())].data(),
+                typeid(ValueType).name());
         }
         return value;
     }

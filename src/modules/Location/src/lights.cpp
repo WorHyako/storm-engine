@@ -13,6 +13,9 @@
 #include "core.h"
 #include "string_compare.hpp"
 
+#include "Filesystem/Config/Config.hpp"
+#include "Filesystem/Constants/ConfigNames.hpp"
+
 // ============================================================================================
 // Construction, destruction
 // ============================================================================================
@@ -56,6 +59,7 @@ bool Lights::Init()
         throw std::runtime_error("No service: dx9render");
     collide = static_cast<COLLIDE *>(core.GetService("COLL"));
     // read the parameters
+    // auto config = Storm::Filesystem::Config::load(Storm::Filesystem::Constants::ConfigNames::lights());
     auto ini = fio->OpenIniFile("RESOURCE\\Ini\\lights.ini");
     if (!ini)
     {

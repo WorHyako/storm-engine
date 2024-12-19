@@ -16,7 +16,6 @@
 SEAFOAM::SEAFOAM()
     : seaID(0), sea(nullptr), shipsCount(0), carcassTexture(0), isStorm(false), soundService(nullptr)
 {
-    psIni = nullptr;
     renderer = nullptr;
 }
 
@@ -50,8 +49,6 @@ bool SEAFOAM::Init()
     renderer = static_cast<VDX9RENDER *>(core.GetService("dx9render"));
     soundService = static_cast<VSoundService *>(core.GetService("SoundService"));
 
-    psIni = fio->OpenIniFile("resource\\ini\\particles.ini");
-
     InitializeShipFoam();
 
     // core.CreateEntity(&arrowModel,"MODELR");
@@ -81,11 +78,11 @@ void SEAFOAM::AddShip(entid_t pShipEID)
     foamInfo->shipModel->GetNode(0)->geo->GetInfo(foamInfo->hullInfo);
     foamInfo->enabled = true;
     foamInfo->frontEmitter[0] = new SEAFOAM_PS();
-    foamInfo->frontEmitter[0]->Init(psIni.get(), "seafoam");
+    foamInfo->frontEmitter[0]->Init("seafoam");
     foamInfo->frontEmitter[1] = new SEAFOAM_PS();
-    foamInfo->frontEmitter[1]->Init(psIni.get(), "seafoam2");
+    foamInfo->frontEmitter[1]->Init("seafoam2");
     foamInfo->frontEmitter[2] = new SEAFOAM_PS();
-    foamInfo->frontEmitter[2]->Init(psIni.get(), "seafoam_front");
+    foamInfo->frontEmitter[2]->Init("seafoam_front");
 
     CreateTracePoints(foamInfo);
     const auto wideK = sqrtf(foamInfo->hullInfo.boxsize.y / 17.f);

@@ -3,8 +3,6 @@
 #include "matrix.h"
 #include "dx9render.h"
 #include "geometry.h"
-#include "file_service.h"
-#include "vma.hpp"
 #include <v_particle_system.h>
 
 #define MAX_PS_TEXTURES 8
@@ -160,7 +158,7 @@ class SEAFOAM_PS : VPARTICLE_SYSTEM
     entid_t SurfaceID;
     void UseSurface(entid_t surface_id);
     float fSurfaceOffset;
-    char *TechniqueName;
+    std::string TechniqueName;
     uint32_t ParticleColor;
 
     //---------------------------------
@@ -193,7 +191,7 @@ class SEAFOAM_PS : VPARTICLE_SYSTEM
   public:
     SEAFOAM_PS();
     ~SEAFOAM_PS() override;
-    bool Init(INIFILE *ini, const char *psname);
+    bool Init(const std::string_view& section);
     void UpdateVertexBuffer();
     void Realize(uint32_t DeltaTime);
     void Execute(uint32_t DeltaTime);
@@ -208,7 +206,7 @@ class SEAFOAM_PS : VPARTICLE_SYSTEM
     void SetParticlesTracks(uint32_t DeltaTime);
 
     float GetTrackValue(TRACK_EVENT *Track, int32_t Time);
-    bool BuildTrack(INIFILE *ini, TRACK_EVENT *Track, const char *psname, const char *key_name);
+    bool BuildTrack(TRACK_EVENT *Track, const std::string_view& section, const std::string_view& key);
     void SetEmitter(CVECTOR p, CVECTOR a) override;
     void LinkToObject(entid_t id, CVECTOR _LinkPos) override;
     void SetDelay(int32_t _delay) override;

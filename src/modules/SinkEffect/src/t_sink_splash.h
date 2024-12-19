@@ -1,7 +1,6 @@
 #pragma once
 
 #include "c_vector.h"
-#include "v_sound_service.h"
 #include "dx9render.h"
 #include "sea_base.h"
 #include "seps.h"
@@ -22,7 +21,7 @@ class TSinkSplash
     TSinkSplash();
     virtual ~TSinkSplash();
 
-    void Initialize(INIFILE *_ini, SEA_BASE *sea);
+    void Initialize(SEA_BASE *sea);
     void Release();
     void Start(const CVECTOR &_pos, uint16_t *_indexes, SINK_VERTEX *_vertexes, int32_t vOffset);
     void Process(uint32_t dTime, uint16_t *_indexes, SINK_VERTEX *_vertexes);
