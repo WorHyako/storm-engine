@@ -9,7 +9,6 @@
 #ifdef _WIN32
 #include "platform/d3dx9.hpp"
 #endif
-#include <string_view>
 
 #include "entity.h"
 #include "matrix.h"

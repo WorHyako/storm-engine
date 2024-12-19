@@ -29,7 +29,7 @@ PCS_CONTROLS::PCS_CONTROLS() {
     memset(&ControlsTab[0], 0, sizeof(ControlsTab));
 
     auto config = Storm::Filesystem::Config::load(Storm::Filesystem::Constants::ConfigNames::engine());
-    std::ignore = config.selectSection("controls");
+    std::ignore = config.select_section("controls");
     m_bIsOffDebugKeys = config.get<int>("ondebugkeys", 0) == 0;
 
     input_ = Input::Create();

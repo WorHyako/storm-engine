@@ -7,6 +7,9 @@
 #include "shared/sea_ai/script_defines.h"
 #include "tga.h"
 
+#include "Filesystem/Config/Config.hpp"
+#include "Filesystem/Constants/Paths.hpp"
+
 #include <cstdio>
 #include <imgui.h>
 
@@ -376,9 +379,8 @@ bool ISLAND::CreateHeightMap(const std::string_view &pDir, const std::string_vie
     TGA_H tga_head;
     char str_tmp[256];
 
-    std::filesystem::path path = std::filesystem::path() / "resource" / "foam" / pDir / pName;
+    std::filesystem::path path = Storm::Filesystem::Constants::Paths::foam() / pDir / pName;
     std::string fileName = path.string() + ".tga";
-    std::string iniName = path.string() + ".ini";
 
     // calc center and size
     CalcBoxParameters(vBoxCenter, vRealBoxSize);
@@ -409,6 +411,8 @@ bool ISLAND::CreateHeightMap(const std::string_view &pDir, const std::string_vie
         }
     }
 
+    auto config = Storm::Filesystem::Config::load(path.string() + ".toml");
+    std::ignore = config.select_section("Main");
     if (bLoad)
     {
         iDMapSize = mzDepth.GetSizeX();
@@ -424,27 +428,25 @@ bool ISLAND::CreateHeightMap(const std::string_view &pDir, const std::string_vie
         vBoxSize /= 2.0f;
         vRealBoxSize /= 2.0f;
 
-        auto pI = fio->OpenIniFile(iniName.c_str());
-        Assert(pI.get());
 
-        CVECTOR vTmpBoxCenter, vTmpBoxSize;
-        pI->ReadString("Main", "vBoxCenter", str_tmp, sizeof(str_tmp) - 1, "1.0,1.0,1.0");
-        sscanf(str_tmp, "%f,%f,%f", &vTmpBoxCenter.x, &vTmpBoxCenter.y, &vTmpBoxCenter.z);
-        pI->ReadString("Main", "vBoxSize", str_tmp, sizeof(str_tmp) - 1, "1.0,1.0,1.0");
-        sscanf(str_tmp, "%f,%f,%f", &vTmpBoxSize.x, &vTmpBoxSize.y, &vTmpBoxSize.z);
+        auto vbox_center_vec3 = config.get_vector3<double>("vBoxCenter", {1.0,1.0,1.0});
+        CVECTOR vTmpBoxCenter(vbox_center_vec3.x, vbox_center_vec3.y, vbox_center_vec3.z);
+        auto vbox_size_vec3 = config.get_vector3<double>("vBoxSize", {1.0,1.0,1.0});
+        CVECTOR vTmpBoxSize(vbox_size_vec3.x, vbox_size_vec3.y, vbox_size_vec3.z);
+
         if (~(vTmpBoxCenter - vBoxCenter) > 0.1f)
         {
-            core.Trace("Island: vBoxCenter not equal, foam error: %s, distance = %.3f", iniName.c_str(),
+            core.Trace("Island: vBoxCenter not equal, foam error: %s, distance = %.3f", path.string() + ".toml",
                        sqrtf(~(vTmpBoxCenter - vBoxCenter)));
             core.Trace("vBoxCenter = %f,%f,%f", vBoxCenter.x, vBoxCenter.y, vBoxCenter.z);
         }
         if (~(vTmpBoxSize - vBoxSize) > 0.1f)
         {
-            core.Trace("Island: vBoxSize not equal, foam error: %s", iniName.c_str());
+            core.Trace("Island: vBoxSize not equal, foam error: %s", path.string() + ".toml");
             core.Trace("vBoxSize = %f,%f,%f", vBoxSize.x, vBoxSize.y, vBoxSize.z);
         }
 
-        AIPath.Load(*pI);
+        AIPath.Load(path.string() + ".toml");
         AIPath.BuildTable();
 
         return true;
@@ -524,18 +526,9 @@ bool ISLAND::CreateHeightMap(const std::string_view &pDir, const std::string_vie
     mzDepth.Save(fileName + ".zap");
     pDepthMap.clear();
 
-    auto pI = fio->OpenIniFile(iniName.c_str());
-    if (!pI)
-    {
-        pI = fio->CreateIniFile(iniName.c_str(), false);
-        Assert(pI.get());
-    }
-    char str[512];
-    pI->WriteString("Main", "DepthFile", (char *)fileName.c_str());
-    sprintf_s(str, "%f,%f,%f", vBoxCenter.x, vBoxCenter.y, vBoxCenter.z);
-    pI->WriteString("Main", "vBoxCenter", str);
-    sprintf_s(str, "%f,%f,%f", vBoxSize.x, vBoxSize.y, vBoxSize.z);
-    pI->WriteString("Main", "vBoxSize", str);
+    config.set<std::string>("DepthFile", fileName);
+    config.set_vec3<double>("vBoxCenter", {vBoxCenter.x, vBoxCenter.y, vBoxCenter.z});
+    config.set_vec3<double>("vBoxSize", {vBoxSize.x, vBoxSize.y, vBoxSize.z});
 
     return true;
 }

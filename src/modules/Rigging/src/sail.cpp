@@ -1251,7 +1251,7 @@ void SAIL::SetAllSails()
 
 void SAIL::LoadSailIni() {
     auto config = Storm::Filesystem::Config::load(Storm::Filesystem::Constants::ConfigNames::rigging());
-    std::ignore = config.selectSection("SAILS");
+    std::ignore = config.select_section("SAILS");
 
     g_fSailHoleDepend = config.get<double>("fHoleDepend", 1.0f);
 

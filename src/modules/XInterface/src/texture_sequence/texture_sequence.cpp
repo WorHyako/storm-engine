@@ -1,12 +1,11 @@
 #include "texture_sequence.h"
-#include "vma.hpp"
 
 #include "core.h"
 
-#include "file_service.h"
+#include "Filesystem/Config/Config.hpp"
+#include "Filesystem/Constants/ConfigNames.hpp"
 
 #define FILE_PATH "TextureSequence\\%s.tga"
-static const char *INI_FILENAME = "resource\\ini\\TextureSequence.ini";
 
 #define TS_VERTEX_FRMT (D3DFVF_XYZRHW | D3DFVF_TEX2 | D3DFVF_TEXTUREFORMAT2)
 
@@ -53,29 +52,26 @@ TextureSequence::~TextureSequence()
     Release();
 }
 
-IDirect3DTexture9 *TextureSequence::Initialize(VDX9RENDER *pRS, const char *cTSfileName, bool bCicled)
+IDirect3DTexture9 *TextureSequence::Initialize(VDX9RENDER *pRS, const char *section, bool bCicled)
 {
     m_bCicled = bCicled;
-    if (pRS == nullptr || cTSfileName == nullptr)
+    if (pRS == nullptr || section == nullptr)
         return nullptr;
     m_pRS = pRS;
 
     // open ini file
-    auto ini = fio->OpenIniFile(INI_FILENAME);
-    if (!ini)
-    {
-        core.Trace("ini file %s not found!", INI_FILENAME);
-        return nullptr;
-    }
-    m_dwDeltaTime = ini->GetInt((char *)cTSfileName, "timeDelay", 128);
+    auto config = Storm::Filesystem::Config::load(Storm::Filesystem::Constants::ConfigNames::texture_sequence());
+    std::ignore = config.select_section(std::string(section));
+
+    m_dwDeltaTime = config.get<int>("timeDelay", 128);
     if (m_dwDeltaTime == 0)
     {
         return nullptr;
     }
-    m_texWidth = ini->GetInt((char *)cTSfileName, "width", 128);
-    m_texHeight = ini->GetInt((char *)cTSfileName, "height", 128);
-    m_xQuantity = ini->GetInt((char *)cTSfileName, "horzQ", 1);
-    m_yQuantity = ini->GetInt((char *)cTSfileName, "vertQ", 1);
+    m_texWidth = config.get<int>("width", 128);
+    m_texHeight = config.get<int>("height", 128);
+    m_xQuantity = config.get<int>("horzQ", 1);
+    m_yQuantity = config.get<int>("vertQ", 1);
     m_maxCurNum = m_xQuantity * m_yQuantity;
     if (m_maxCurNum == 0)
     {
@@ -83,17 +79,15 @@ IDirect3DTexture9 *TextureSequence::Initialize(VDX9RENDER *pRS, const char *cTSf
     }
 
     // load sequence texture
-    char fullName[256];
-    if (!ini->ReadString((char *)cTSfileName, "TextureFile", fullName, sizeof(fullName) - 1, ""))
-        sprintf_s(fullName, FILE_PATH, cTSfileName);
-    m_AllTex = m_pRS->TextureCreate(fullName);
+    const auto texture_name = config.get<std::string>("TextureFile", "");
+    m_AllTex = m_pRS->TextureCreate(texture_name.c_str());
     if (m_AllTex == -1)
     {
         return nullptr;
     }
 
-    m_bHorzFlip = ini->GetInt((char *)cTSfileName, "flipH", 0) != 0;
-    m_bVertFlip = ini->GetInt((char *)cTSfileName, "flipV", 0) != 0;
+    m_bHorzFlip = config.get<int>("flipH", 0) != 0;
+    m_bVertFlip = config.get<int>("flipV", 0) != 0;
 
     m_pTexture = nullptr;
     // create output texture

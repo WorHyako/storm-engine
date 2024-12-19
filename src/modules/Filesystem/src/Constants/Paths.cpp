@@ -14,7 +14,7 @@ std::filesystem::path Paths::stash() noexcept {
     if (SHGetKnownFolderPath(FOLDERID_Documents, KF_FLAG_SIMPLE_IDLIST, nullptr, &str) != S_OK
         || str == nullptr) {
         return {};
-        }
+    }
     std::filesystem::path path{std::filesystem::path(str) / "My Games" / "Sea Dogs"};
     CoTaskMemFree(str);
 #else
@@ -54,6 +54,14 @@ std::filesystem::path Paths::script_cache() noexcept {
 
 std::filesystem::path Paths::save_data() noexcept {
     return {stash() / "SaveData"};
+}
+
+std::filesystem::path Paths::locations() noexcept {
+    return {foam() / "locations"};
+}
+
+std::filesystem::path Paths::foam() noexcept {
+    return {resources() / "foam"};
 }
 
 std::filesystem::path Paths::program() noexcept {

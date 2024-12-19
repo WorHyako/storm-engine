@@ -116,7 +116,7 @@ void DIALOG::DlgTextDescribe::ChangeText(const std::string_view text)
 void DIALOG::DlgTextDescribe::Init(VDX9RENDER *pRS, D3DVIEWPORT9 &vp)
 {
     auto config = Storm::Filesystem::Config::load(Storm::Filesystem::Constants::ConfigNames::dialog());
-    std::ignore = config.selectSection("DIALOG");
+    std::ignore = config.select_section("DIALOG");
 
     Assert(pRS);
 
@@ -483,7 +483,7 @@ void DIALOG::DrawButtons()
 void DIALOG::LoadFromIni()
 {
     auto config = Storm::Filesystem::Config::load(Storm::Filesystem::Constants::ConfigNames::dialog());
-    std::ignore = config.selectSection("BACKPARAM");
+    std::ignore = config.select_section("BACKPARAM");
 
     const auto texture_path = config.get<std::string>("texture", "dialog\\interface.tga");
     m_BackParams.m_idBackTex = RenderService->TextureCreate(texture_path.c_str());
@@ -542,7 +542,7 @@ void DIALOG::LoadFromIni()
     m_BackParams.m_frBorderExt.bottom = GetScrY(m_BackParams.m_frBorderExt.bottom);
 
     m_ButtonParams.m_idTexture = m_BackParams.m_idBackTex;
-    std::ignore = config.selectSection("BUTTON");
+    std::ignore = config.select_section("BUTTON");
     m_ButtonParams.frUpNormalButtonUV = toFRECT(config.get_vector4<double>("uvUpNormal", {0,0,1,1}));
     m_ButtonParams.frDownNormalButtonUV = toFRECT(config.get_vector4<double>("uvDownNormal", {0,0,1,1}));
     m_ButtonParams.frUpLightButtonUV = toFRECT(config.get_vector4<double>("uvUpLight", {0,0,1,1}));
@@ -552,7 +552,7 @@ void DIALOG::LoadFromIni()
     m_ButtonParams.fTopOffset = GetScrHeight(config.get<double>("topoffset", 0.0));
     m_ButtonParams.fBottomOffset = GetScrHeight(config.get<double>("bottomoffset", 0.0));
 
-    std::ignore = config.selectSection("DIALOG");
+    std::ignore = config.select_section("DIALOG");
     m_nCharNameTextFont = RenderService->LoadFont(config.get<std::string>("charnamefont", "DIALOG2"));
     m_dwCharNameTextColor = config.get<std::int64_t>("charnamecolor", 0xFFFFFFFF);
     m_fCharNameTextScale = config.get<double>("charnamescale", 1.0);
@@ -614,7 +614,7 @@ void DIALOG::InitLinks(VDX9RENDER *pRS, D3DVIEWPORT9 &vp)
     linkDescribe_.SetWindowWidth(window_width);
 
     auto config = Storm::Filesystem::Config::load(Storm::Filesystem::Constants::ConfigNames::dialog());
-    std::ignore = config.selectSection("DIALOG");
+    std::ignore = config.select_section("DIALOG");
 
     int32_t font_id = pRS->LoadFont(config.get<std::string>("subfont", "DIALOG3"));
     linkDescribe_.SetFont(font_id);

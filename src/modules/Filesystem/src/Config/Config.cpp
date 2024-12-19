@@ -21,7 +21,7 @@ Config Config::load(const std::filesystem::path& file_path) noexcept {
     return config;
 }
 
-bool Config::selectSection(const std::string &section_name) noexcept {
+bool Config::select_section(const std::string &section_name) noexcept {
     if (_config.empty()) {
         return false;
     }
@@ -38,7 +38,7 @@ void Config::write() const noexcept {
     if (!config_file.is_open()) {
         return;
     }
-    config_file << _config;
+    config_file << toml::toml_formatter{_config, toml::format_flags::none};
     config_file.close();
 }
 

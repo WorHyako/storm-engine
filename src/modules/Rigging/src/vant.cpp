@@ -626,7 +626,7 @@ void VANT::LoadIni()
     }
 
     auto config = Storm::Filesystem::Config::load(Storm::Filesystem::Constants::ConfigNames::rigging());
-    std::ignore = config.selectSection("VANTS");
+    std::ignore = config.select_section("VANTS");
 
     auto texture_name = config.get<std::string>("TextureName", "vant.tga");
     if (texl != -1)
@@ -696,7 +696,7 @@ void VANTL::LoadIni()
     }
 
     auto config = Storm::Filesystem::Config::load(Storm::Filesystem::Constants::ConfigNames::rigging());
-    std::ignore = config.selectSection("VANTS_L");
+    std::ignore = config.select_section("VANTS_L");
 
     auto texture_name = config.get<std::string>("TextureName", "vant.tga");
     if (texl != -1)
@@ -765,7 +765,7 @@ void VANTZ::LoadIni()
     }
 
     auto config = Storm::Filesystem::Config::load(Storm::Filesystem::Constants::ConfigNames::rigging());
-    std::ignore = config.selectSection("VANTS_Z");
+    std::ignore = config.select_section("VANTS_Z");
 
     auto texture_name = config.get<std::string>("TextureName", "vant.tga");
     if (texl != -1)

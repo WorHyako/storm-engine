@@ -5,6 +5,9 @@
 #include "dx9render.h"
 #include "math3d.h"
 
+#include "Filesystem/Config/Config.hpp"
+#include "Filesystem/Constants/Paths.hpp"
+
 namespace
 {
 
@@ -842,63 +845,57 @@ void CoastFoam::clear()
 
 void CoastFoam::Load()
 {
-    char cSection[256], cKey[256], cTemp[1024];
-
-    const auto sID = std::string("resource\\foam\\locations\\") + to_string(AttributesPointer->GetAttribute("id")) + ".ini";
-    auto pI = fio->OpenIniFile(sID.c_str());
-    if (!pI)
-        return;
+    const auto location_name = to_string(AttributesPointer->GetAttribute("id"));
+    const auto config_path = Storm::Filesystem::Constants::Paths::locations() / (location_name + ".toml");
+    auto config = Storm::Filesystem::Config::load(config_path);
+    std::ignore = config.select_section("Main");
 
     clear();
-    const auto iNumFoams = pI->GetInt(nullptr, "NumFoams", 0);
-    fMaxFoamDistance = pI->GetFloat(nullptr, "MaxFoamDistance", 1000.0f);
-    fFoamDeltaY = pI->GetFloat(nullptr, "FoamDeltaY", 0.2f);
-    iFoamDivides = pI->GetInt(nullptr, "FoamDivides", 4);
+    const auto iNumFoams = config.get<int>("NumFoams", 0);
+    fMaxFoamDistance =  config.get<float>("MaxFoamDistance", 1000.0f);
+    fFoamDeltaY =  config.get<float>("FoamDeltaY", 0.2f);
+    iFoamDivides =  config.get<int>("FoamDivides", 4);
+
     for (int32_t i = 0; i < iNumFoams; i++)
     {
         // Foam * pF = aFoams[aFoams.Add(new Foam)];
         aFoams.push_back(new Foam);
         auto *pF = aFoams.back();
 
-        sprintf_s(cSection, "foam_%d", i);
+        std::ignore = config.select_section(std::string("foam_" + std::to_string(i)));
 
-        const int32_t iNumParts = pI->GetInt(cSection, "NumParts", 0);
+        auto alpha_vec = config.get_vector2<double>("Alpha", {148.0, 196.0}).to<float>();
+        pF->fAlphaMin = alpha_vec.x;
+        pF->fAlphaMax = alpha_vec.y;
 
-        pI->ReadString(cSection, "Alpha", cTemp, sizeof(cTemp), "148, 196");
-        sscanf(cTemp, "%f, %f", &pF->fAlphaMin, &pF->fAlphaMax);
+        auto speed_vec = config.get_vector2<double>("Speed", {0.2, 0.3}).to<float>();
+        pF->fSpeedMin = speed_vec.x;
+        pF->fSpeedMax = speed_vec.y;
 
-        pI->ReadString(cSection, "Speed", cTemp, sizeof(cTemp), "0.200, 0.30");
-        sscanf(cTemp, "%f, %f", &pF->fSpeedMin, &pF->fSpeedMax);
+        auto braking_vec = config.get_vector2<double>("Braking", {}).to<float>();
+        pF->fBrakingMin = braking_vec.x;
+        pF->fBrakingMax = braking_vec.y;
 
-        pI->ReadString(cSection, "Braking", cTemp, sizeof(cTemp), "0.000, 0.000");
-        sscanf(cTemp, "%f, %f", &pF->fBrakingMin, &pF->fBrakingMax);
+        auto appear_vec = config.get_vector2<double>("Appear", {0.0, 0.2}).to<float>();
+        pF->fAppearMin = appear_vec.x;
+        pF->fAppearMax = appear_vec.y;
 
-        pI->ReadString(cSection, "Appear", cTemp, sizeof(cTemp), "0.000, 0.200");
-        sscanf(cTemp, "%f, %f", &pF->fAppearMin, &pF->fAppearMax);
+        pF->fTexScaleX = config.get<float>("TexScaleX", 0.05f);
 
-        pI->ReadString(cSection, "TexScaleX", cTemp, sizeof(cTemp), "0.050");
-        sscanf(cTemp, "%f", &pF->fTexScaleX);
+        pF->iNumFoams = config.get<int>("NumFoams", 2) == 2 ? 2 : 1;
 
-        pF->iNumFoams = (pI->GetInt(cSection, "NumFoams", 2) == 2) ? 2 : 1;
+        pF->sTexture = config.get<std::string>("Texture", "foam.tga");
+        pF->iTexture = rs->TextureCreate((std::string("weather\\coastfoam\\") + pF->sTexture).c_str());
+        pF->Type = static_cast<FOAMTYPE>(config.get<int>("Type", FOAM_TYPE_2));
 
-        pI->ReadString(cSection, "Texture", cTemp, sizeof(cTemp), "foam.tga");
-        pF->sTexture = cTemp;
-        pF->iTexture = rs->TextureCreate((std::string("weather\\coastfoam\\") + cTemp).c_str());
-        pF->Type = static_cast<FOAMTYPE>(pI->GetInt(cSection, "Type", FOAM_TYPE_2));
+        const auto iNumParts = config.get<int>("NumParts", 0);
 
-        for (int32_t j = 0; j < ((iNumParts) ? iNumParts : 100000); j++)
-        {
-            sprintf_s(cKey, "key_%d", j);
-            CVECTOR v1, v2;
-            v1.y = v2.y = 0.0f;
-            pI->ReadString(cSection, cKey, cTemp, sizeof(cTemp), "");
-            if (!cTemp[0])
-                break;
-            sscanf(cTemp, "%f, %f, %f, %f", &v1.x, &v1.z, &v2.x, &v2.z);
+        for (std::int32_t j = 0; j < (iNumParts ? iNumParts : 100000); j++) {
+            const auto vec4 = config.get_vector4<double>("key_" + std::to_string(j), {}).to<float>();
 
-            FoamPart foam;
-            foam.v[0] = v1;
-            foam.v[1] = v2;
+            FoamPart foam{};
+            foam.v[0] = CVECTOR(vec4.x, 0.0f, vec4.y),
+            foam.v[1] = CVECTOR(vec4.z, 0.0f, vec4.w);
             pF->aFoamParts.push_back(foam);
             // pF->aFoamParts.Add();
             // pF->aFoamParts.LastE().v[0] = v1;

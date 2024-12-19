@@ -27,7 +27,7 @@ TSeagulls::~TSeagulls()
 //--------------------------------------------------------------------
 void TSeagulls::LoadSettings() {
     auto config = Storm::Filesystem::Config::load(Storm::Filesystem::Constants::ConfigNames::animals());
-    std::ignore = config.selectSection(ANIMALS_SEAGULLS_SECTION);
+    std::ignore = config.select_section(ANIMALS_SEAGULLS_SECTION);
     maxRadius = config.get<float>("radius", SEAGULL_MAX_RADIUS);
     maxAngleSpeed = config.get<float>("angle", SEAGULL_MAX_SPEED);
     maxDistance = config.get<float>("distance", SEAGULL_DISTANCE);

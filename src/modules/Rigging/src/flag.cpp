@@ -579,7 +579,7 @@ void FLAG::LoadIni()
         ft_old = fio->_GetLastWriteTime(config_name.c_str());
     }
     auto config = Storm::Filesystem::Config::load(config_name.c_str());
-    std::ignore = config.selectSection("FLAGS");
+    std::ignore = config.select_section("FLAGS");
 
     // load texture parameters
     const auto texture_name = config.get<std::string>("TextureName", "flagall.tga");

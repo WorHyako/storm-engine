@@ -1142,7 +1142,7 @@ int32_t Window::SelPreset()
         if (lastPreset != ins) {
             // Load the name
             auto config = Storm::Filesystem::Config::load(Storm::Filesystem::Constants::ConfigNames::loclighter());
-            std::ignore = config.selectSection("prs" + std::to_string(ins));
+            std::ignore = config.select_section("prs" + std::to_string(ins));
             auto prsComment_str = config.get<std::string>("comment", "");
             std::ranges::move(prsComment_str, prsComment);
         }
@@ -1161,7 +1161,7 @@ void Window::SavePreset(int32_t prs)
         return;
     // Checking if able to work
     auto config = Storm::Filesystem::Config::load(Storm::Filesystem::Constants::ConfigNames::loclighter());
-    std::ignore = config.selectSection("prs" + std::to_string(prs));
+    std::ignore = config.select_section("prs" + std::to_string(prs));
 
     for (int32_t i = 0; i < numElements; i++)
     {
@@ -1226,7 +1226,7 @@ void Window::LoadPreset(int32_t prs)
         return;
     // Checking if able to work
     auto config = Storm::Filesystem::Config::load(Storm::Filesystem::Constants::ConfigNames::loclighter());
-    std::ignore = config.selectSection("prs" + std::to_string(prs));
+    std::ignore = config.select_section("prs" + std::to_string(prs));
 
     for (int32_t i = 0; i < numElements; i++)
     {

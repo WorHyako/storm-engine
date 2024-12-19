@@ -433,7 +433,7 @@ void COMPILER::SetWarning(const char *data_PTR, ...)
 
 void COMPILER::LoadPreprocess() {
     auto config = Storm::Filesystem::Config::load(Storm::Filesystem::Constants::ConfigNames::engine());
-    std::ignore = config.selectSection("script");
+    std::ignore = config.select_section("script");
     bDebugInfo = config.get<int>("debuginfo", 0) == 0;
     bWriteCodeFile = config.get<int>("codefiles", 0) == 0;
     bRuntimeLog = config.get<int>("runtimelog", 0) == 0;

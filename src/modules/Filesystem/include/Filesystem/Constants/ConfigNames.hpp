@@ -22,5 +22,8 @@ namespace Storm::Filesystem::Constants::ConfigNames {
     std::filesystem::path dialog() noexcept;
 
     [[nodiscard]]
+    std::filesystem::path texture_sequence() noexcept;
+
+    [[nodiscard]]
     std::filesystem::path lights() noexcept;
 }

@@ -485,7 +485,7 @@ bool DX9RENDER::Init() {
     std::filesystem::create_directories(Storm::Filesystem::Constants::Paths::screenshots());
 
     auto config = Storm::Filesystem::Config::load(Storm::Filesystem::Constants::ConfigNames::engine());
-    std::ignore = config.selectSection("Main");
+    std::ignore = config.select_section("Main");
 
     // bPostProcessEnabled = ini->GetInt(0, "PostProcess", 0) == 1;
     bPostProcessEnabled = false; //~!~
@@ -576,7 +576,7 @@ bool DX9RENDER::Init() {
         core.Trace("can not init start font");
     idFontCurrent = 0L;
 
-    std::ignore = config.selectSection("ProgressImage");
+    std::ignore = config.select_section("ProgressImage");
     // Progress image parameters
     progressFramesPosX = config.get<float>("RelativePosX", 0.85f);
     progressFramesPosY = config.get<float>("RelativePosY", 0.8f);

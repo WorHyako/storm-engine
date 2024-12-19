@@ -14,7 +14,7 @@ namespace Storm::Filesystem {
         static Config load(const std::filesystem::path &file_path) noexcept;
 
         [[nodiscard]]
-        bool selectSection(const std::string &section_name) noexcept;
+        bool select_section(const std::string &section_name) noexcept;
 
     private:
         [[nodiscard]]
@@ -42,8 +42,11 @@ namespace Storm::Filesystem {
         [[nodiscard]]
         ValueType get(const std::string &key, ValueType default_value) const noexcept;
 
-        template<class Type>
-        void set(const std::string &key, Type value) noexcept;
+        template<class ValueType>
+        void set(const std::string &key, ValueType value) noexcept;
+
+        template<class ValueType>
+        void set_vec3(const std::string &key, Math::Types::Vector3<ValueType> value) noexcept;
 
         template<class ValueType>
         [[nodiscard]]
@@ -109,12 +112,12 @@ namespace Storm::Filesystem {
         for (auto &&element: *config_node->as_array()) {
             toml::impl::wrap_node<ValueType> *value = element.as<ValueType>();
             if (value == nullptr) {
-                std::printf(
-                    "Warning:\n\tConfig - [%s]\n\tKey [%s] has different type - [%s].\n\tRequested type - [%s]\n",
-                    _config.source().path.get()->c_str(),
-                    key.c_str(),
-                    toml::impl::node_type_friendly_names[static_cast<int>(value->type())].data(),
-                    typeid(ValueType).name());
+                // std::printf(
+                    // "Warning:\n\tConfig - [%s]\n\tKey [%s] has different type - [%s].\n\tRequested type - [%s]\n",
+                    // _config.source().path.get()->c_str(),
+                    // key.c_str(),
+                    // toml::impl::node_type_friendly_names[static_cast<int>(ValueType::type())].data(),
+                    // typeid(ValueType).name());
                 return {};
             }
             result.push_back(static_cast<ValueType>(*value));
@@ -247,9 +250,22 @@ namespace Storm::Filesystem {
             return;
         }
         auto it = _section->insert_or_assign(to_lowercase(key), value);
-        if (const auto result = it.first != _section->end()) {
+        if (it.first != _section->end()) {
             write();
         }
+    }
+
+    template<class ValueType>
+    void Config::set_vec3(const std::string &key, Math::Types::Vector3<ValueType> value) noexcept {
+        auto current_node = node(key);
+        if (current_node == nullptr || current_node->as_array() == nullptr) {
+            return;
+        }
+        auto&& array = _section->get_as<toml::array>(key);
+        array->replace(array->cbegin(), value.x);
+        array->replace(array->cbegin() + 1, value.y);
+        array->replace(array->cbegin() + 2, value.z);
+        write();
     }
 
 #pragma endregion Accessors/Mutators

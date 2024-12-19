@@ -425,7 +425,7 @@ int main(int argc, char *argv[])
     bool run_in_background = false;
     {
         auto config =  Storm::Filesystem::Config::load(Storm::Filesystem::Constants::ConfigNames::engine());
-        std::ignore = config.selectSection("Main");
+        std::ignore = config.select_section("Main");
         dwMaxFPS = config.get<std::uint32_t>("max_fps", 0);
         bDebugWindow = config.get<std::uint32_t>("DebugWindow", 0) == 1;
         bAcceleration = config.get<std::uint32_t>("Acceleration", 0) == 1;

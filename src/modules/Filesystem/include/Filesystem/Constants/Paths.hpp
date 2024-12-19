@@ -31,5 +31,11 @@ namespace Storm::Filesystem::Constants::Paths {
     std::filesystem::path save_data() noexcept;
 
     [[nodiscard]]
+    std::filesystem::path locations() noexcept;
+
+    [[nodiscard]]
+    std::filesystem::path foam() noexcept;
+
+    [[nodiscard]]
     std::filesystem::path program() noexcept;
 }
