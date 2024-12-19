@@ -107,8 +107,7 @@ def repair_option_duplicating(file_path) -> None:
         key = str(content[i][:equal_idx - 1])
         j = i + 1
         while j < len(content) and not content[j].startswith('['):
-            other_line_key_idx = content[j].find(key)
-            if other_line_key_idx == -1:
+            if not content[j].startswith(f'{key} '):
                 j += 1
                 continue
             current_line = content[i][:-1]
@@ -121,6 +120,7 @@ def repair_option_duplicating(file_path) -> None:
             content.pop(j)
             continue
         i += 1
+
     with open(file_path, 'w', encoding='utf-8') as file:
         file.writelines(content)
 
@@ -168,7 +168,7 @@ def repair_symbols(file_path) -> None:
         content = file.readlines()
 
     i = 0
-    while i < len(content) - 1:
+    while i < len(content):
         comment_idx = content[i].find(';')
         if comment_idx != -1:
             content[i] = content[i][:comment_idx]
@@ -234,6 +234,7 @@ def main() -> int:
             shutil.copy(file_full_path, ini_file)
 
             parser = configparser.ConfigParser()
+
             repair_symbols(ini_file)
 
             while True:
