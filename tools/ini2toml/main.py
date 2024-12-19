@@ -12,7 +12,6 @@ class ParseResult(enum.Enum):
     FLOAT = 1
     INT = 2
     STRING = 3
-    BOOL = 4
 
 
 def element_type(element) -> ParseResult:
@@ -173,16 +172,16 @@ def repair_symbols(file_path) -> None:
         comment_idx = content[i].find(';')
         if comment_idx != -1:
             content[i] = content[i][:comment_idx]
+            if content[i].endswith(' '):
+                content[i] = content[i][:-1]
+            if not content[i].endswith('\n'):
+                content[i] += '\n'
 
         content[i] = content[i].replace('\t', ' ').replace('  ', ' ').replace('  ', ' ')
 
         percent_symbol_idx = content[i].find('%')
         if percent_symbol_idx != -1:
             content[i] = content[i].replace('%', '%%')
-
-        if content[i] == '\n' or content[i].replace(' ', '') == '':
-            content.pop(i)
-            continue
 
         if len(content[i]) > 1 and not content[i].startswith('[') and content[i].find('=') == -1:
             content[i] = content[i][:-1] + ' = 0\n'
@@ -191,6 +190,10 @@ def repair_symbols(file_path) -> None:
         if separ_idx != -1:
             equal_idx = content[i].find('=')
             content[i] = content[i][:equal_idx + 2] + '[' + content[i][equal_idx + 2:-1] + ']\n'
+
+        if content[i] == '\n' or content[i].replace(' ', '') == '':
+            content.pop(i)
+            continue
 
         i += 1
 
@@ -292,12 +295,6 @@ def main() -> int:
                                     res.append(list(map(int, i)))
                                     continue
                                 res.append(int(i))
-                        case ParseResult.BOOL:
-                            for i in value_arr:
-                                if type(i) is list:
-                                    res.append(list(map(bool, i)))
-                                    continue
-                                res.append(bool(i))
                         case ParseResult.FLOAT:
                             for i in value_arr:
                                 if type(i) is list:
