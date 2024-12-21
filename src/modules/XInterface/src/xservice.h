@@ -7,26 +7,26 @@ class XSERVICE : public VXSERVICE
 {
     struct IMAGELISTDESCR
     {
-        char *sImageListName;
-        char *sTextureName;
-        int32_t textureID;
-        int textureQuantity;
+        std::string sImageListName;
+        std::string sTextureName;
+        std::int32_t textureID = -1L;
+        std::int32_t textureQuantity = 0;
 
-        int32_t textureWidth;
-        int32_t textureHeight;
-        int32_t pictureQuantity;
-        int32_t pictureStart;
+        std::int32_t textureWidth = 1024;
+        std::int32_t textureHeight = 1024;
+        std::int32_t pictureQuantity = 0;
+        std::int32_t pictureStart = 0;
     };
 
     struct PICTUREDESCR
     {
-        char *sPictureName;
+        std::string sPictureName;
         XYRECT pTextureRect;
     };
 
   public:
     XSERVICE();
-    ~XSERVICE() override;
+    ~XSERVICE() override = default;
 
     // initialization of service
     void Init(VDX9RENDER *pRS, int32_t lWidth, int32_t lHight) override;
@@ -58,10 +58,8 @@ class XSERVICE : public VXSERVICE
   protected:
     VDX9RENDER *m_pRS;
 
-    int32_t m_dwListQuantity;
-    int32_t m_dwImageQuantity;
-    IMAGELISTDESCR *m_pList;
-    PICTUREDESCR *m_pImage;
+    std::vector<IMAGELISTDESCR> m_pList;
+    std::vector<PICTUREDESCR> m_pImage;
 
     // Scale factors
     float m_fWScale;
@@ -69,49 +67,4 @@ class XSERVICE : public VXSERVICE
     // scaling error parameters
     float m_fWAdd;
     float m_fHAdd;
-};
-
-class ComboString
-{
-    VDX9RENDER *m_pRS;
-
-    struct STRING_DESCR
-    {
-        int x, y;
-        int idFont;
-        char *str;
-    };
-
-    struct PICS_DESCR
-    {
-        XYRECT pos;
-        int idTex;
-        FXYRECT texUV;
-    };
-
-    struct STRING_COMBINE
-    {
-        int *pFontsID;
-        int fontQ;
-
-        STRING_DESCR *pStr;
-        int strQ;
-
-        PICS_DESCR *pPics;
-        int picQ;
-    };
-
-    STRING_COMBINE *pComboStr;
-
-    void AddToCombo(char *fontName, const XYPOINT &posStrStart, char *str);
-    void AddToCombo(XYRECT posPic, char *picTexName, FXYRECT picUV);
-
-  public:
-    ComboString();
-    ~ComboString();
-
-    void PrintComboString(int comboStrID);
-    int GetComboString(int align, int x, int y, int needWidth, int needHeight, int *allHeight, char *formatStr,
-                       char *fontlist);
-    void ComboStringRelease(int comboStrID);
 };

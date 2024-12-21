@@ -43,7 +43,6 @@ Lights::~Lights()
     {
         if (types[i].corona >= 0 && rs)
             rs->TextureRelease(types[i].corona);
-        delete types[i].name;
     }
     if (rs)
         for (int32_t i = 1; i < 8; i++)
@@ -59,87 +58,20 @@ bool Lights::Init()
         throw std::runtime_error("No service: dx9render");
     collide = static_cast<COLLIDE *>(core.GetService("COLL"));
     // read the parameters
-    // auto config = Storm::Filesystem::Config::load(Storm::Filesystem::Constants::ConfigNames::lights());
-    auto ini = fio->OpenIniFile("RESOURCE\\Ini\\lights.ini");
-    if (!ini)
-    {
-        core.Trace("Location lights not inited -> RESOURCES\\Ini\\lights.ini not found");
-        return false;
+    auto config = Storm::Filesystem::Config::load(Storm::Filesystem::Constants::ConfigNames::lights());
+
+    const auto sections = config.Sections();
+
+    for (const auto &section : sections) {
+        std::ignore = config.select_section(section);
+        LightType light;
+        light.name = section;
+        fill_light_by_config(light);
+
+        types.emplace_back(std::move(light));
     }
-    char lName[256];
-    auto res = ini->GetSectionName(lName, sizeof(lName) - 1);
-    while (res)
-    {
-        lName[sizeof(lName) - 1] = 0;
-        int32_t i;
-        for (i = 0; i < numTypes; i++)
-        {
-            if (storm::iEquals(lName, types[i].name))
-            {
-                core.Trace("Location lights redefinition light: %s", lName);
-                break;
-            }
-        }
-        if (i == numTypes)
-        {
-            types.push_back({});
-            // Save the name
-            const auto len = strlen(lName) + 1;
-            types[numTypes].name = new char[len];
-            memcpy(types[numTypes].name, lName, len);
-            // Reading parameters
-            types[numTypes].color.b = ini->GetFloat(lName, "b", 1.0f);
-            types[numTypes].color.g = ini->GetFloat(lName, "g", 1.0f);
-            types[numTypes].color.r = ini->GetFloat(lName, "r", 1.0f);
-            types[numTypes].color.a = 1.0f;
-            types[numTypes].dxLight.Type = D3DLIGHT_POINT;
-            types[numTypes].dxLight.Diffuse = types[numTypes].color;
-            types[numTypes].dxLight.Range = ini->GetFloat(lName, "range", 10.0f);
-            types[numTypes].dxLight.Attenuation0 = ini->GetFloat(lName, "att0", 0.0f);
-            types[numTypes].dxLight.Attenuation1 = ini->GetFloat(lName, "att1", 0.0f);
-            types[numTypes].dxLight.Attenuation2 = ini->GetFloat(lName, "att2", 1.0f);
-            types[numTypes].flicker = ini->GetFloat(lName, "flicker", 0.0f);
-            types[numTypes].freq = ini->GetFloat(lName, "freq", 0.0f);
-            types[numTypes].flickerSlow = ini->GetFloat(lName, "flickerSlow", 0.0f);
-            types[numTypes].freqSlow = ini->GetFloat(lName, "freqSlow", 0.0f);
-            types[numTypes].corona = -1;
-            types[numTypes].coronaRange = ini->GetFloat(lName, "coronaRange", 20.0f);
-            types[numTypes].coronaSize = ini->GetFloat(lName, "coronaSize", 1.0f);
-            if (types[numTypes].coronaRange > 0.0f && types[numTypes].coronaSize > 0.0f)
-            {
-                types[numTypes].invCoronaRange = 1.0f / types[numTypes].coronaRange;
-                char texture[256];
-                if (ini->ReadString(lName, "corona", texture, sizeof(texture), ""))
-                {
-                    if (texture[0])
-                    {
-                        types[numTypes].corona = rs->TextureCreate(texture);
-                    }
-                }
-            }
-            types[numTypes].coronaRange2 = types[numTypes].coronaRange * types[numTypes].coronaRange;
-            if (types[numTypes].flicker <= 0.0f)
-                types[numTypes].freq = 0.0f;
-            if (types[numTypes].flicker > 1.0f)
-                types[numTypes].flicker = 1.0f;
-            if (types[numTypes].freq <= 0.0f)
-                types[numTypes].flicker = 0.0f;
-            if (types[numTypes].freq > 0.0f)
-                types[numTypes].p = 1.0f / types[numTypes].freq;
-            if (types[numTypes].flickerSlow <= 0.0f)
-                types[numTypes].freqSlow = 0.0f;
-            if (types[numTypes].flickerSlow > 1.0f)
-                types[numTypes].flickerSlow = 1.0f;
-            if (types[numTypes].freqSlow <= 0.0f)
-                types[numTypes].flickerSlow = 0.0f;
-            if (types[numTypes].freqSlow > 0.0f)
-                types[numTypes].pSlow = 1.0f / types[numTypes].freqSlow;
-            numTypes++;
-        }
-        res = ini->GetSectionNameNext(lName, sizeof(lName) - 1);
-    }
-    if (numTypes == 0)
-    {
+
+    if (types.empty()) {
         core.Trace("Location lights not inited -> 0 light types");
         return false;
     }
@@ -535,58 +467,7 @@ void Lights::UnsetLights()
 // Update source types
 void Lights::UpdateLightTypes(int32_t i)
 {
-    auto ini = fio->OpenIniFile("RESOURCE\\Ini\\lights.ini");
-    if (!ini)
-        return;
-    // Source name
-    char *lName = types[i].name;
-    // Reading parameters
-    types[i].color.b = ini->GetFloat(lName, "b", 1.0f);
-    types[i].color.g = ini->GetFloat(lName, "g", 1.0f);
-    types[i].color.r = ini->GetFloat(lName, "r", 1.0f);
-    types[i].color.a = 1.0f;
-    types[i].dxLight.Type = D3DLIGHT_POINT;
-    types[i].dxLight.Diffuse = types[i].color;
-    types[i].dxLight.Range = ini->GetFloat(lName, "range", 10.0f);
-    types[i].dxLight.Attenuation0 = ini->GetFloat(lName, "att0", 0.0f);
-    types[i].dxLight.Attenuation1 = ini->GetFloat(lName, "att1", 0.0f);
-    types[i].dxLight.Attenuation2 = ini->GetFloat(lName, "att2", 1.0f);
-    types[i].flicker = ini->GetFloat(lName, "flicker", 0.0f);
-    types[i].freq = ini->GetFloat(lName, "freq", 0.0f);
-    types[i].flickerSlow = ini->GetFloat(lName, "flickerSlow", 0.0f);
-    types[i].freqSlow = ini->GetFloat(lName, "freqSlow", 0.0f);
-    types[i].corona = -1;
-    types[i].coronaRange = ini->GetFloat(lName, "coronaRange", 20.0f);
-    types[i].coronaSize = ini->GetFloat(lName, "coronaSize", 1.0f);
-    if (types[i].coronaRange > 0.0f && types[i].coronaSize > 0.0f)
-    {
-        types[i].invCoronaRange = 1.0f / types[i].coronaRange;
-        char texture[256];
-        if (ini->ReadString(lName, "corona", texture, sizeof(texture), ""))
-        {
-            if (texture[0])
-            {
-                types[i].corona = rs->TextureCreate(texture);
-            }
-        }
-    }
-    types[i].coronaRange2 = types[i].coronaRange * types[i].coronaRange;
-    if (types[i].flicker <= 0.0f)
-        types[i].freq = 0.0f;
-    if (types[i].flicker > 1.0f)
-        types[i].flicker = 1.0f;
-    if (types[i].freq <= 0.0f)
-        types[i].flicker = 0.0f;
-    if (types[i].freq > 0.0f)
-        types[i].p = 1.0f / types[i].freq;
-    if (types[i].flickerSlow <= 0.0f)
-        types[i].freqSlow = 0.0f;
-    if (types[i].flickerSlow > 1.0f)
-        types[i].flickerSlow = 1.0f;
-    if (types[i].freqSlow <= 0.0f)
-        types[i].flickerSlow = 0.0f;
-    if (types[i].freqSlow > 0.0f)
-        types[i].pSlow = 1.0f / types[i].freqSlow;
+    fill_light_by_config(types[i]);
     for (int32_t c = 0; c < numLights; c++)
     {
         if (lights[c].type != i)
@@ -660,4 +541,49 @@ void Lights::PrintDebugInfo()
         
         rs->SetTransform(D3DTS_VIEW, view);
     }
+}
+
+void Lights::fill_light_by_config(LightType& light) const {
+    auto config = Storm::Filesystem::Config::load(Storm::Filesystem::Constants::ConfigNames::lights());
+    std::ignore = config.select_section(light.name);
+
+    light.color.r = config.Get<double>("r", 1.0f);
+    light.color.g = config.Get<double>("g", 1.0f);
+    light.color.b = config.Get<double>("b", 1.0f);
+    light.color.a = 1.0f;
+    light.dxLight.Type = D3DLIGHT_POINT;
+    light.dxLight.Diffuse = light.color;
+    light.dxLight.Range = config.Get<double>("range", 10.0f);
+    light.dxLight.Attenuation0 = config.Get<double>("att0", 0.0f);
+    light.dxLight.Attenuation1 = config.Get<double>("att1", 0.0f);
+    light.dxLight.Attenuation2 = config.Get<double>("att2", 1.0f);
+    light.flicker = config.Get<double>("flicker", 0.0f);
+    light.freq = config.Get<double>("freq", 0.0f);
+    light.flickerSlow = config.Get<double>("flickerSlow", 0.0f);
+    light.freqSlow = config.Get<double>("freqSlow", 0.0);
+    light.corona = -1;
+    light.coronaRange = config.Get<double>("coronaRange", 20.0f);
+    light.coronaSize = config.Get<double>("coronaSize", 1.0f);
+    if (light.coronaRange > 0.0f && light.coronaSize > 0.0f) {
+        light.invCoronaRange = 1.0f / light.coronaRange;
+        light.corona = rs->TextureCreate(config.Get<std::string>("corona", "").c_str());
+    }
+
+    light.coronaRange2 = light.coronaRange * light.coronaRange;
+    if (light.flicker <= 0.0f)
+        light.freq = 0.0f;
+    if (light.flicker > 1.0f)
+        light.flicker = 1.0f;
+    if (light.freq <= 0.0f)
+        light.flicker = 0.0f;
+    if (light.freq > 0.0f)
+        light.p = 1.0f / light.freq;
+    if (light.flickerSlow <= 0.0f)
+        light.freqSlow = 0.0f;
+    if (light.flickerSlow > 1.0f)
+        light.flickerSlow = 1.0f;
+    if (light.freqSlow <= 0.0f)
+        light.flickerSlow = 0.0f;
+    if (light.freqSlow > 0.0f)
+        light.pSlow = 1.0f / light.freqSlow;
 }

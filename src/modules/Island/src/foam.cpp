@@ -781,51 +781,36 @@ void CoastFoam::Save()
     if (!bCanEdit)
         return;
 
-    char cKey[128], cSection[128], cTemp[1024];
-    const auto sID = std::string("resource\\foam\\locations\\") + to_string(AttributesPointer->GetAttribute("id")) + ".ini";
-    fio->_DeleteFile(sID.c_str());
-
-    auto pI = fio->CreateIniFile(sID.c_str(), false);
-    if (!pI)
-        return;
-
-    pI->WriteLong(nullptr, "NumFoams", aFoams.size());
-    pI->WriteDouble(nullptr, "MaxFoamDistance", fMaxFoamDistance);
-    pI->WriteDouble(nullptr, "FoamDeltaY", fFoamDeltaY);
-    pI->WriteLong(nullptr, "FoamDivides", iFoamDivides);
+    const auto location_name = to_string(AttributesPointer->GetAttribute("id"));
+    const auto config_path = Storm::Filesystem::Constants::Paths::locations() / (location_name + ".toml");
+    auto config = Storm::Filesystem::Config::load(config_path);
+    std::ignore = config.select_section("Main");
+    /**
+     * TODO: recreate config file
+     */
+    config.write<int>("NumFoams", aFoams.size());
+    config.write<double>("MaxFoamDistance", fMaxFoamDistance);
+    config.write<double>("FoamDeltaY", fFoamDeltaY);
+    config.write<int>("FoamDivides", iFoamDivides);
 
     for (int32_t i = 0; i < aFoams.size(); i++)
     {
-        auto *pF = aFoams[i];
-        sprintf_s(cSection, "foam_%d", i);
-        pI->WriteLong(cSection, "NumParts", pF->aFoamParts.size());
+        std::ignore = config.select_section("foam_" + std::to_string(i));
 
-        sprintf_s(cTemp, "%.0f, %.0f", pF->fAlphaMin, pF->fAlphaMax);
-        pI->WriteString(cSection, "Alpha", cTemp);
+        auto&& pF = aFoams[i];
+        config.write<int>("NumParts", pF->aFoamParts.size());
+        config.write_vector2<double>("Alpha", {pF->fAlphaMin, pF->fAlphaMax});
+        config.write_vector2<double>("Speed", {pF->fSpeedMin, pF->fSpeedMax});
+        config.write_vector2<double>("Braking", {pF->fBrakingMin, pF->fBrakingMax});
+        config.write_vector2<double>("Appear", {pF->fAppearMin, pF->fAppearMax});
+        config.write<double>("TexScaleX", pF->fTexScaleX);
+        config.write<int>("NumFoams", pF->iNumFoams);
+        config.write<std::string>("Texture", pF->sTexture);
+        config.write<int>("Type", pF->Type);
 
-        sprintf_s(cTemp, "%.3f, %.3f", pF->fSpeedMin, pF->fSpeedMax);
-        pI->WriteString(cSection, "Speed", cTemp);
-
-        sprintf_s(cTemp, "%.3f, %.3f", pF->fBrakingMin, pF->fBrakingMax);
-        pI->WriteString(cSection, "Braking", cTemp);
-
-        sprintf_s(cTemp, "%.3f, %.3f", pF->fAppearMin, pF->fAppearMax);
-        pI->WriteString(cSection, "Appear", cTemp);
-
-        sprintf_s(cTemp, "%.3f", pF->fTexScaleX);
-        pI->WriteString(cSection, "TexScaleX", cTemp);
-
-        pI->WriteLong(cSection, "NumFoams", pF->iNumFoams);
-
-        pI->WriteString(cSection, "Texture", (char *)pF->sTexture.c_str());
-        pI->WriteLong(cSection, "Type", pF->Type);
-
-        for (int32_t j = 0; j < pF->aFoamParts.size(); j++)
-        {
+        for (int32_t j = 0; j < pF->aFoamParts.size(); j++) {
             auto *pFP = &pF->aFoamParts[j];
-            sprintf_s(cKey, "key_%d", j);
-            sprintf_s(cTemp, "%.4f, %.4f, %.4f, %.4f", pFP->v[0].x, pFP->v[0].z, pFP->v[1].x, pFP->v[1].z);
-            pI->WriteString(cSection, cKey, cTemp);
+            config.write_vector4<double>("key_" + std::to_string(j), {pFP->v[0].x, pFP->v[0].z, pFP->v[1].x, pFP->v[1].z});
         }
     }
 #ifdef _WIN32 // FIX_LINUX _flushall
@@ -851,10 +836,10 @@ void CoastFoam::Load()
     std::ignore = config.select_section("Main");
 
     clear();
-    const auto iNumFoams = config.get<int>("NumFoams", 0);
-    fMaxFoamDistance =  config.get<float>("MaxFoamDistance", 1000.0f);
-    fFoamDeltaY =  config.get<float>("FoamDeltaY", 0.2f);
-    iFoamDivides =  config.get<int>("FoamDivides", 4);
+    const auto iNumFoams = config.Get<std::int64_t>("NumFoams", 0);
+    fMaxFoamDistance =  config.Get<double>("MaxFoamDistance", 1000.0f);
+    fFoamDeltaY =  config.Get<double>("FoamDeltaY", 0.2f);
+    iFoamDivides =  config.Get<std::int64_t>("FoamDivides", 4);
 
     for (int32_t i = 0; i < iNumFoams; i++)
     {
@@ -864,34 +849,34 @@ void CoastFoam::Load()
 
         std::ignore = config.select_section(std::string("foam_" + std::to_string(i)));
 
-        auto alpha_vec = config.get_vector2<double>("Alpha", {148.0, 196.0}).to<float>();
+        auto alpha_vec = config.Get<Storm::Math::Types::Vector2<double>>("Alpha", {148.0, 196.0}).to<float>();
         pF->fAlphaMin = alpha_vec.x;
         pF->fAlphaMax = alpha_vec.y;
 
-        auto speed_vec = config.get_vector2<double>("Speed", {0.2, 0.3}).to<float>();
+        auto speed_vec = config.Get<Storm::Math::Types::Vector2<double>>("Speed", {0.2, 0.3}).to<float>();
         pF->fSpeedMin = speed_vec.x;
         pF->fSpeedMax = speed_vec.y;
 
-        auto braking_vec = config.get_vector2<double>("Braking", {}).to<float>();
+        auto braking_vec = config.Get<Storm::Math::Types::Vector2<double>>("Braking", {}).to<float>();
         pF->fBrakingMin = braking_vec.x;
         pF->fBrakingMax = braking_vec.y;
 
-        auto appear_vec = config.get_vector2<double>("Appear", {0.0, 0.2}).to<float>();
+        auto appear_vec = config.Get<Storm::Math::Types::Vector2<double>>("Appear", {0.0, 0.2}).to<float>();
         pF->fAppearMin = appear_vec.x;
         pF->fAppearMax = appear_vec.y;
 
-        pF->fTexScaleX = config.get<float>("TexScaleX", 0.05f);
+        pF->fTexScaleX = config.Get<double>("TexScaleX", 0.05f);
 
-        pF->iNumFoams = config.get<int>("NumFoams", 2) == 2 ? 2 : 1;
+        pF->iNumFoams = config.Get<std::int64_t>("NumFoams", 2) == 2 ? 2 : 1;
 
-        pF->sTexture = config.get<std::string>("Texture", "foam.tga");
+        pF->sTexture = config.Get<std::string>("Texture", "foam.tga");
         pF->iTexture = rs->TextureCreate((std::string("weather\\coastfoam\\") + pF->sTexture).c_str());
-        pF->Type = static_cast<FOAMTYPE>(config.get<int>("Type", FOAM_TYPE_2));
+        pF->Type = static_cast<FOAMTYPE>(config.Get<std::int64_t>("Type", FOAM_TYPE_2));
 
-        const auto iNumParts = config.get<int>("NumParts", 0);
+        const auto iNumParts = config.Get<std::int64_t>("NumParts", 0);
 
         for (std::int32_t j = 0; j < (iNumParts ? iNumParts : 100000); j++) {
-            const auto vec4 = config.get_vector4<double>("key_" + std::to_string(j), {}).to<float>();
+            const auto vec4 = config.Get<Storm::Math::Types::Vector4<double>>("key_" + std::to_string(j), {}).to<float>();
 
             FoamPart foam{};
             foam.v[0] = CVECTOR(vec4.x, 0.0f, vec4.y),

@@ -28,16 +28,16 @@ TSeagulls::~TSeagulls()
 void TSeagulls::LoadSettings() {
     auto config = Storm::Filesystem::Config::load(Storm::Filesystem::Constants::ConfigNames::animals());
     std::ignore = config.select_section(ANIMALS_SEAGULLS_SECTION);
-    maxRadius = config.get<float>("radius", SEAGULL_MAX_RADIUS);
-    maxAngleSpeed = config.get<float>("angle", SEAGULL_MAX_SPEED);
-    maxDistance = config.get<float>("distance", SEAGULL_DISTANCE);
-    maxHeight = config.get<float>("height", SEAGULL_MAX_HEIGHT);
-    maxCircleTime = config.get<int>("circle_time", SEAGULL_MAX_CIRCLE_TIME);
-    farChoiceChance = config.get<int>("far_choice", SEAGULL_LONG_DISTANCE_CHANCE);
-    relaxTime = config.get<int>("relax_time", SEAGULL_RELAX_TIME);
-    screamTime = config.get<int>("scream_time", SEAGULL_SCREAM_TIME);
-    countAdd = config.get<int>("add_count", SEAGULL_ADD_COUNT);
-    std::string screamFilename_str = config.get<std::string>("scream_file", ANIMALS_SEAGULLS_SCREAM_FILENAME).c_str();
+    maxRadius = config.Get<double>("radius", SEAGULL_MAX_RADIUS);
+    maxAngleSpeed = config.Get<double>("angle", SEAGULL_MAX_SPEED);
+    maxDistance = config.Get<double>("distance", SEAGULL_DISTANCE);
+    maxHeight = config.Get<double>("height", SEAGULL_MAX_HEIGHT);
+    maxCircleTime = config.Get<std::int64_t>("circle_time", SEAGULL_MAX_CIRCLE_TIME);
+    farChoiceChance = config.Get<std::int64_t>("far_choice", SEAGULL_LONG_DISTANCE_CHANCE);
+    relaxTime = config.Get<std::int64_t>("relax_time", SEAGULL_RELAX_TIME);
+    screamTime = config.Get<std::int64_t>("scream_time", SEAGULL_SCREAM_TIME);
+    countAdd = config.Get<std::int64_t>("add_count", SEAGULL_ADD_COUNT);
+    std::string screamFilename_str = config.Get<std::string>("scream_file", ANIMALS_SEAGULLS_SCREAM_FILENAME).c_str();
     std::copy(std::begin(screamFilename_str), std::begin(screamFilename_str), screamFilename);
 }
 

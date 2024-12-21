@@ -3,6 +3,9 @@
 #include "controls.h"
 #include "core.h"
 
+#include "Filesystem/Config/Config.hpp"
+#include "Filesystem/Constants/ConfigNames.hpp"
+
 #include "../xdefines.h"
 
 #define HCHOOSER_FVF (D3DFVF_XYZRHW | D3DFVF_TEX1 | D3DFVF_TEXTUREFORMAT2)
@@ -14,8 +17,6 @@ struct HCHOOSER_VERTEX
     float tu, tv;
 };
 
-extern char *XI_ParseStr(char *inStr, char *buf, size_t bufSize, char devChar = ',');
-
 HELPCHOOSER::HELPCHOOSER()
 {
     rs = nullptr;
@@ -23,9 +24,7 @@ HELPCHOOSER::HELPCHOOSER()
     m_idPicTexture = -1;
     m_idBackTexture = -1;
     m_idVBuf = -1;
-    m_pRectList = nullptr;
     m_nRectQ = 0;
-    m_psRectName = nullptr;
 }
 
 HELPCHOOSER::~HELPCHOOSER()
@@ -66,7 +65,7 @@ void HELPCHOOSER::Execute(uint32_t Delta_Time)
     core.Controls->GetControlState("HelpChooser_Action", cs);
     if (cs.state == CST_ACTIVATED)
     {
-        if (m_nCurRect >= 0 && m_nCurRect < m_nRectQ && m_psRectName != nullptr)
+        if (m_nCurRect >= 0 && m_nCurRect < m_nRectQ && !m_psRectName.empty())
         {
             core.Event("EventEndHelpChooser", "s", m_psRectName[m_nCurRect]);
         }
@@ -195,36 +194,23 @@ void HELPCHOOSER::AllRelease()
     TEXTURE_RELEASE(rs, m_idPicTexture);
     TEXTURE_RELEASE(rs, m_idBackTexture);
     VERTEX_BUFFER_RELEASE(rs, m_idVBuf);
-    STORM_DELETE(m_pRectList);
-    for (auto i = 0; i < m_nRectQ; i++)
-    {
-        STORM_DELETE(m_psRectName[i]);
-    }
+    m_psRectName.clear();
     m_nRectQ = 0;
-    STORM_DELETE(m_psRectName);
 }
 
 bool HELPCHOOSER::RunChooser(const char *ChooserGroup)
 {
-    int i, j;
-    char param[512];
-    char param2[256];
-    float texWidth, texHeight;
-
     AllRelease();
 
     if (ChooserGroup == nullptr)
         return false;
-    auto ini = fio->OpenIniFile("resource\\ini\\helpchooser.ini");
-    if (!ini)
-    {
-        core.Trace("Can`t open INI file \"resource\\ini\\helpchooser.ini\"");
-        return false;
-    }
+
+    auto config = Storm::Filesystem::Config::load(Storm::Filesystem::Constants::ConfigNames::helpchooser());
+    std::ignore = config.select_section(ChooserGroup);
 
     // get the size of the textures
-    texWidth = ini->GetFloat(ChooserGroup, "TextureWidth", 512.f);
-    texHeight = ini->GetFloat(ChooserGroup, "TextureHeight", 512.f);
+    auto texWidth = config.Get<double>("TextureWidth", 512.f);
+    auto texHeight = config.Get<double>("TextureHeight", 512.f);
 
     // Get the size of the output surface (window size)
     IDirect3DSurface9 *pRenderTarget;
@@ -236,75 +222,48 @@ bool HELPCHOOSER::RunChooser(const char *ChooserGroup)
     pRenderTarget->Release();
 
     // texture of the selected image
-    if (ini->ReadString(ChooserGroup, "FrontTexture", param, sizeof(param) - 1, ""))
-        m_idPicTexture = rs->TextureCreate(param);
+    m_idPicTexture = rs->TextureCreate(config.Get<std::string>("FrontTexture", "").c_str());
 
     // texture of unselected (background) image
-    if (ini->ReadString(ChooserGroup, "BackTexture", param, sizeof(param) - 1, ""))
-        m_idBackTexture = rs->TextureCreate(param);
+    m_idBackTexture = rs->TextureCreate(config.Get<std::string>("BackTexture", "").c_str());
 
-    // counting the number of rectangles for choosing help
-    m_nRectQ = 0;
-    if (ini->ReadString(ChooserGroup, "rect", param, sizeof(param) - 1, ""))
-        do
-        {
-            m_nRectQ++;
-        } while (ini->ReadStringNext(ChooserGroup, "rect", param, sizeof(param) - 1));
-    // create an array of coordinates of the selection rectangles
-    if (m_nRectQ > 0)
-    {
-        m_pRectList = new FRECT[m_nRectQ];
-        m_psRectName = new char *[m_nRectQ];
-        if (m_pRectList == nullptr || m_psRectName == nullptr)
-        {
-            throw std::runtime_error("Allocate memory error");
-        }
-    }
     // fill in all the rectangles
-    ini->ReadString(ChooserGroup, "rect", param, sizeof(param) - 1, "");
-    for (i = 0; i < m_nRectQ; i++)
-    {
-        m_psRectName[i] = nullptr;
-        auto *tmpStr = param;
+    auto rect_vec = config.Get<std::vector<std::vector<std::string>>>("rect", {});
+    if (rect_vec.empty()) {
+        /**
+         * TODO: ?
+         */
+    }
+    // counting the number of rectangles for choosing help
+    m_nRectQ = std::size(rect_vec);
 
-        tmpStr = XI_ParseStr(tmpStr, param2, sizeof(param2));
-        for (j = strlen(param2) - 1; j >= 0; j--)
-            if (param2[j] == ' ')
-                param2[j] = 0;
-            else
-                break;
-        if (j > 0)
-        {
-            m_psRectName[i] = new char[j + 2];
-            if (m_psRectName[i] == nullptr)
-            {
-                throw std::runtime_error("Allocate memory error");
-            }
-            strcpy_s(m_psRectName[i], j + 2, param2);
+    m_psRectName.reserve(m_nRectQ);
+    m_pRectList.reserve(m_nRectQ);
+    for (int i = 0; i < std::size(rect_vec); i++) {
+        if (rect_vec[0].empty()) {
+            /**
+             * TODO: ?
+             */
         }
-
-        tmpStr = XI_ParseStr(tmpStr, param2, sizeof(param2));
-        m_pRectList[i].left = static_cast<float>(atof(param2)) / texWidth;
-        tmpStr = XI_ParseStr(tmpStr, param2, sizeof(param2));
-        m_pRectList[i].top = static_cast<float>(atof(param2)) / texHeight;
-        tmpStr = XI_ParseStr(tmpStr, param2, sizeof(param2));
-        m_pRectList[i].right = static_cast<float>(atof(param2)) / texWidth;
-        tmpStr = XI_ParseStr(tmpStr, param2, sizeof(param2));
-        m_pRectList[i].bottom = static_cast<float>(atof(param2)) / texHeight;
-
-        ini->ReadStringNext(ChooserGroup, "rect", param, sizeof(param) - 1);
+        m_psRectName[i] = rect_vec[i][0];
+        FRECT rect;
+        rect.left = std::stof(rect_vec[i][1]) / texWidth;
+        rect.top = std::stof(rect_vec[i][2]) / texHeight;
+        rect.right = std::stof(rect_vec[i][3]) / texWidth;
+        rect.bottom = std::stof(rect_vec[i][4]) / texHeight;
+        m_pRectList[i] = std::move(rect);
     }
 
+    std::ignore = config.select_section("COMMON");
     // set the mouse
     m_fCurMouseX = 0.f;
     m_fCurMouseY = 0.f;
-    m_nMouseWidth = ini->GetInt("COMMON", "mouseWidth", 32);
-    m_nMouseHeight = ini->GetInt("COMMON", "mouseHeight", 32);
-    m_nMouseCornerX = ini->GetInt("COMMON", "mouseCornerX", 0);
-    m_nMouseCornerY = ini->GetInt("COMMON", "mouseCornerY", 0);
+    m_nMouseWidth = config.Get<std::int64_t>("mouseWidth", 32);
+    m_nMouseHeight = config.Get<std::int64_t>("mouseHeight", 32);
+    m_nMouseCornerX = config.Get<std::int64_t>("mouseCornerX", 0);
+    m_nMouseCornerY = config.Get<std::int64_t>("mouseCornerY", 0);
     if (m_nMouseWidth > 0 && m_nMouseHeight > 0)
-        if (ini->ReadString("COMMON", "mouseTexture", param, sizeof(param) - 1, ""))
-            m_idMouseTexture = rs->TextureCreate(param);
+        m_idMouseTexture = rs->TextureCreate(config.Get<std::string>("mouseTexture", "").c_str());
 
     // create a vertex buffer
     m_idVBuf = rs->CreateVertexBuffer(HCHOOSER_FVF, 18 * sizeof(HCHOOSER_VERTEX), D3DUSAGE_WRITEONLY);
@@ -315,7 +274,7 @@ bool HELPCHOOSER::RunChooser(const char *ChooserGroup)
         auto *pv = static_cast<HCHOOSER_VERTEX *>(rs->LockVertexBuffer(m_idVBuf));
         if (pv != nullptr)
         {
-            for (i = 0; i < 18; i++)
+            for (int i = 0; i < 18; i++)
             {
                 pv[i].pos.z = 1.f;
                 pv[i].w = 0.5f;
@@ -400,7 +359,7 @@ void HELPCHOOSER::SetRectangle(int32_t newRectNum)
 
 int32_t HELPCHOOSER::GetRectangleLeft() const
 {
-    if (m_nCurRect < 0 || m_nCurRect >= m_nRectQ || m_pRectList == nullptr)
+    if (m_nCurRect < 0 || m_nCurRect >= m_nRectQ || m_pRectList.empty())
         return 0;
     const auto left = m_pRectList[m_nCurRect].left;
     auto top = m_pRectList[m_nCurRect].top;
@@ -442,7 +401,7 @@ int32_t HELPCHOOSER::GetRectangleLeft() const
 
 int32_t HELPCHOOSER::GetRectangleRight() const
 {
-    if (m_nCurRect < 0 || m_nCurRect >= m_nRectQ || m_pRectList == nullptr)
+    if (m_nCurRect < 0 || m_nCurRect >= m_nRectQ || m_pRectList.empty())
         return 0;
     auto left = m_pRectList[m_nCurRect].left;
     auto top = m_pRectList[m_nCurRect].top;
@@ -484,7 +443,7 @@ int32_t HELPCHOOSER::GetRectangleRight() const
 
 int32_t HELPCHOOSER::GetRectangleUp() const
 {
-    if (m_nCurRect < 0 || m_nCurRect >= m_nRectQ || m_pRectList == nullptr)
+    if (m_nCurRect < 0 || m_nCurRect >= m_nRectQ || m_pRectList.empty())
         return 0;
     auto left = m_pRectList[m_nCurRect].left;
     const auto top = m_pRectList[m_nCurRect].top;
@@ -526,7 +485,7 @@ int32_t HELPCHOOSER::GetRectangleUp() const
 
 int32_t HELPCHOOSER::GetRectangleDown() const
 {
-    if (m_nCurRect < 0 || m_nCurRect >= m_nRectQ || m_pRectList == nullptr)
+    if (m_nCurRect < 0 || m_nCurRect >= m_nRectQ || m_pRectList.empty())
         return 0;
     auto left = m_pRectList[m_nCurRect].left;
     auto top = m_pRectList[m_nCurRect].top;
@@ -597,7 +556,7 @@ bool HELPCHOOSER::MouseMove()
 
 int32_t HELPCHOOSER::GetRectangleFromPos(float x, float y) const
 {
-    if (m_pRectList == nullptr)
+    if (m_pRectList.empty())
         return m_nCurRect;
     x /= m_fScreenWidth;
     y /= m_fScreenHeight;

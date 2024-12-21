@@ -63,15 +63,15 @@ IDirect3DTexture9 *TextureSequence::Initialize(VDX9RENDER *pRS, const char *sect
     auto config = Storm::Filesystem::Config::load(Storm::Filesystem::Constants::ConfigNames::texture_sequence());
     std::ignore = config.select_section(std::string(section));
 
-    m_dwDeltaTime = config.get<int>("timeDelay", 128);
+    m_dwDeltaTime = config.Get<std::int64_t>("timeDelay", 128);
     if (m_dwDeltaTime == 0)
     {
         return nullptr;
     }
-    m_texWidth = config.get<int>("width", 128);
-    m_texHeight = config.get<int>("height", 128);
-    m_xQuantity = config.get<int>("horzQ", 1);
-    m_yQuantity = config.get<int>("vertQ", 1);
+    m_texWidth = config.Get<std::int64_t>("width", 128);
+    m_texHeight = config.Get<std::int64_t>("height", 128);
+    m_xQuantity = config.Get<std::int64_t>("horzQ", 1);
+    m_yQuantity = config.Get<std::int64_t>("vertQ", 1);
     m_maxCurNum = m_xQuantity * m_yQuantity;
     if (m_maxCurNum == 0)
     {
@@ -79,15 +79,15 @@ IDirect3DTexture9 *TextureSequence::Initialize(VDX9RENDER *pRS, const char *sect
     }
 
     // load sequence texture
-    const auto texture_name = config.get<std::string>("TextureFile", "");
+    const auto texture_name = config.Get<std::string>("TextureFile", "");
     m_AllTex = m_pRS->TextureCreate(texture_name.c_str());
     if (m_AllTex == -1)
     {
         return nullptr;
     }
 
-    m_bHorzFlip = config.get<int>("flipH", 0) != 0;
-    m_bVertFlip = config.get<int>("flipV", 0) != 0;
+    m_bHorzFlip = config.Get<std::int64_t>("flipH", 0) != 0;
+    m_bVertFlip = config.Get<std::int64_t>("flipV", 0) != 0;
 
     m_pTexture = nullptr;
     // create output texture

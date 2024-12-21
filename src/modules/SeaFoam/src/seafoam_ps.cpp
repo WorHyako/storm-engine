@@ -167,47 +167,47 @@ bool SEAFOAM_PS::Init(const std::string_view& section)
     std::ignore = config.select_section(std::string(section));
 
     TexturesNum = 0;
-    auto texture_name_vec = config.get_array<std::string>(PSKEY_TEXTURE);
+    auto texture_name_opt = config.Get<std::vector<std::string>>(PSKEY_TEXTURE);
 
-    if (!texture_name_vec.empty()) {
-        for (int i = 0; i < std::size(texture_name_vec); i++) {
-            TextureID[i] = RenderService->TextureCreate(texture_name_vec[i].c_str());
+    if (texture_name_opt.has_value()) {
+        for (int i = 0; i < std::size(texture_name_opt.value()); i++) {
+            TextureID[i] = RenderService->TextureCreate(texture_name_opt.value()[i].c_str());
             if (TextureID[i] >= 0)
                 TexturesNum++;
         }
     }
 
-    TechniqueName = config.get<std::string>(PSKEY_TECHNIQUE, "");
+    TechniqueName = config.Get<std::string>(PSKEY_TECHNIQUE, "");
 
     // configure particles
-    ParticlesNum = config.get<int>(PSKEY_PNUM, 32);
-    EmissionTime = config.get<float>(PSKEY_EMISSIONTIME, 0.0f);
+    ParticlesNum = config.Get<std::int64_t>(PSKEY_PNUM, 32);
+    EmissionTime = config.Get<double>(PSKEY_EMISSIONTIME, 0.0f);
     DeltaTimeSLE = static_cast<std::int32_t>(EmissionTime);
-    EmissionTimeRand = config.get<float>(PSKEY_EMISSIONTIMERAND, 0.0f);
+    EmissionTimeRand = config.Get<double>(PSKEY_EMISSIONTIMERAND, 0.0f);
     CurrentEmissionTimeRand = EmissionTimeRand * rand() / RAND_MAX;
-    fSurfaceOffset = config.get<float>(PSKEY_SURFACEOFFSET, 0);
-    ParticleColor = config.get<int>("color", 0xffffffff);
+    fSurfaceOffset = config.Get<double>(PSKEY_SURFACEOFFSET, 0);
+    ParticleColor = config.Get<std::int64_t>("color", 0xffffffff);
 
-    fWindEffect = config.get<float>(PSKEY_WINDEFFECT, 0.0f);
+    fWindEffect = config.Get<double>(PSKEY_WINDEFFECT, 0.0f);
 
-    DirectionDeviation = config.get<float>(PSKEY_DDEVIATION, 0.0f);
-    Gravity = config.get<float>(PSKEY_GRAVITY, 0.0f);
-    Inispeed = config.get<float>(PSKEY_INISPEED, 0.0f);
-    SpeedDeviation = config.get<float>(PSKEY_SDEVIATION, 0.0f);
-    Lifetime = config.get<int>(PSKEY_LIFETIME, 1000);
-    Spin = config.get<float>(PSKEY_SPIN, 0.0f);
-    SpinDeviation = config.get<float>(PSKEY_SPINDEV, 0.0f);
-    EmitterIniTime = config.get<int>(PSKEY_EMITTERINITIME, 0);
-    Weight = config.get<float>(PSKEY_WEIGHT, 0.0f);
-    WeightDeviation = config.get<float>(PSKEY_WEIGHTDEVIATION, 0.0f);
-    Emitdelta = config.get<int>(PSKEY_EMITDELTA, 0);
-    ESpace = config.get<float>(PSKEY_EMITRADIUS, 0.0f);
-    fTrackPointRadius = config.get<float>(PSKEY_TRACKPOINTRADIUS, 1.0f);
+    DirectionDeviation = config.Get<double>(PSKEY_DDEVIATION, 0.0f);
+    Gravity = config.Get<double>(PSKEY_GRAVITY, 0.0f);
+    Inispeed = config.Get<double>(PSKEY_INISPEED, 0.0f);
+    SpeedDeviation = config.Get<double>(PSKEY_SDEVIATION, 0.0f);
+    Lifetime = config.Get<std::int64_t>(PSKEY_LIFETIME, 1000);
+    Spin = config.Get<double>(PSKEY_SPIN, 0.0f);
+    SpinDeviation = config.Get<double>(PSKEY_SPINDEV, 0.0f);
+    EmitterIniTime = config.Get<std::int64_t>(PSKEY_EMITTERINITIME, 0);
+    Weight = config.Get<double>(PSKEY_WEIGHT, 0.0f);
+    WeightDeviation = config.Get<double>(PSKEY_WEIGHTDEVIATION, 0.0f);
+    Emitdelta = config.Get<std::int64_t>(PSKEY_EMITDELTA, 0);
+    ESpace = config.Get<double>(PSKEY_EMITRADIUS, 0.0f);
+    fTrackPointRadius = config.Get<double>(PSKEY_TRACKPOINTRADIUS, 1.0f);
 
-    bColorInverse = config.get<int>(PSKEY_COLORINVERSE, 0);
-    bUniformEmit = config.get<int>(PSKEY_UNIFORMEMIT, 0);
-    bRandomDirection = config.get<int>(PSKEY_RANDOMDIRECTION, 0);
-    bRepeat = config.get<int>(PSKEY_NONSTOPEMIT, 0);
+    bColorInverse = config.Get<std::int64_t>(PSKEY_COLORINVERSE, 0);
+    bUniformEmit = config.Get<std::int64_t>(PSKEY_UNIFORMEMIT, 0);
+    bRandomDirection = config.Get<std::int64_t>(PSKEY_RANDOMDIRECTION, 0);
+    bRepeat = config.Get<std::int64_t>(PSKEY_NONSTOPEMIT, 0);
 
     Particle = (PARTICLE *)new char[ParticlesNum * sizeof(PARTICLE)];
     if (Particle == nullptr)
@@ -756,7 +756,7 @@ bool SEAFOAM_PS::BuildTrack(TRACK_EVENT *Track, const std::string_view& section,
     auto config = Storm::Filesystem::Config::load(Storm::Filesystem::Constants::ConfigNames::particles());
     std::ignore = config.select_section(std::string(section));
 
-    auto value_time_vec = config.get_matrix<double>(std::string(key));
+    auto value_time_vec = config.Get<std::vector<std::vector<double>>>(std::string(key), {});
     for (int track_idx = 0, confix_size = std::size(value_time_vec); track_idx < TRACK_EVENT_MAX; track_idx++) {
         Track[track_idx].value = 0;
         Track[track_idx].time = -1;

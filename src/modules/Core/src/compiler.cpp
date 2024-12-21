@@ -434,10 +434,10 @@ void COMPILER::SetWarning(const char *data_PTR, ...)
 void COMPILER::LoadPreprocess() {
     auto config = Storm::Filesystem::Config::load(Storm::Filesystem::Constants::ConfigNames::engine());
     std::ignore = config.select_section("script");
-    bDebugInfo = config.get<int>("debuginfo", 0) == 0;
-    bWriteCodeFile = config.get<int>("codefiles", 0) == 0;
-    bRuntimeLog = config.get<int>("runtimelog", 0) == 0;
-    script_cache_mode_ = config.get<int>("cache_mode", kCacheDisabled);
+    bDebugInfo = config.Get<std::int64_t>("debuginfo", 0) == 0;
+    bWriteCodeFile = config.Get<std::int64_t>("codefiles", 0) == 0;
+    bRuntimeLog = config.Get<std::int64_t>("runtimelog", 0) == 0;
+    script_cache_mode_ = config.Get<std::int64_t>("cache_mode", kCacheDisabled);
 
     if (script_cache_mode_ < kCacheDisabled || script_cache_mode_ > kCacheEnabledNoRuntimeCheck) {
         script_cache_mode_ = kCacheDisabled;

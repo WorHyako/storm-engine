@@ -491,7 +491,7 @@ bool DX9RENDER::Init() {
     bPostProcessEnabled = false; //~!~
 
     // screenshot format and extension
-    screenshotExt = config.get<std::string>("screenshot_format", "jpg");
+    screenshotExt = config.Get<std::string>("screenshot_format", "jpg");
     screenshotFormat = GetScreenshotFormat(screenshotExt);
     std::ranges::transform(screenshotExt, screenshotExt.begin(),
                            [](const unsigned char c) { return std::tolower(c); });
@@ -503,22 +503,22 @@ bool DX9RENDER::Init() {
     }
 #endif
 
-    bShowFps = config.get<int>("show_fps", 0) == 1;
-    bShowExInfo = config.get<int>("show_exinfo", 0) == 1;
-    bSafeRendering = config.get<int>("safe_render", 0) == 0;
-    bDropVideoConveyor = config.get<int>("DropVideoConveyor", 0) != 0;
-    texLog = config.get<int>("texture_log", 0) == 1;
-    bUseLargeBackBuffer = config.get<int>("UseLargeBackBuffer", 0) != 0;
-    bWindow = config.get<int>("full_screen", 1) == 0;
-    nTextureDegradation = config.get<int>("texture_degradation", 0);
-    FovMultiplier = config.get<float>("fov_multiplier", 1.0f);
-    screen_size.x = config.get<int>("screen_x", 1024);
-    screen_size.y = config.get<int>("screen_y", 768);
-    fNearClipPlane = config.get<float>("NearClipPlane", 0.1f);
-    fFarClipPlane = config.get<float>("FarClipPlane", 4000.0f);
-    bBackBufferCanLock = config.get<int>("lockable_back_buffer", 0) != 0;
+    bShowFps = config.Get<std::int64_t>("show_fps", 0) == 1;
+    bShowExInfo = config.Get<std::int64_t>("show_exinfo", 0) == 1;
+    bSafeRendering = config.Get<std::int64_t>("safe_render", 0) == 0;
+    bDropVideoConveyor = config.Get<std::int64_t>("DropVideoConveyor", 0) != 0;
+    texLog = config.Get<std::int64_t>("texture_log", 0) == 1;
+    bUseLargeBackBuffer = config.Get<std::int64_t>("UseLargeBackBuffer", 0) != 0;
+    bWindow = config.Get<std::int64_t>("full_screen", 1) == 0;
+    nTextureDegradation = config.Get<std::int64_t>("texture_degradation", 0);
+    FovMultiplier = config.Get<double>("fov_multiplier", 1.0f);
+    screen_size.x = config.Get<std::int64_t>("screen_x", 1024);
+    screen_size.y = config.Get<std::int64_t>("screen_y", 768);
+    fNearClipPlane = config.Get<double>("NearClipPlane", 0.1f);
+    fFarClipPlane = config.Get<double>("FarClipPlane", 4000.0f);
+    bBackBufferCanLock = config.Get<std::int64_t>("lockable_back_buffer", 0) != 0;
 
-    auto back_buffer = config.get<std::string>("lockable_back_buffer", "D3DFMT_R5G6B5");
+    auto back_buffer = config.Get<std::string>("screen_bpp", "D3DFMT_R5G6B5");
 
     screen_bpp = D3DFMT_R5G6B5;
     stencil_format = D3DFMT_D16;
@@ -539,9 +539,9 @@ bool DX9RENDER::Init() {
     }
 
     // new renderer settings
-    vSyncEnabled = config.get<int>("vsync", 0);
+    vSyncEnabled = config.Get<std::int64_t>("vsync", 0);
 
-    msaa = config.get<int>("msaa", D3DMULTISAMPLE_NONE);
+    msaa = config.Get<std::int64_t>("msaa", D3DMULTISAMPLE_NONE);
 
     if (msaa != D3DMULTISAMPLE_NONE)
     {
@@ -551,7 +551,7 @@ bool DX9RENDER::Init() {
         }
     }
 
-    videoAdapterIndex = config.get<int>("adapter", std::numeric_limits<std::int32_t>::max());
+    videoAdapterIndex = config.Get<std::int64_t>("adapter", std::numeric_limits<std::int32_t>::max());
 
     // stencil_format = D3DFMT_D24S8;
     if (!InitDevice(bWindow, static_cast<HWND>(core.GetWindow()->OSHandle()), screen_size.x, screen_size.y))
@@ -564,33 +564,28 @@ bool DX9RENDER::Init() {
     pTechnique->DecodeFiles();
 #endif
 
-    auto font_ini_file_opt = config.get<std::string>("startFontIniFile");
+    fontIniFileName = config.Get<std::string>("startFontIniFile", "resource\\ini\\fonts.ini");
     // get start ini file for fonts
 
-    fontIniFileName = font_ini_file_opt.has_value() ? font_ini_file_opt.value() : "resource\\ini\\fonts.ini";
-    auto font_opt = config.get<std::string>("font");
-    // get start font quantity
-    std::string font_name = font_opt.has_value() ?font_opt.value() : "normal";
-
-    if (LoadFont(font_name) == -1L)
+    if (LoadFont(config.Get<std::string>("font", "normal")) == -1L)
         core.Trace("can not init start font");
     idFontCurrent = 0L;
 
     std::ignore = config.select_section("ProgressImage");
     // Progress image parameters
-    progressFramesPosX = config.get<float>("RelativePosX", 0.85f);
-    progressFramesPosY = config.get<float>("RelativePosY", 0.8f);
+    progressFramesPosX = config.Get<double>("RelativePosX", 0.85f);
+    progressFramesPosY = config.Get<double>("RelativePosY", 0.8f);
 
-    progressFramesWidth = config.get<float>("RelativeWidth", 0.0625f);
+    progressFramesWidth = config.Get<double>("RelativeWidth", 0.0625f);
     progressFramesWidth = std::clamp(progressFramesWidth, 0.0f, 10.0f);
 
-    progressFramesHeight = config.get<float>("RelativeHeight", 0.0625f);
+    progressFramesHeight = config.Get<double>("RelativeHeight", 0.0625f);
     progressFramesHeight = std::clamp(progressFramesHeight, 0.0f, 10.0f);
 
-    progressFramesCountX = static_cast<std::int32_t>(config.get<float>("HorisontalFramesCount", 8));
+    progressFramesCountX = config.Get<std::int64_t>("HorisontalFramesCount", 8);
     progressFramesCountX = std::clamp(progressFramesCountX, 1, 64);
 
-    progressFramesCountY = static_cast<std::int32_t>(config.get<float>("VerticalFramesCount", 8));
+    progressFramesCountY = config.Get<std::int64_t>("VerticalFramesCount", 8);
     progressFramesCountY = std::clamp(progressFramesCountY, 1, 64);
     CreateSphere();
     auto *pScriptRender = static_cast<VDATA *>(core.GetScriptVariable("Render"));

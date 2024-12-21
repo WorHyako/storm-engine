@@ -64,7 +64,7 @@ bool GEOMETRY::Init() {
 
     auto config = Storm::Filesystem::Config::load(Storm::Filesystem::Constants::ConfigNames::engine());
     std::ignore = config.select_section("Main");
-    geoLog = config.get<int>("geometry_log", 0) == 1;
+    geoLog = config.Get<std::int64_t>("geometry_log", 0) == 1;
     return true;
 }
 

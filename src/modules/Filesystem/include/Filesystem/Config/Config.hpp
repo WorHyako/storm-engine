@@ -11,14 +11,18 @@
 namespace Storm::Filesystem {
     class Config final {
     public:
+        [[nodiscard]]
         static Config load(const std::filesystem::path &file_path) noexcept;
 
         [[nodiscard]]
-        bool select_section(const std::string &section_name) noexcept;
+        bool select_section(std::string section_name) noexcept;
 
     private:
         [[nodiscard]]
         std::string to_lowercase(std::string str) const noexcept;
+
+        [[nodiscard]]
+        std::string PrintInfo(const std::string_view& key, const std::string_view& message) const noexcept;
 
         /**
          * @brief   Ctor.
@@ -29,68 +33,67 @@ namespace Storm::Filesystem {
 
         toml::parse_result _config;
 
+        std::string _section_name;
+
         toml::table *_section;
 
 #pragma region Accessors/Mutators
 
     public:
-        template<class ValueType>
         [[nodiscard]]
-        std::optional<ValueType> get(const std::string &key) const noexcept;
-
-        template<class ValueType>
-        [[nodiscard]]
-        ValueType get(const std::string &key, ValueType default_value) const noexcept;
-
-        template<class ValueType>
-        void set(const std::string &key, ValueType value) noexcept;
-
-        template<class ValueType>
-        void set_vec3(const std::string &key, Math::Types::Vector3<ValueType> value) noexcept;
+        std::vector<std::string> Sections() noexcept;
 
         template<class ValueType>
         [[nodiscard]]
-        std::vector<ValueType> get_array(const std::string &key) const noexcept;
+        ValueType Get(const std::string &key, ValueType default_value) const noexcept;
 
         template<class ValueType>
         [[nodiscard]]
-        std::vector<std::vector<ValueType> > get_matrix(const std::string &key) const noexcept;
+        std::optional<ValueType> Get(const std::string &key) const noexcept;
 
-        template<typename ValueType>
-        [[nodiscard]]
-        std::optional<Math::Types::Vector4<ValueType> > get_vector4(const std::string &key) const noexcept;
+        template<class ValueType>
+        void write(const std::string &key, ValueType value) noexcept;
 
-        template<typename ValueType>
-        [[nodiscard]]
-        std::optional<Math::Types::Vector3<ValueType> > get_vector3(const std::string &key) const noexcept;
+        template<class ValueType>
+        void write_vector4(const std::string &key, Math::Types::Vector4<ValueType> value) noexcept;
 
-        template<typename ValueType>
-        [[nodiscard]]
-        std::optional<Math::Types::Vector2<ValueType> > get_vector2(const std::string &key) const noexcept;
+        template<class ValueType>
+        void write_vector3(const std::string &key, Math::Types::Vector3<ValueType> value) noexcept;
 
-        template<typename ValueType>
-        [[nodiscard]]
-        Math::Types::Vector4<ValueType> get_vector4(const std::string &key,
-                                                    Math::Types::Vector4<ValueType> default_value) const noexcept;
-
-        template<typename ValueType>
-        [[nodiscard]]
-        Math::Types::Vector3<ValueType> get_vector3(const std::string &key,
-                                                    Math::Types::Vector3<ValueType> default_value) const noexcept;
-
-        template<typename ValueType>
-        [[nodiscard]]
-        Math::Types::Vector2<ValueType> get_vector2(const std::string &key,
-                                                    Math::Types::Vector2<ValueType> default_value) const noexcept;
-
-        template<typename ValueType>
-        [[nodiscard]]
-        std::optional<Math::Types::Vector2<ValueType> >
-        get_vector2_from(const std::string &key, std::int16_t idx) const noexcept;
+        template<class ValueType>
+        void write_vector2(const std::string &key, Math::Types::Vector2<ValueType> value) noexcept;
 
     private:
+        template<class ElementType>
         [[nodiscard]]
-        toml::node *node(const std::string &key) const noexcept;
+        std::vector<std::vector<ElementType> > Matrix(toml::node *node) const noexcept;
+
+        template<typename ValueType>
+        [[nodiscard]]
+        std::optional<ValueType> SingleValue(toml::node *node) const;
+
+        template<typename ElementType>
+        [[nodiscard]]
+        std::vector<ElementType> ArrayValue(toml::node *node) const;
+
+        template<typename ElementType>
+        [[nodiscard]]
+        std::vector<ElementType> ArrayVector2Value(toml::node *node) const;
+
+        template<typename ElementType>
+        [[nodiscard]]
+        std::optional<Math::Types::Vector2<ElementType> > Vector2Value(toml::node *node) const;
+
+        template<typename ElementType>
+        [[nodiscard]]
+        std::optional<Math::Types::Vector3<ElementType> > Vector3Value(toml::node *node) const;
+
+        template<typename ElementType>
+        [[nodiscard]]
+        std::optional<Math::Types::Vector4<ElementType> > Vector4Value(toml::node *node) const;
+
+        [[nodiscard]]
+        toml::node *Node(const std::string &key) const noexcept;
 
         [[nodiscard]]
         toml::table *section(const std::string &section_name);
@@ -100,57 +103,31 @@ namespace Storm::Filesystem {
 
 #pragma region Accessors/Mutators
 
-    template<typename ValueType>
-    std::vector<ValueType> Config::get_array(const std::string &key) const noexcept {
-        auto config_node = node(key);
-        if (config_node == nullptr) {
-            std::printf("Can't find key [%s]\n", key.c_str());
+    template<typename ElementType>
+    std::vector<std::vector<ElementType> > Config::Matrix(toml::node *node) const noexcept {
+        if (node == nullptr || !node->is_array()) {
             return {};
         }
-        std::vector<ValueType> result;
-        result.reserve(std::size(*config_node->as_array()));
-        for (auto &&element: *config_node->as_array()) {
-            toml::impl::wrap_node<ValueType> *value = element.as<ValueType>();
-            if (value == nullptr) {
-                // std::printf(
-                    // "Warning:\n\tConfig - [%s]\n\tKey [%s] has different type - [%s].\n\tRequested type - [%s]\n",
-                    // _config.source().path.get()->c_str(),
-                    // key.c_str(),
-                    // toml::impl::node_type_friendly_names[static_cast<int>(ValueType::type())].data(),
-                    // typeid(ValueType).name());
-                return {};
-            }
-            result.push_back(static_cast<ValueType>(*value));
-        }
-
-        return result;
-    }
-
-    template<typename ValueType>
-    std::vector<std::vector<ValueType> > Config::get_matrix(const std::string &key) const noexcept {
-        auto config_node = node(key);
-        if (config_node == nullptr || !config_node->is_array()) {
-            std::printf("Can't find key [%s]\n", key.c_str());
-            return {};
-        }
-        std::vector<std::vector<ValueType> > result{};
-        for (auto &&row: *config_node->as_array()) {
+        std::vector<std::vector<ElementType> > result{};
+        for (auto &&row: *node->as_array()) {
             if (row.is_array()) {
-                std::vector<ValueType> column_array{};
+                std::vector<ElementType> column_array{};
                 for (auto &&column: *row.as_array()) {
-                    auto column_value = column.as<ValueType>();
-                    ValueType val_to_emplace = column_value == nullptr
-                                                   ? ValueType()
-                                                   : static_cast<ValueType>(*column_value);
+                    auto column_value = column.as<ElementType>();
+                    if (column_value == nullptr) {
+                        continue;
+                    }
+                    auto val_to_emplace = static_cast<ElementType>(*column_value);
                     column_array.emplace_back(val_to_emplace);
                 }
                 result.emplace_back(column_array);
             } else {
-                auto row_value = row.as<ValueType>();
-                ValueType val_to_emplace = row_value == nullptr
-                                               ? ValueType()
-                                               : static_cast<ValueType>(*row_value);
-                result.template emplace_back<std::vector<ValueType> >({val_to_emplace});
+                auto row_value = row.as<ElementType>();
+                if (row_value == nullptr) {
+                    continue;
+                }
+                auto val_to_emplace = static_cast<ElementType>(*row_value);
+                result.template emplace_back<std::vector<ElementType> >({val_to_emplace});
             }
         }
 
@@ -158,94 +135,147 @@ namespace Storm::Filesystem {
     }
 
     template<typename ValueType>
-    std::optional<Math::Types::Vector4<ValueType> > Config::get_vector4(const std::string &key) const noexcept {
-        auto array = get_array<ValueType>(key);
-        if (array.empty() || std::size(array) != 4) {
+    std::optional<ValueType> Config::SingleValue(toml::node *node) const {
+        return node != nullptr && node->value<ValueType>().has_value()
+                   ? node->value<ValueType>()
+                   : std::nullopt;
+    }
+
+    template<typename ElementType>
+    std::optional<Math::Types::Vector2<ElementType> > Config::Vector2Value(toml::node *node) const {
+        const auto array_value = ArrayValue<ElementType>(node);
+        auto result = array_value.empty() || std::size(array_value) != 2
+                          ? std::nullopt
+                          : std::optional{Math::Types::Vector2<ElementType>(array_value[0], array_value[1])};
+        return result;
+    }
+
+    template<typename ElementType>
+    std::optional<Math::Types::Vector3<ElementType> > Config::Vector3Value(toml::node *node) const {
+        auto array_value = ArrayValue<ElementType>(node);
+        auto result = array_value.empty() || std::size(array_value) != 3
+                          ? std::nullopt
+                          : std::optional{
+                              Math::Types::Vector3<ElementType>(array_value[0], array_value[1],
+                                                                array_value[2])
+                          };
+        return result;
+    }
+
+    template<typename ElementType>
+    std::optional<Math::Types::Vector4<ElementType> > Config::Vector4Value(toml::node *node) const {
+        const auto array_value = ArrayValue<ElementType>(node);
+        auto result = array_value.empty() || std::size(array_value) != 4
+                          ? std::nullopt
+                          : std::optional{
+                              Math::Types::Vector4<ElementType>(array_value[0], array_value[1],
+                                                                array_value[2], array_value[3])
+                          };
+        return result;
+    }
+
+    template<typename ElementType>
+    std::vector<ElementType> Config::ArrayValue(toml::node *node) const {
+        if (node->as_array() == nullptr) {
             return {};
         }
-        return Math::Types::Vector4<ValueType>(array[0], array[1], array[2], array[3]);
+        std::vector<ElementType> result;
+        result.reserve(std::size(*node->as_array()));
+        for (auto &&element: *node->as_array()) {
+            toml::impl::wrap_node<ElementType> *value = element.as<ElementType>();
+            if (value == nullptr) {
+                return {};
+            }
+            result.push_back(static_cast<ElementType>(*value));
+        }
+
+        return result;
     }
 
-    template<typename ValueType>
-    std::optional<Math::Types::Vector3<ValueType> > Config::get_vector3(const std::string &key) const noexcept {
-        auto array = get_array<ValueType>(key);
-        if (array.empty() || std::size(array) != 3) {
+    template<typename ElementType>
+    std::vector<ElementType> Config::ArrayVector2Value(toml::node *node) const {
+        std::vector<Math::Types::Vector2<ElementType>> result{};
+        const auto array_value = Matrix<ElementType>(node);
+        if (array_value.empty()) {
             return {};
         }
-        return Math::Types::Vector3<ValueType>(array[0], array[1], array[2]);
-    }
 
-    template<typename ValueType>
-    std::optional<Math::Types::Vector2<ValueType> > Config::get_vector2(const std::string &key) const noexcept {
-        auto array = get_array<ValueType>(key);
-        if (array.empty() || std::size(array) != 2) {
-            return {};
+        for (std::vector<ElementType> &&element: *array_value) {
+            if (std::size(element) != 2) {
+                return {};
+            }
+            result.emplace_back({element[0], element[1]});
         }
-        return Math::Types::Vector2<ValueType>(array[0], array[1]);
-    }
-
-    template<typename ValueType>
-    Math::Types::Vector4<ValueType> Config::get_vector4(const std::string &key,
-                                                        Math::Types::Vector4<ValueType> default_value) const noexcept {
-        return get_vector4<ValueType>(key).has_value()
-                   ? get_vector4<ValueType>(key).value()
-                   : default_value;
-    }
-
-    template<typename ValueType>
-    Math::Types::Vector3<ValueType> Config::get_vector3(const std::string &key,
-                                                        Math::Types::Vector3<ValueType> default_value) const noexcept {
-        return get_vector3<ValueType>(key).has_value()
-                   ? get_vector3<ValueType>(key).value()
-                   : default_value;
-    }
-
-    template<typename ValueType>
-    Math::Types::Vector2<ValueType> Config::get_vector2(const std::string &key,
-                                                        Math::Types::Vector2<ValueType> default_value) const noexcept {
-        return get_vector2<ValueType>(key).has_value()
-                   ? get_vector2<ValueType>(key).value()
-                   : default_value;
-    }
-
-    template<typename ValueType>
-    std::optional<Math::Types::Vector2<ValueType> > Config::get_vector2_from(const std::string &key,
-                                                                             std::int16_t idx) const noexcept {
-        auto matrix = get_matrix<ValueType>(key);
-        if (std::size(matrix) < idx + 1 || std::size(matrix[idx]) != 2) {
-            return {};
-        }
-        return Math::Types::Vector2<ValueType>(matrix[idx][0], matrix[idx][1]);
+        return result;
     }
 
     template<class ValueType>
-    std::optional<ValueType> Config::get(const std::string &key) const noexcept {
-        auto config_node = node(key);
+    std::optional<ValueType> Config::Get(const std::string &key) const noexcept {
+        const auto config_node = Node(key);
         if (config_node == nullptr) {
-            std::printf("Warning:\n\tCan't find key [%s]\n", key.c_str());
+            std::printf("\nError: \n%s", PrintInfo(key, "Can't find key").c_str());
             return {};
         }
-        auto value = config_node->value<ValueType>();
-        if (!value.has_value()) {
-            std::printf(
-                "Warning:\n\tConfig [%s]\n\tKey [%s] has different type - [%s].\n\tRequested type - [%s]\n",
-                _config.source().path.get()->c_str(),
-                key.c_str(),
-                toml::impl::node_type_friendly_names[static_cast<int>(config_node->type())].data(),
-                typeid(ValueType).name());
+
+        std::optional<ValueType> result;
+
+        if constexpr (std::is_same_v<ValueType, std::int64_t>
+                      || std::is_same_v<ValueType, double>
+                      || std::is_same_v<ValueType, std::string>) {
+            result = SingleValue<ValueType>(config_node);
+
+        } else if constexpr (std::is_same_v<ValueType, std::vector<std::int64_t> >
+                             || std::is_same_v<ValueType, std::vector<double> >
+                             || std::is_same_v<ValueType, std::vector<std::string> >) {
+            result = ArrayValue<typename ValueType::value_type>(config_node);
+
+        } else if constexpr (std::is_same_v<ValueType, std::vector<Math::Types::Vector2<std::int64_t>> >) {
+            result = ArrayVector2Value<std::int64_t>(config_node);
+        } else if constexpr (std::is_same_v<ValueType, std::vector<Math::Types::Vector2<double> >>) {
+            result = ArrayVector2Value<double>(config_node);
+        } else if constexpr (std::is_same_v<ValueType, std::vector<Math::Types::Vector2<std::string> >>) {
+            result = ArrayVector2Value<std::string>(config_node);
+
+        } else if constexpr (std::is_same_v<ValueType, std::vector<std::vector<std::string> >>) {
+            result = Matrix<std::string>(config_node);
+
+        } else if constexpr (std::is_same_v<ValueType, Math::Types::Vector2<std::int64_t> >) {
+            result = Vector2Value<std::int64_t>(config_node);
+        } else if constexpr (std::is_same_v<ValueType, Math::Types::Vector2<double> >) {
+            result = Vector2Value<double>(config_node);
+        } else if constexpr (std::is_same_v<ValueType, Math::Types::Vector2<std::string> >) {
+            result = Vector2Value<std::string>(config_node);
+
+        } else if constexpr (std::is_same_v<ValueType, Math::Types::Vector3<std::int64_t> >) {
+            result = Vector3Value<std::int64_t>(config_node);
+        } else if constexpr (std::is_same_v<ValueType, Math::Types::Vector3<double> >) {
+            result = Vector3Value<double>(config_node);
+        } else if constexpr (std::is_same_v<ValueType, Math::Types::Vector3<std::string> >) {
+            result = Vector3Value<std::string>(config_node);
+
+        } else if constexpr (std::is_same_v<ValueType, Math::Types::Vector4<std::int64_t> >) {
+            result = Vector4Value<std::int64_t>(config_node);
+        } else if constexpr (std::is_same_v<ValueType, Math::Types::Vector4<double> >) {
+            result = Vector4Value<double>(config_node);
+        } else if constexpr (std::is_same_v<ValueType, Math::Types::Vector4<std::string> >) {
+            result = Vector4Value<std::string>(config_node);
         }
-        return value;
+        if (!result.has_value()) {
+            std::printf("\nError: \n%s", PrintInfo(key, "Error parsing value").c_str());
+        }
+        return result;
     }
 
     template<class ValueType>
-    ValueType Config::get(const std::string &key, ValueType default_value) const noexcept {
-        return get<ValueType>(key).has_value()
-                   ? get<ValueType>(key).value()
+    ValueType Config::Get(const std::string &key, ValueType default_value) const noexcept {
+        std::optional res{Get<ValueType>(key)};
+        return res.has_value()
+                   ? res.value()
                    : default_value;
     }
 
     template<class ValueType>
-    void Config::set(const std::string &key, ValueType value) noexcept {
+    void Config::write(const std::string &key, ValueType value) noexcept {
         if (_section == nullptr) {
             return;
         }
@@ -256,15 +286,41 @@ namespace Storm::Filesystem {
     }
 
     template<class ValueType>
-    void Config::set_vec3(const std::string &key, Math::Types::Vector3<ValueType> value) noexcept {
-        auto current_node = node(key);
-        if (current_node == nullptr || current_node->as_array() == nullptr) {
+    void Config::write_vector4(const std::string &key, Math::Types::Vector4<ValueType> value) noexcept {
+        auto config_node = Node(key);
+        if (config_node == nullptr || config_node->as_array() == nullptr) {
             return;
         }
-        auto&& array = _section->get_as<toml::array>(key);
+        auto &&array = _section->get_as<toml::array>(key);
         array->replace(array->cbegin(), value.x);
         array->replace(array->cbegin() + 1, value.y);
         array->replace(array->cbegin() + 2, value.z);
+        array->replace(array->cbegin() + 3, value.w);
+        write();
+    }
+
+    template<class ValueType>
+    void Config::write_vector3(const std::string &key, Math::Types::Vector3<ValueType> value) noexcept {
+        auto config_node = Node(key);
+        if (config_node == nullptr || config_node->as_array() == nullptr) {
+            return;
+        }
+        auto &&array = _section->get_as<toml::array>(key);
+        array->replace(array->cbegin(), value.x);
+        array->replace(array->cbegin() + 1, value.y);
+        array->replace(array->cbegin() + 2, value.z);
+        write();
+    }
+
+    template<class ValueType>
+    void Config::write_vector2(const std::string &key, Math::Types::Vector2<ValueType> value) noexcept {
+        auto config_node = Node(key);
+        if (config_node == nullptr || config_node->as_array() == nullptr) {
+            return;
+        }
+        auto &&array = _section->get_as<toml::array>(key);
+        array->replace(array->cbegin(), value.x);
+        array->replace(array->cbegin() + 1, value.y);
         write();
     }
 

@@ -628,7 +628,7 @@ void VANT::LoadIni()
     auto config = Storm::Filesystem::Config::load(Storm::Filesystem::Constants::ConfigNames::rigging());
     std::ignore = config.select_section("VANTS");
 
-    auto texture_name = config.get<std::string>("TextureName", "vant.tga");
+    auto texture_name = config.Get<std::string>("TextureName", "vant.tga");
     if (texl != -1)
     {
         if (texture_name != TextureName)
@@ -645,42 +645,42 @@ void VANT::LoadIni()
     }
 
     // rope thickness
-    ROPE_WIDTH = config.get<float>("fWIDTH", 0.025f);
+    ROPE_WIDTH = config.Get<double>("fWIDTH", 0.025f);
     // number of ropes
-    ROPE_WIDTH = config.get<int>("fRopeQuant", 5);
+    ROPE_WIDTH = config.Get<std::int64_t>("fRopeQuant", 5);
     if (ROPE_QUANT < 2)
         ROPE_QUANT = 2;
     // xBeg horizontal rope texture coordinates
-    ropeXl = config.get<float>("fHRopeXbeg", 0.5f);
-    ropeXr = config.get<float>("fHRopeXend", 1.0f);
+    ropeXl = config.Get<double>("fHRopeXbeg", 0.5f);
+    ropeXr = config.Get<double>("fHRopeXend", 1.0f);
     // triangle texture coordinates
-    treangXl = config.get<float>("fTreangXbeg", 0.0f);
-    treangXr = config.get<float>("fTreangXend", 0.5f);
-    treangYu = config.get<float>("fTreangYbeg", 0.0f);
-    treangYd = config.get<float>("fTreangYend", 1.0f);
+    treangXl = config.Get<double>("fTreangXbeg", 0.0f);
+    treangXr = config.Get<double>("fTreangXend", 0.5f);
+    treangYu = config.Get<double>("fTreangYbeg", 0.0f);
+    treangYd = config.Get<double>("fTreangYend", 1.0f);
     // beam texture coordinates
-    balkYu = config.get<float>("fBalkYbeg", 0.6f);
-    balkYd = config.get<float>("fBalkYend", 1.0f);
+    balkYu = config.Get<double>("fBalkYbeg", 0.6f);
+    balkYd = config.Get<double>("fBalkYend", 1.0f);
     // vertical rope texture coordinates
-    vRopeXl = config.get<float>("fVRopeXbeg", 0.0f);
-    vRopeXr = config.get<float>("fVRopeXend", 0.1f);
+    vRopeXl = config.Get<double>("fVRopeXbeg", 0.0f);
+    vRopeXr = config.Get<double>("fVRopeXend", 0.1f);
     // upper triangle width
-    upWidth = config.get<float>("fTreangWidth", 1.0f);
+    upWidth = config.Get<double>("fTreangWidth", 1.0f);
     // the height of the upper triangle
-    upHeight = config.get<float>("fTreangHeight", 1.0f);
+    upHeight = config.Get<double>("fTreangHeight", 1.0f);
     // vertical rope height
-    vRopeHeight = config.get<float>("fVRopeHeight", 1.0f);
+    vRopeHeight = config.Get<double>("fVRopeHeight", 1.0f);
     // horizontal rope height
-    hRopeHeight = config.get<float>("fHRopeHeight", 1.0f);
+    hRopeHeight = config.Get<double>("fHRopeHeight", 1.0f);
     // beam height relative to triangle height
-    fBalkHeight = config.get<float>("fBalkHeight", 0.1f);
-    fBalkWidth = config.get<float>("fBalkWidth", 1.2f);
+    fBalkHeight = config.Get<double>("fBalkHeight", 0.1f);
+    fBalkWidth = config.Get<double>("fBalkWidth", 1.2f);
     // the square of the distance from which the cables are not visible
-    fVantMaxDist = config.get<float>("fVantMaxDist", 10000.0f);
+    fVantMaxDist = config.Get<double>("fVantMaxDist", 10000.0f);
     // Guy motion sampling step
-    ZERO_CMP_VAL = config.get<float>("fDiscrValue", 0.01f);
+    ZERO_CMP_VAL = config.Get<double>("fDiscrValue", 0.01f);
     // the maximum change in the guy position at which the guy stops being displayed
-    MAXFALL_CMP_VAL = config.get<float>("fDisapearValue", 5.0f);
+    MAXFALL_CMP_VAL = config.Get<double>("fDisapearValue", 5.0f);
 
     VantId = 0;
     // UNGUARD
@@ -698,7 +698,7 @@ void VANTL::LoadIni()
     auto config = Storm::Filesystem::Config::load(Storm::Filesystem::Constants::ConfigNames::rigging());
     std::ignore = config.select_section("VANTS_L");
 
-    auto texture_name = config.get<std::string>("TextureName", "vant.tga");
+    auto texture_name = config.Get<std::string>("TextureName", "vant.tga");
     if (texl != -1)
     {
         if (texture_name != TextureName)
@@ -714,42 +714,42 @@ void VANTL::LoadIni()
         TextureName = std::move(texture_name);
     }
         // rope thickness
-    ROPE_WIDTH = config.get<float>("fWidth", 0.1f);
+    ROPE_WIDTH = config.Get<double>("fWidth", 0.1f);
     // number of ropes
-    ROPE_WIDTH = config.get<int>("fRopeQuant", 5);
+    ROPE_WIDTH = config.Get<std::int64_t>("fRopeQuant", 5);
     if (ROPE_QUANT < 2)
         ROPE_QUANT = 2;
     // xBeg horizontal rope texture coordinates
-    ropeXl = config.get<float>("fHRopeXbeg", 0.5f);
-    ropeXr = config.get<float>("fHRopeXend", 1.0f);
+    ropeXl = config.Get<double>("fHRopeXbeg", 0.5f);
+    ropeXr = config.Get<double>("fHRopeXend", 1.0f);
     // triangle texture coordinates
-    treangXl = config.get<float>("fTreangXbeg", 0.0f);
-    treangXr = config.get<float>("fTreangXend", 0.5f);
-    treangYu = config.get<float>("fTreangYbeg", 0.0f);
-    treangYd = config.get<float>("fTreangYend", 1.0f);
+    treangXl = config.Get<double>("fTreangXbeg", 0.0f);
+    treangXr = config.Get<double>("fTreangXend", 0.5f);
+    treangYu = config.Get<double>("fTreangYbeg", 0.0f);
+    treangYd = config.Get<double>("fTreangYend", 1.0f);
     // beam texture coordinates
-    balkYu = config.get<float>("fBalkYbeg", 0.6f);
-    balkYd = config.get<float>("fBalkYend", 1.0f);
+    balkYu = config.Get<double>("fBalkYbeg", 0.6f);
+    balkYd = config.Get<double>("fBalkYend", 1.0f);
     // vertical rope texture coordinates
-    vRopeXl = config.get<float>("fVRopeXbeg", 0.0f);
-    vRopeXr = config.get<float>("fVRopeXend", 0.1f);
+    vRopeXl = config.Get<double>("fVRopeXbeg", 0.0f);
+    vRopeXr = config.Get<double>("fVRopeXend", 0.1f);
     // upper triangle width
-    upWidth = config.get<float>("fTreangWidth", 1.0f);
+    upWidth = config.Get<double>("fTreangWidth", 1.0f);
     // the height of the upper triangle
-    upHeight = config.get<float>("fTreangHeight", 1.0f);
+    upHeight = config.Get<double>("fTreangHeight", 1.0f);
     // vertical rope height
-    vRopeHeight = config.get<float>("fVRopeHeight", 1.0f);
+    vRopeHeight = config.Get<double>("fVRopeHeight", 1.0f);
     // horizontal rope height
-    hRopeHeight = config.get<float>("fHRopeHeight", 1.0f);
+    hRopeHeight = config.Get<double>("fHRopeHeight", 1.0f);
     // beam height relative to triangle height
-    fBalkHeight = config.get<float>("fBalkHeight", 0.1f);
-    fBalkWidth = config.get<float>("fBalkWidth", 1.2f);
+    fBalkHeight = config.Get<double>("fBalkHeight", 0.1f);
+    fBalkWidth = config.Get<double>("fBalkWidth", 1.2f);
     // the square of the distance from which the cables are not visible
-    fVantMaxDist = config.get<float>("fVantMaxDist", 10000.0f);
+    fVantMaxDist = config.Get<double>("fVantMaxDist", 10000.0f);
     // Guy motion sampling step
-    ZERO_CMP_VAL = config.get<float>("fDiscrValue", 0.01f);
+    ZERO_CMP_VAL = config.Get<double>("fDiscrValue", 0.01f);
     // the maximum change in the guy position at which the guy stops being displayed
-    MAXFALL_CMP_VAL = config.get<float>("fDisapearValue", 5.0f);
+    MAXFALL_CMP_VAL = config.Get<double>("fDisapearValue", 5.0f);
 
     VantId = 1;
     // UNGUARD
@@ -767,7 +767,7 @@ void VANTZ::LoadIni()
     auto config = Storm::Filesystem::Config::load(Storm::Filesystem::Constants::ConfigNames::rigging());
     std::ignore = config.select_section("VANTS_Z");
 
-    auto texture_name = config.get<std::string>("TextureName", "vant.tga");
+    auto texture_name = config.Get<std::string>("TextureName", "vant.tga");
     if (texl != -1)
     {
         if (texture_name != TextureName)
@@ -783,42 +783,42 @@ void VANTZ::LoadIni()
         TextureName = std::move(texture_name);
     }
         // rope thickness
-    ROPE_WIDTH = config.get<float>("fWidth", 0.1f);
+    ROPE_WIDTH = config.Get<double>("fWidth", 0.1f);
     // number of ropes
-    ROPE_WIDTH = config.get<int>("fRopeQuant", 5);
+    ROPE_WIDTH = config.Get<std::int64_t>("fRopeQuant", 5);
     if (ROPE_QUANT < 2)
         ROPE_QUANT = 2;
     // xBeg horizontal rope texture coordinates
-    ropeXl = config.get<float>("fHRopeXbeg", 0.5f);
-    ropeXr = config.get<float>("fHRopeXend", 1.0f);
+    ropeXl = config.Get<double>("fHRopeXbeg", 0.5f);
+    ropeXr = config.Get<double>("fHRopeXend", 1.0f);
     // triangle texture coordinates
-    treangXl = config.get<float>("fTreangXbeg", 0.0f);
-    treangXr = config.get<float>("fTreangXend", 0.5f);
-    treangYu = config.get<float>("fTreangYbeg", 0.0f);
-    treangYd = config.get<float>("fTreangYend", 1.0f);
+    treangXl = config.Get<double>("fTreangXbeg", 0.0f);
+    treangXr = config.Get<double>("fTreangXend", 0.5f);
+    treangYu = config.Get<double>("fTreangYbeg", 0.0f);
+    treangYd = config.Get<double>("fTreangYend", 1.0f);
     // beam texture coordinates
-    balkYu = config.get<float>("fBalkYbeg", 0.6f);
-    balkYd = config.get<float>("fBalkYend", 1.0f);
+    balkYu = config.Get<double>("fBalkYbeg", 0.6f);
+    balkYd = config.Get<double>("fBalkYend", 1.0f);
     // vertical rope texture coordinates
-    vRopeXl = config.get<float>("fVRopeXbeg", 0.0f);
-    vRopeXr = config.get<float>("fVRopeXend", 0.1f);
+    vRopeXl = config.Get<double>("fVRopeXbeg", 0.0f);
+    vRopeXr = config.Get<double>("fVRopeXend", 0.1f);
     // upper triangle width
-    upWidth = config.get<float>("fTreangWidth", 1.0f);
+    upWidth = config.Get<double>("fTreangWidth", 1.0f);
     // the height of the upper triangle
-    upHeight = config.get<float>("fTreangHeight", 1.0f);
+    upHeight = config.Get<double>("fTreangHeight", 1.0f);
     // vertical rope height
-    vRopeHeight = config.get<float>("fVRopeHeight", 1.0f);
+    vRopeHeight = config.Get<double>("fVRopeHeight", 1.0f);
     // horizontal rope height
-    hRopeHeight = config.get<float>("fHRopeHeight", 1.0f);
+    hRopeHeight = config.Get<double>("fHRopeHeight", 1.0f);
     // beam height relative to triangle height
-    fBalkHeight = config.get<float>("fBalkHeight", 0.1f);
-    fBalkWidth = config.get<float>("fBalkWidth", 1.2f);
+    fBalkHeight = config.Get<double>("fBalkHeight", 0.1f);
+    fBalkWidth = config.Get<double>("fBalkWidth", 1.2f);
     // the square of the distance from which the cables are not visible
-    fVantMaxDist = config.get<float>("fVantMaxDist", 10000.0f);
+    fVantMaxDist = config.Get<double>("fVantMaxDist", 10000.0f);
     // Guy motion sampling step
-    ZERO_CMP_VAL = config.get<float>("fDiscrValue", 0.01f);
+    ZERO_CMP_VAL = config.Get<double>("fDiscrValue", 0.01f);
     // the maximum change in the guy position at which the guy stops being displayed
-    MAXFALL_CMP_VAL = config.get<float>("fDisapearValue", 5.0f);
+    MAXFALL_CMP_VAL = config.Get<double>("fDisapearValue", 5.0f);
 
     VantId = 2;
     // UNGUARD

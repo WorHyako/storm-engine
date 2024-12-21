@@ -1143,7 +1143,7 @@ int32_t Window::SelPreset()
             // Load the name
             auto config = Storm::Filesystem::Config::load(Storm::Filesystem::Constants::ConfigNames::loclighter());
             std::ignore = config.select_section("prs" + std::to_string(ins));
-            auto prsComment_str = config.get<std::string>("comment", "");
+            auto prsComment_str = config.Get<std::string>("comment", "");
             std::ranges::move(prsComment_str, prsComment);
         }
         if (prsComment[0])
@@ -1170,49 +1170,49 @@ void Window::SavePreset(int32_t prs)
         switch (element.type)
         {
         case ListElement::t_smooth:
-            config.set<int>("smoothUseNormals", smoothNorm);
-            config.set<double>("smoothRadius", smoothRad);
+            config.write<int>("smoothUseNormals", smoothNorm);
+            config.write<double>("smoothRadius", smoothRad);
             break;
         case ListElement::t_blur:
-            config.set<int>("blurTrace", isTraceBlur);
-            config.set<double>("blurRadius", blurRad);
-            config.set<double>("blurAtt", blurAtt);
-            config.set<double>("blurCos", blurCos);
-            config.set<double>("blurKf", kBlur);
+            config.write<int>("blurTrace", isTraceBlur);
+            config.write<double>("blurRadius", blurRad);
+            config.write<double>("blurAtt", blurAtt);
+            config.write<double>("blurCos", blurCos);
+            config.write<double>("blurKf", kBlur);
             break;
         case ListElement::t_amb:
-            config.set<double>("ambient_intens", element.st);
-            config.set<double>("ambient_clrR", element.c.x);
-            config.set<double>("ambient_clrG", element.c.y);
-            config.set<double>("ambient_clrB", element.c.z);
+            config.write<double>("ambient_intens", element.st);
+            config.write<double>("ambient_clrR", element.c.x);
+            config.write<double>("ambient_clrG", element.c.y);
+            config.write<double>("ambient_clrB", element.c.z);
             break;
             case ListElement::t_light:
-            config.set<double>(l_name + "_intens", element.st);
-            config.set<double>(l_name + "_clrR", element.c.x);
-            config.set<double>(l_name + "_clrG", element.c.y);
-            config.set<double>(l_name + "_clrB", element.c.z);
-            config.set<double>(l_name + "_cosine", *element.cosine);
-            config.set<double>(l_name + "_shadow", *element.shadow);
-            config.set<double>(l_name + "_bright", *element.bright);
-            config.set<double>(l_name + "_contr", *element.contr);
-            config.set<double>(l_name + "_gamma", *element.gamma);
-            config.set<int>(l_name + "_isOn", *element.isOn);
+            config.write<double>(l_name + "_intens", element.st);
+            config.write<double>(l_name + "_clrR", element.c.x);
+            config.write<double>(l_name + "_clrG", element.c.y);
+            config.write<double>(l_name + "_clrB", element.c.z);
+            config.write<double>(l_name + "_cosine", *element.cosine);
+            config.write<double>(l_name + "_shadow", *element.shadow);
+            config.write<double>(l_name + "_bright", *element.bright);
+            config.write<double>(l_name + "_contr", *element.contr);
+            config.write<double>(l_name + "_gamma", *element.gamma);
+            config.write<int>(l_name + "_isOn", *element.isOn);
             break;
         case ListElement::t_glight:
-            config.set<double>(l_name + "_intens", element.st);
-            config.set<double>(l_name + "_clrR", element.c.x);
-            config.set<double>(l_name + "_clrG", element.c.y);
-            config.set<double>(l_name + "_clrB", element.c.z);
-            config.set<double>(l_name + "_cosine", *element.cosine);
-            config.set<double>(l_name + "_shadow", *element.shadow);
-            config.set<double>(l_name + "_bright", *element.bright);
-            config.set<double>(l_name + "_contr", *element.contr);
-            config.set<double>(l_name + "_gamma", *element.gamma);
-            config.set<double>(l_name + "_att0", *element.att0);
-            config.set<double>(l_name + "_att1", *element.att1);
-            config.set<double>(l_name + "_att2", *element.att2);
-            config.set<double>(l_name + "_range", *element.range);
-            config.set<int>(l_name + "_isOn", *element.isOn);
+            config.write<double>(l_name + "_intens", element.st);
+            config.write<double>(l_name + "_clrR", element.c.x);
+            config.write<double>(l_name + "_clrG", element.c.y);
+            config.write<double>(l_name + "_clrB", element.c.z);
+            config.write<double>(l_name + "_cosine", *element.cosine);
+            config.write<double>(l_name + "_shadow", *element.shadow);
+            config.write<double>(l_name + "_bright", *element.bright);
+            config.write<double>(l_name + "_contr", *element.contr);
+            config.write<double>(l_name + "_gamma", *element.gamma);
+            config.write<double>(l_name + "_att0", *element.att0);
+            config.write<double>(l_name + "_att1", *element.att1);
+            config.write<double>(l_name + "_att2", *element.att2);
+            config.write<double>(l_name + "_range", *element.range);
+            config.write<int>(l_name + "_isOn", *element.isOn);
             break;
         default:
             break;
@@ -1237,50 +1237,50 @@ void Window::LoadPreset(int32_t prs)
         switch (element.type)
         {
         case ListElement::t_smooth:
-            smoothNorm = config.get<int>("smoothUseNormals", smoothNorm) != 0;
-            smoothRad = config.get<double>("smoothRadius", smoothRad);
+            smoothNorm = config.Get<std::int64_t>("smoothUseNormals", smoothNorm) != 0;
+            smoothRad = config.Get<double>("smoothRadius", smoothRad);
             break;
         case ListElement::t_blur:
-            isTraceBlur = config.get<int>("blurTrace", isTraceBlur) != 0;
-            blurRad = config.get<double>("blurRadius", blurRad);
-            blurAtt = config.get<double>("blurAtt", blurAtt);
-            blurCos = config.get<double>("blurCos", blurCos);
-            kBlur = config.get<double>("blurKf", kBlur);
+            isTraceBlur = config.Get<std::int64_t>("blurTrace", isTraceBlur) != 0;
+            blurRad = config.Get<double>("blurRadius", blurRad);
+            blurAtt = config.Get<double>("blurAtt", blurAtt);
+            blurCos = config.Get<double>("blurCos", blurCos);
+            kBlur = config.Get<double>("blurKf", kBlur);
             break;
         case ListElement::t_amb:
-            element.st = config.get<double>("ambient_intens", element.st);
-            element.c.x = config.get<double>("ambient_clrR", element.c.x);
-            element.c.y = config.get<double>("ambient_clrG", element.c.y);
-            element.c.z = config.get<double>("ambient_clrB", element.c.z);
+            element.st = config.Get<double>("ambient_intens", element.st);
+            element.c.x = config.Get<double>("ambient_clrR", element.c.x);
+            element.c.y = config.Get<double>("ambient_clrG", element.c.y);
+            element.c.z = config.Get<double>("ambient_clrB", element.c.z);
             break;
         case ListElement::t_light:
-            element.st = config.get<double>(l_name + "_intens", element.st);
-            element.c.x = config.get<double>(l_name + "_clrR", element.c.x);
-            element.c.y = config.get<double>(l_name + "_clrG", element.c.y);
-            element.c.z = config.get<double>(l_name + "_clrB", element.c.z);
-            *element.cosine = config.get<double>(l_name + "_cosine", *element.cosine);
-            *element.shadow = config.get<double>(l_name + "_shadow", *element.shadow);
-            *element.bright = config.get<double>(l_name + "_bright", *element.bright);
-            *element.contr = config.get<double>(l_name + "_contr", *element.contr);
-            *element.gamma = config.get<double>(l_name + "_gamma", *element.gamma);
-            *element.gamma = config.get<int>(l_name + "_gamma", *element.gamma);
-            *element.isOn = config.get<int>(l_name + "_isOn", *element.isOn) != 0;
+            element.st = config.Get<double>(l_name + "_intens", element.st);
+            element.c.x = config.Get<double>(l_name + "_clrR", element.c.x);
+            element.c.y = config.Get<double>(l_name + "_clrG", element.c.y);
+            element.c.z = config.Get<double>(l_name + "_clrB", element.c.z);
+            *element.cosine = config.Get<double>(l_name + "_cosine", *element.cosine);
+            *element.shadow = config.Get<double>(l_name + "_shadow", *element.shadow);
+            *element.bright = config.Get<double>(l_name + "_bright", *element.bright);
+            *element.contr = config.Get<double>(l_name + "_contr", *element.contr);
+            *element.gamma = config.Get<double>(l_name + "_gamma", *element.gamma);
+            *element.gamma = config.Get<std::int64_t>(l_name + "_gamma", *element.gamma);
+            *element.isOn = config.Get<std::int64_t>(l_name + "_isOn", *element.isOn) != 0;
             break;
         case ListElement::t_glight:
-            element.st = config.get<double>(l_name + "_intens", element.st);
-            element.c.x = config.get<double>(l_name + "_clrR", element.c.x);
-            element.c.y = config.get<double>(l_name + "_clrG", element.c.y);
-            element.c.z = config.get<double>(l_name + "_clrB", element.c.z);
-            *element.cosine = config.get<double>(l_name + "_cosine", *element.cosine);
-            *element.shadow = config.get<double>(l_name + "_shadow", *element.shadow);
-            *element.bright = config.get<double>(l_name + "_bright", *element.bright);
-            *element.contr = config.get<double>(l_name + "_contr", *element.contr);
-            *element.gamma = config.get<double>(l_name + "_gamma", *element.gamma);
-            *element.att0 = config.get<double>(l_name + "_att0", *element.att0);
-            *element.att1 = config.get<double>(l_name + "_att1", *element.att1);
-            *element.att2 = config.get<double>(l_name + "_att2", *element.att2);
-            *element.range = config.get<double>(l_name + "_range", *element.range);
-            *element.isOn = config.get<int>(l_name + "_isOn", *element.isOn) != 0;
+            element.st = config.Get<double>(l_name + "_intens", element.st);
+            element.c.x = config.Get<double>(l_name + "_clrR", element.c.x);
+            element.c.y = config.Get<double>(l_name + "_clrG", element.c.y);
+            element.c.z = config.Get<double>(l_name + "_clrB", element.c.z);
+            *element.cosine = config.Get<double>(l_name + "_cosine", *element.cosine);
+            *element.shadow = config.Get<double>(l_name + "_shadow", *element.shadow);
+            *element.bright = config.Get<double>(l_name + "_bright", *element.bright);
+            *element.contr = config.Get<double>(l_name + "_contr", *element.contr);
+            *element.gamma = config.Get<double>(l_name + "_gamma", *element.gamma);
+            *element.att0 = config.Get<double>(l_name + "_att0", *element.att0);
+            *element.att1 = config.Get<double>(l_name + "_att1", *element.att1);
+            *element.att2 = config.Get<double>(l_name + "_att2", *element.att2);
+            *element.range = config.Get<double>(l_name + "_range", *element.range);
+            *element.isOn = config.Get<std::int64_t>(l_name + "_isOn", *element.isOn) != 0;
             break;
         default:
             break;

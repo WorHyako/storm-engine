@@ -15,36 +15,56 @@ namespace {
     constexpr std::string_view dialog_config_name = "dialog";
     constexpr std::string_view lights_config_name = "lights";
     constexpr std::string_view texture_sequence_name = "TextureSequence";
+    constexpr std::string_view helpchooser_config_name = "helpchooser";
+    constexpr std::string_view pictures_config_name = "pictures";
+    constexpr std::string_view defaultnode_config_name = "defaultnode";
+    constexpr std::string_view mast_name = "mast";
 }
 
 std::filesystem::path ConfigNames::engine() noexcept {
-    return Paths::root() / std::filesystem::path(std::string(engine_config_name) + std::string(config_file_ext));
+    return Paths::root() / (std::string(engine_config_name) + std::string(config_file_ext));
 }
 
 std::filesystem::path ConfigNames::animals() noexcept {
-    return Paths::ini() / std::filesystem::path(std::string(animals_config_name) + std::string(config_file_ext));
+    return Paths::ini() / (std::string(animals_config_name) + std::string(config_file_ext));
+}
+
+std::filesystem::path ConfigNames::helpchooser() noexcept {
+    return Paths::ini() / (std::string(helpchooser_config_name) + std::string(config_file_ext));
 }
 
 std::filesystem::path ConfigNames::rigging() noexcept {
-    return Paths::ini() / std::filesystem::path(std::string(rigging_config_name) + std::string(config_file_ext));
+    return Paths::ini() / (std::string(rigging_config_name) + std::string(config_file_ext));
 }
 
 std::filesystem::path ConfigNames::particles() noexcept {
-    return Paths::ini() / std::filesystem::path(std::string(particles_config_name) + std::string(config_file_ext));
+    return Paths::ini() / (std::string(particles_config_name) + std::string(config_file_ext));
 }
 
 std::filesystem::path ConfigNames::loclighter() noexcept {
-    return Paths::ini() / std::filesystem::path(std::string(loclighter_config_name) + std::string(config_file_ext));
+    return Paths::ini() / (std::string(loclighter_config_name) + std::string(config_file_ext));
 }
 
 std::filesystem::path ConfigNames::dialog() noexcept {
-    return Paths::ini() / std::filesystem::path(std::string(dialog_config_name) + std::string(config_file_ext));
+    return Paths::ini() / (std::string(dialog_config_name) + std::string(config_file_ext));
+}
+
+std::filesystem::path ConfigNames::pictures() noexcept {
+    return Paths::interfaces() / (std::string(pictures_config_name) + std::string(config_file_ext));
 }
 
 std::filesystem::path ConfigNames::lights() noexcept {
-    return Paths::ini() / std::filesystem::path(std::string(lights_config_name) + std::string(config_file_ext));
+    return Paths::ini() / (std::string(lights_config_name) + std::string(config_file_ext));
+}
+
+std::filesystem::path ConfigNames::defaultnode() noexcept {
+    return Paths::ini() / (std::string(defaultnode_config_name) + std::string(config_file_ext));
+}
+
+std::filesystem::path ConfigNames::mast() noexcept {
+    return Paths::ini() / (std::string(mast_name) + std::string(config_file_ext));
 }
 
 std::filesystem::path ConfigNames::texture_sequence() noexcept {
-    return Paths::ini() / std::filesystem::path(std::string(texture_sequence_name) + std::string(config_file_ext));
+    return Paths::ini() / (std::string(texture_sequence_name) + std::string(config_file_ext));
 }

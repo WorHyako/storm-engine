@@ -155,7 +155,7 @@ bool Fader::Init()
     if (!numberOfTips) {
         auto config = Storm::Filesystem::Config::load(Storm::Filesystem::Constants::ConfigNames::engine());
         std::ignore = config.select_section("Main");
-        numberOfTips = config.get<int>("ProgressFrame", 1);
+        numberOfTips = config.Get<std::int64_t>("ProgressFrame", 1);
         numberOfTips = std::clamp(numberOfTips, 0, 1);
     }
     return true;

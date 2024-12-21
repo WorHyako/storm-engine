@@ -195,7 +195,7 @@ bool SEA::Init()
     {
         auto config = Storm::Filesystem::Config::load(Storm::Filesystem::Constants::ConfigNames::engine());
         std::ignore = config.select_section("Sea");
-        bIniFoamEnable = config.get<int>("FoamEnable", 1) != 0;
+        bIniFoamEnable = config.Get<std::int64_t>("FoamEnable", 1) != 0;
     }
 
     iFoamTexture = rs->TextureCreate("weather\\sea\\pena\\pena.tga");

@@ -28,6 +28,10 @@ std::filesystem::path Paths::stash() noexcept {
     return path;
 }
 
+std::filesystem::path Paths::interfaces() noexcept {
+    return {ini() / "interfaces"};
+}
+
 std::filesystem::path Paths::resources() noexcept {
     return {root() / "RESOURCE"};
 }

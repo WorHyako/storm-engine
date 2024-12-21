@@ -38,13 +38,13 @@ bool BLAST::Init()
     auto config = Storm::Filesystem::Config::load(Storm::Filesystem::Constants::ConfigNames::particles());
     std::ignore = config.select_section("geo");
 
-    const auto RandomNum = config.get<int>("randomnum", 0);
+    const auto RandomNum = config.Get<std::int64_t>("randomnum", 0);
 
-    auto files = config.get_array<std::string>("file");
-    if (files.empty()) {
+    auto files = config.Get<std::vector<std::string>>("file");
+    if (!files.has_value()) {
         return false;
     }
-    std::ranges::for_each(files,
+    std::ranges::for_each(files.value(),
                           [&](std::string& file) {
                               AddGeometry(file.data(), RandomNum * std::rand() / RAND_MAX + 1);
                           });

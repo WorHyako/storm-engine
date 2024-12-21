@@ -582,52 +582,52 @@ void FLAG::LoadIni()
     std::ignore = config.select_section("FLAGS");
 
     // load texture parameters
-    const auto texture_name = config.get<std::string>("TextureName", "flagall.tga");
+    const auto texture_name = config.Get<std::string>("TextureName", "flagall.tga");
     UpdateTexture(texture_name);
 
     if (core.GetTargetEngineVersion() <= storm::ENGINE_VERSION::CITY_OF_ABANDONED_SHIPS)
     {
-        FlagTextureQuantity = config.get<int>("TextureCount", 10);
+        FlagTextureQuantity = config.Get<std::int64_t>("TextureCount", 10);
         FlagTextureQuantityRow = 1;
     }
     else
     {
-        FlagTextureQuantity = config.get<int>("TextureCountColumn", 4);
-        FlagTextureQuantityRow = config.get<int>("TextureCountRow", 8);
+        FlagTextureQuantity = config.Get<std::int64_t>("TextureCountColumn", 4);
+        FlagTextureQuantityRow = config.Get<std::int64_t>("TextureCountRow", 8);
     }
 
     verticesNeedUpdate_ = true;
     SetTextureCoordinate();
 
     // flag segment length
-    FLAGVECTORLEN = config.get<float>("fSegLen", 0.2f);
+    FLAGVECTORLEN = config.Get<double>("fSegLen", 0.2f);
 
     // Wind influence parameters
     // vertical wind speed
-    ALFA_DEPEND = config.get<float>("alfa_depend", 0.1f);
+    ALFA_DEPEND = config.Get<double>("alfa_depend", 0.1f);
     // horizontal wind speed
-    BETA_DEPEND = config.get<float>("beta_depend", 0.06f);
+    BETA_DEPEND = config.Get<double>("beta_depend", 0.06f);
     // the maximum value of the random change in the angle Alpha
-    ALFA_RAND = config.get<float>("alpha_rand", 0.1f);
+    ALFA_RAND = config.Get<double>("alpha_rand", 0.1f);
     // the maximum value of the random change in the angle Beta
-    BETA_RAND = config.get<float>("beta_rand", 0.1f);
+    BETA_RAND = config.Get<double>("beta_rand", 0.1f);
     // maximum angle (for the end of the flag)
-    fAlfaMax = config.get<float>("fAlfaMax", 4.71f);
-    fAlfaStep = config.get<float>("fAlfaStep", 0.2f);
+    fAlfaMax = config.Get<double>("fAlfaMax", 4.71f);
+    fAlfaStep = config.Get<double>("fAlfaStep", 0.2f);
     // maximum angle (for the end of the flag)
-    fBetaMax = config.get<float>("fBetaMax", 7.85f);
-    fBetaStep = config.get<float>("fBetaStep", 0.3f);
+    fBetaMax = config.Get<double>("fBetaMax", 7.85f);
+    fBetaStep = config.Get<double>("fBetaStep", 0.3f);
     // Parameters of forming the shape of the flag and its fluctuation
     // amplitude of the flag guideline
-    fWindAm = config.get<float>("fWindAm", 0.2f);
+    fWindAm = config.Get<double>("fWindAm", 0.2f);
     // amplitude of oscillation (rotation) of the diameter of the flag
-    fRotAm = config.get<float>("fRotAm", 0.2f);
+    fRotAm = config.Get<double>("fRotAm", 0.2f);
     // the value of lowering the flag at each step from the mast
-    DOWNVAL = config.get<float>("fDownVal", 0.05f);
+    DOWNVAL = config.Get<double>("fDownVal", 0.05f);
     // maximum wind value
-    fWindMaxValue = config.get<float>("fWindMaxValue", 12.f);
+    fWindMaxValue = config.Get<double>("fWindMaxValue", 12.f);
     // minimum number of segments in the flag
-    MinSegmentQuantity = config.get<int>("MinSegQuantity", 4);
+    MinSegmentQuantity = config.Get<std::int64_t>("MinSegQuantity", 4);
 }
 
 uint32_t FLAG::AttributeChanged(ATTRIBUTES *attributes)

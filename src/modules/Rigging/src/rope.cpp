@@ -793,7 +793,7 @@ void ROPE::LoadIni()
 
     std::ignore = config.select_section("ROPES");
 
-    auto texture_name = config.get<std::string>("TextureName", "sail_rope.tga");
+    auto texture_name = config.Get<std::string>("TextureName", "sail_rope.tga");
     if (texl != -1)
     {
         if (texture_name != TextureName)
@@ -809,31 +809,31 @@ void ROPE::LoadIni()
         TextureName = std::move(texture_name);
     }
     // length of one rope segment
-    ROPE_SEG_LENGTH = config.get<float>("fSEG_LENGTH", 2.0f);
+    ROPE_SEG_LENGTH = config.Get<double>("fSEG_LENGTH", 2.0f);
     // rope thickness
-    ROPE_WIDTH = config.get<float>("fWIDTH", 0.025f);
+    ROPE_WIDTH = config.Get<double>("fWIDTH", 0.025f);
     // rope (head) thickness
-    STAY_WIDTH = config.get<float>("fSTAY_WIDTH", 0.12f);
+    STAY_WIDTH = config.Get<double>("fSTAY_WIDTH", 0.12f);
     // the length of the rope (triangle) at the point of connection with the sail in relation to the total length
-    ROPE_END_LENGTH = config.get<float>("fEND_LENGTH", 0.05f);
+    ROPE_END_LENGTH = config.Get<double>("fEND_LENGTH", 0.05f);
     // amplitude of rope vibration in absolute values
-    ROPE_WAVE = config.get<float>("fWAVE", 0.1f);
+    ROPE_WAVE = config.Get<double>("fWAVE", 0.1f);
     // maximum coordinate change at which the entire rope is recalculated
-    MaxCh = config.get<float>("fMaxCh", 0.1f);
+    MaxCh = config.Get<double>("fMaxCh", 0.1f);
     // the length of the rope on which the texture applies
-    ROPE_TEX_LEN = config.get<float>("fTexHeight", 0.5f);
+    ROPE_TEX_LEN = config.Get<double>("fTexHeight", 0.5f);
     // maximum distance from which the ropes are visible
-    fMaxRopeDist = config.get<float>("fMaxDist", 5000.0f);
+    fMaxRopeDist = config.Get<double>("fMaxDist", 5000.0f);
     // the rate of change in the depth of the rope deflection
-    DEEP_CHANGE_SPEED = config.get<float>("fDeepChangeSpeed", 0.15f);
+    DEEP_CHANGE_SPEED = config.Get<double>("fDeepChangeSpeed", 0.15f);
     // rope swing speed
-    ROTATE_SPEED = config.get<float>("fRotateSpeed", 0.08f);
+    ROTATE_SPEED = config.Get<double>("fRotateSpeed", 0.08f);
     // the minimum value of the coefficient of use of the deflection of the rope
-    MIN_DEEP_MUL = config.get<float>("fMinDeepMul", 1.0f);
+    MIN_DEEP_MUL = config.Get<double>("fMinDeepMul", 1.0f);
     // limit of variation of the coefficient of use of rope deflection
-    VAR_DEEP_MUL = config.get<float>("fVarDeepMul", 0.7f);
+    VAR_DEEP_MUL = config.Get<double>("fVarDeepMul", 0.7f);
     // rope swing angle
-    VAR_ROTATE_ANGL = config.get<float>("fRotateAng", 0.1f);
+    VAR_ROTATE_ANGL = config.Get<double>("fRotateAng", 0.1f);
 
     // UNGUARD
 }

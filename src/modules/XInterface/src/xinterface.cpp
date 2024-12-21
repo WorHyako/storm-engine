@@ -11,7 +11,11 @@
 #include "string_service/obj_str_service.h"
 #include "string_service/str_service.h"
 #include "xservice.h"
+
 #include <cstdio>
+
+#include "Filesystem/Config/Config.hpp"
+#include "Filesystem/Constants/ConfigNames.hpp"
 
 #define CHECK_FILE_NAME "PiratesReadme.txt"
 
@@ -1211,6 +1215,8 @@ void XINTERFACE::LoadDialog(const char *sFileName)
         core.PostEvent("exitCancel", 1, nullptr);
         return;
     }
+
+
     auto ownerIni = fio->OpenIniFile("RESOURCE\\INI\\INTERFACES\\defaultnode.ini");
 
     sprintf_s(section, "MAIN");
@@ -1349,6 +1355,7 @@ void XINTERFACE::CreateNode(const char *sFileName, const char *sNodeType, const 
             return;
         }
     }
+    // auto config = Storm::Filesystem::Config::load(Storm::Filesystem::Constants::ConfigNames::defaultnode());
     auto ownerIni = fio->OpenIniFile("RESOURCE\\INI\\INTERFACES\\defaultnode.ini");
 
     SFLB_CreateNode(ownerIni.get(), ini.get(), sNodeType, sNodeName, priority);

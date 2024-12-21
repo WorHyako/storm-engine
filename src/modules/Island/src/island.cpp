@@ -429,9 +429,9 @@ bool ISLAND::CreateHeightMap(const std::string_view &pDir, const std::string_vie
         vRealBoxSize /= 2.0f;
 
 
-        auto vbox_center_vec3 = config.get_vector3<double>("vBoxCenter", {1.0,1.0,1.0});
+        auto vbox_center_vec3 = config.Get<Storm::Math::Types::Vector3<double>>("vBoxCenter", {1.0,1.0,1.0});
         CVECTOR vTmpBoxCenter(vbox_center_vec3.x, vbox_center_vec3.y, vbox_center_vec3.z);
-        auto vbox_size_vec3 = config.get_vector3<double>("vBoxSize", {1.0,1.0,1.0});
+        auto vbox_size_vec3 = config.Get<Storm::Math::Types::Vector3<double>>("vBoxSize", {1.0,1.0,1.0});
         CVECTOR vTmpBoxSize(vbox_size_vec3.x, vbox_size_vec3.y, vbox_size_vec3.z);
 
         if (~(vTmpBoxCenter - vBoxCenter) > 0.1f)
@@ -526,9 +526,9 @@ bool ISLAND::CreateHeightMap(const std::string_view &pDir, const std::string_vie
     mzDepth.Save(fileName + ".zap");
     pDepthMap.clear();
 
-    config.set<std::string>("DepthFile", fileName);
-    config.set_vec3<double>("vBoxCenter", {vBoxCenter.x, vBoxCenter.y, vBoxCenter.z});
-    config.set_vec3<double>("vBoxSize", {vBoxSize.x, vBoxSize.y, vBoxSize.z});
+    config.write<std::string>("DepthFile", fileName);
+    config.write_vector3<double>("vBoxCenter", {vBoxCenter.x, vBoxCenter.y, vBoxCenter.z});
+    config.write_vector3<double>("vBoxSize", {vBoxSize.x, vBoxSize.y, vBoxSize.z});
 
     return true;
 }

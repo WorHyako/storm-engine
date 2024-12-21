@@ -100,7 +100,7 @@ bool SoundService::Init()
     {
         auto config = Storm::Filesystem::Config::load(Storm::Filesystem::Constants::ConfigNames::engine());
         std::ignore = config.select_section("sound");
-        fadeTimeInSeconds = config.get<float>("fade_time", 0.5f);
+        fadeTimeInSeconds = config.Get<double>("fade_time", 0.5f);
     }
 
     numActiveSounds = 2; // 0 and 1 are special

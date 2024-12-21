@@ -3,7 +3,6 @@
 #include "core.h"
 #include "c_vector.h"
 #include "storm_assert.h"
-#include "file_service.h"
 #include "math_inlines.h"
 
 #include <algorithm>
@@ -142,10 +141,11 @@ inline bool AIFlowGraph::Load(const std::string_view& config_path)
 
     while (true) {
         const std::string key{"pnt" + std::to_string(std::size(aPoints))};
-        auto array = config.get_array<std::string>(key);
-        if (array.empty()) {
+        auto array_opt = config.Get<std::vector<std::string>>(key);
+        if (!array_opt.has_value() || array_opt.value().empty()) {
             break;
         }
+        auto&& array = array_opt.value();
         point_t point(CVECTOR(std::stof(array[0]), 0.0f, std::stof(array[1])));
         aPoints.push_back(point);
 

@@ -8,6 +8,8 @@
 #include "string_compare.hpp"
 #include "shared/messages.h"
 
+#include "Filesystem/Constants/Paths.hpp"
+
 PARTICLES::PARTICLES()
 {
     bSystemDelete = false;
@@ -190,7 +192,7 @@ PARTICLE_SYSTEM *PARTICLES::CreateSystem(const char *pFileName, uint32_t LifeTim
     // pFullFileName += pFileName;
     // pFullFileName.AddExtention(".xps");
     //psnip_trap(); //~!~
-    auto path = std::filesystem::path() / "resource" / "particles" / pFileName;
+    auto path = Storm::Filesystem::Constants::Paths::resources() / "particles" / pFileName;
     std::string pathStr = path.extension().string();
     if (!storm::iEquals(pathStr, ".xps"))
         path += ".xps";

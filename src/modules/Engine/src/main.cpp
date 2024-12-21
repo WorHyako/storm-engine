@@ -382,7 +382,11 @@ int main(int argc, char *argv[])
     mi_option_set(mi_option_verbose, 4);
 #endif
 
-    SDL_InitSubSystem(SDL_INIT_EVENTS | SDL_INIT_VIDEO | SDL_INIT_GAMECONTROLLER);
+    if (SDL_Init(SDL_INIT_EVENTS | SDL_INIT_VIDEO | SDL_INIT_GAMECONTROLLER) != 0) {
+        SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "SDL ERROR", "Init Error", nullptr);
+        SDL_Log("Something went wrong with SDL Init %s", SDL_GetError());
+        return 1;
+    }
 
     // Init diagnostics
     const auto lifecycleDiagnosticsGuard =
@@ -424,31 +428,34 @@ int main(int argc, char *argv[])
     bool bAcceleration = false;
     bool run_in_background = false;
     {
+        /**
+         * TODO: load config for ALL classes in some place of Engine module once
+         */
         auto config =  Storm::Filesystem::Config::load(Storm::Filesystem::Constants::ConfigNames::engine());
         std::ignore = config.select_section("Main");
-        dwMaxFPS = config.get<std::uint32_t>("max_fps", 0);
-        bDebugWindow = config.get<std::uint32_t>("DebugWindow", 0) == 1;
-        bAcceleration = config.get<std::uint32_t>("Acceleration", 0) == 1;
+        dwMaxFPS = config.Get<std::int64_t>("max_fps", 0);
+        bDebugWindow = config.Get<std::int64_t>("DebugWindow", 0) == 1;
+        bAcceleration = config.Get<std::string>("Acceleration", "0") == "0";
 
-        auto log = config.get<std::uint32_t>("logs", 0);
+        auto log = config.Get<std::int64_t>("logs", 0);
         if (log == 0) {
             spdlog::set_level(spdlog::level::off);
         }
 
-        width = config.get<int>("screen_x", 1024);
-        height = config.get<int>("screen_y", 768);
-        preferred_display = config.get<int>("display", 0);
-        fullscreen = config.get<int>("full_screen", 0);
-        show_borders = config.get<int>("window_borders", 0);
-        run_in_background = config.get<int>("run_in_background", 0);
+        width = config.Get<std::int64_t>("screen_x", 1024);
+        height = config.Get<std::int64_t>("screen_y", 768);
+        preferred_display = config.Get<std::int64_t>("display", 0);
+        fullscreen = config.Get<std::int64_t>("full_screen", 0);
+        show_borders = config.Get<std::int64_t>("window_borders", 0);
+        run_in_background = config.Get<std::int64_t>("run_in_background", 0);
 
         if (run_in_background) {
-            bSoundInBackground = config.get<int>("sound_in_background", 1);
+            bSoundInBackground = config.Get<std::int64_t>("sound_in_background", 1);
         } else {
             bSoundInBackground = false;
         }
 
-        bSteam = config.get<int>("Steam", 0);
+        bSteam = config.Get<std::int64_t>("Steam", 0);
     }
 
     // initialize SteamApi through evaluating its singleton

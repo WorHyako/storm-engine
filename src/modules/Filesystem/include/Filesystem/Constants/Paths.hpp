@@ -10,6 +10,9 @@ namespace Storm::Filesystem::Constants::Paths {
     std::filesystem::path stash() noexcept;
 
     [[nodiscard]]
+    std::filesystem::path interfaces() noexcept;
+
+    [[nodiscard]]
     std::filesystem::path resources() noexcept;
 
     [[nodiscard]]

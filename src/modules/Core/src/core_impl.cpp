@@ -275,12 +275,12 @@ void CoreImpl::ProcessEngineIniFile() {
     auto config = Storm::Filesystem::Config::load(Storm::Filesystem::Constants::ConfigNames::engine());
     std::ignore = config.select_section("Main");
 
-    const auto program_dir = config.get<std::string>("program_directory", "");
-    const auto run = config.get<std::string>("run");
+    const auto program_dir = config.Get<std::string>("program_directory", "");
+    const auto run = config.Get<std::string>("run");
 
     Compiler->SetProgramDirectory(program_dir.c_str());
 
-    const auto controls_opt = config.get<std::string>("controls");
+    const auto controls_opt = config.Get<std::string>("controls");
     if (controls_opt.has_value()) {
         core_internal.Controls = static_cast<CONTROLS *>(MakeClass(controls_opt.value().c_str()));
         if (core_internal.Controls == nullptr)
@@ -295,7 +295,7 @@ void CoreImpl::ProcessEngineIniFile() {
     }
 
     std::ignore = config.select_section("compatibility");
-    const auto target_engine_version = config.get<std::string>("target_version", "latest");
+    const auto target_engine_version = config.Get<std::string>("target_version", "latest");
     targetVersion_ = storm::getTargetEngineVersion(target_engine_version);
 
     // if (targetVersion_ == ENGINE_VERSION::UNKNOWN)
@@ -311,8 +311,8 @@ void CoreImpl::ProcessEngineIniFile() {
     }
 
     std::ignore = config.select_section("interface");
-    screenSize_.width = config.get<int>("screen_width", screenSize_.width);
-    screenSize_.height = config.get<int>("screen_height", screenSize_.height);
+    screenSize_.width = config.Get<std::int64_t>("screen_width", screenSize_.width);
+    screenSize_.height = config.Get<std::int64_t>("screen_height", screenSize_.height);
 
     if (run.has_value())
     {

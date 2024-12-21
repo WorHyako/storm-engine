@@ -27,8 +27,8 @@ TButterflies::~TButterflies()
 void TButterflies::LoadSettings() {
     auto config = Storm::Filesystem::Config::load(Storm::Filesystem::Constants::ConfigNames::animals());
     std::ignore = config.select_section(ANIMALS_BUTTERFLIES_SECTION);
-    butterfliesCount = config.get<int>("count", BUTTERFLY_COUNT);
-    maxDistance = config.get<int>("distance", BUTTERFLY_DISTANCE);
+    butterfliesCount = config.Get<std::int64_t>("count", BUTTERFLY_COUNT);
+    maxDistance = config.Get<std::int64_t>("distance", BUTTERFLY_DISTANCE);
     // DEBUG!
     // butterfliesCount = 1;
 }

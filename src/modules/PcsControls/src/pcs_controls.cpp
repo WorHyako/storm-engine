@@ -30,7 +30,7 @@ PCS_CONTROLS::PCS_CONTROLS() {
 
     auto config = Storm::Filesystem::Config::load(Storm::Filesystem::Constants::ConfigNames::engine());
     std::ignore = config.select_section("controls");
-    m_bIsOffDebugKeys = config.get<int>("ondebugkeys", 0) == 0;
+    m_bIsOffDebugKeys = config.Get<std::int64_t>("ondebugkeys", 0) == 0;
 
     input_ = Input::Create();
     inputHandlerID_ = input_->Subscribe([this](const InputEvent &evt) { HandleEvent(evt); });

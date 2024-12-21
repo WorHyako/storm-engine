@@ -1253,55 +1253,55 @@ void SAIL::LoadSailIni() {
     auto config = Storm::Filesystem::Config::load(Storm::Filesystem::Constants::ConfigNames::rigging());
     std::ignore = config.select_section("SAILS");
 
-    g_fSailHoleDepend = config.get<double>("fHoleDepend", 1.0f);
+    g_fSailHoleDepend = config.Get<double>("fHoleDepend", 1.0f);
 
-    const auto diffuse = config.get_vector4<double>("Diffuse", {});
+    const auto diffuse = config.Get<Storm::Math::Types::Vector4<double>>("Diffuse", {});
     mat.Diffuse = toD3DCOLOR(diffuse);
 
-    const auto ambient = config.get_vector4<double>("Ambient", {});
+    const auto ambient = config.Get<Storm::Math::Types::Vector4<double>>("Ambient", {});
     mat.Ambient = toD3DCOLOR(ambient);
 
-    const auto specular = config.get_vector4<double>("Specular", {});
+    const auto specular = config.Get<Storm::Math::Types::Vector4<double>>("Specular", {});
     mat.Specular = toD3DCOLOR(specular);
 
-    const auto emissive = config.get_vector4<double>("Emissive", {});
+    const auto emissive = config.Get<Storm::Math::Types::Vector4<double>>("Emissive", {});
     mat.Emissive = toD3DCOLOR(emissive);
 
-    mat.Power = config.get<float>("Power", 0.5f);
-    WINDVECTOR_QUANTITY = config.get<int>("WINDVECTOR_QNT", 60);
-    TURNSTEPANGL = config.get<double>("TURNSTEPANGL", 0.002);
-    GROUP_UPDATE_TIME = config.get<double>("msecSailUpdateTime", 0.002);
-    MAXSUMWIND = config.get<double>("MAXSUMWIND", 0.02);
-    ROLLINGSPEED = config.get<double>("ROLLINGSPEED", 0.02);
-    WINDVECTOR_TINCR = config.get<int>("WINDVECTOR_TINCR", 3);
-    WINDVECTOR_TADD = config.get<int>("WINDVECTOR_TADD", 3);
-    WINDVECTOR_SINCR = config.get<int>("WINDVECTOR_SINCR", 6);
-    WINDVECTOR_SADD = config.get<int>("WINDVECTOR_SADD", 3);
-    FLEXSPEED = config.get<double>("FLEXSPEED", 0.001);
-    WINDANGL_DISCRETE = config.get<double>("WINDANGLDISCRETE", 0.01);
-    TR_FORM_MUL = config.get<double>("tr_form_mul", 0.01);
-    ROLL_Z_VAL = config.get<double>("ROLL_Z_VAL", 0.01);
-    ROLL_Z_DELTA = config.get<double>("ROLL_Z_DELTA", 0.001);
-    ROLL_Y_VAL = config.get<double>("ROLL_Y_VAL", 0.04);
-    ROLL_Y_DELTA = config.get<double>("ROLL_Y_DELTA", 0.001);
-    MAXTURNANGL = config.get<double>("MAXTURNANGL", 0.6);
-    SsailWindDepend = config.get<double>("fSsailWindDepend", 0.05);
-    TsailWindDepend = config.get<double>("TsailWindDepend", 0.5);
-    fWindAdding = config.get<double>("fWindAdding", 0.5);
-    FALL_SSAIL_ADD_MIN = config.get<double>("fFallSSailAddMin", 0.2);
-    FALL_SSAIL_ADD_RAND = config.get<double>("fFallSSailAddRand", 0.2);
-    FALL_TSAIL_ADD_MIN = config.get<double>("fFallTSailAddMin", 0.2);
-    FALL_TSAIL_ADD_RAND = config.get<double>("fFallTSailAddRand", 0.2);
-    fTHoleFlexDepend = config.get<double>("fTHoleFlexDepend", 0.01);
+    mat.Power = config.Get<double>("Power", 0.5f);
+    WINDVECTOR_QUANTITY = config.Get<std::int64_t>("WINDVECTOR_QNT", 60);
+    TURNSTEPANGL = config.Get<double>("TURNSTEPANGL", 0.002);
+    GROUP_UPDATE_TIME = config.Get<double>("msecSailUpdateTime", 0.002);
+    MAXSUMWIND = config.Get<double>("MAXSUMWIND", 0.02);
+    ROLLINGSPEED = config.Get<double>("ROLLINGSPEED", 0.02);
+    WINDVECTOR_TINCR = config.Get<std::int64_t>("WINDVECTOR_TINCR", 3);
+    WINDVECTOR_TADD = config.Get<std::int64_t>("WINDVECTOR_TADD", 3);
+    WINDVECTOR_SINCR = config.Get<std::int64_t>("WINDVECTOR_SINCR", 6);
+    WINDVECTOR_SADD = config.Get<std::int64_t>("WINDVECTOR_SADD", 3);
+    FLEXSPEED = config.Get<double>("FLEXSPEED", 0.001);
+    WINDANGL_DISCRETE = config.Get<double>("WINDANGLDISCRETE", 0.01);
+    TR_FORM_MUL = config.Get<double>("tr_form_mul", 0.01);
+    ROLL_Z_VAL = config.Get<double>("ROLL_Z_VAL", 0.01);
+    ROLL_Z_DELTA = config.Get<double>("ROLL_Z_DELTA", 0.001);
+    ROLL_Y_VAL = config.Get<double>("ROLL_Y_VAL", 0.04);
+    ROLL_Y_DELTA = config.Get<double>("ROLL_Y_DELTA", 0.001);
+    MAXTURNANGL = config.Get<double>("MAXTURNANGL", 0.6);
+    SsailWindDepend = config.Get<double>("fSsailWindDepend", 0.05);
+    TsailWindDepend = config.Get<double>("TsailWindDepend", 0.5);
+    fWindAdding = config.Get<double>("fWindAdding", 0.5);
+    FALL_SSAIL_ADD_MIN = config.Get<double>("fFallSSailAddMin", 0.2);
+    FALL_SSAIL_ADD_RAND = config.Get<double>("fFallSSailAddRand", 0.2);
+    FALL_TSAIL_ADD_MIN = config.Get<double>("fFallTSailAddMin", 0.2);
+    FALL_TSAIL_ADD_RAND = config.Get<double>("fFallTSailAddRand", 0.2);
+    fTHoleFlexDepend = config.Get<double>("fTHoleFlexDepend", 0.01);
     if (fTHoleFlexDepend > 0.1) {
         fTHoleFlexDepend = 0.1;
     }
-    fSHoleFlexDepend = config.get<double>("fSHoleFlexDepend", 0.01);
+    fSHoleFlexDepend = config.Get<double>("fSHoleFlexDepend", 0.01);
     if (fSHoleFlexDepend > 0.1) {
         fSHoleFlexDepend = 0.1;
     }
 
-    auto roll_form = config.get_array<double>("rollSSailForm");
+    auto roll_form = config.Get<std::vector<double>>("rollSSailForm", {});
     if (!roll_form.empty()) {
         SSailRollForm.resize(std::size(roll_form));
         std::ranges::move(roll_form, std::begin(SSailRollForm));
@@ -1309,16 +1309,16 @@ void SAIL::LoadSailIni() {
         SSailRollForm = {0.2, 0.8, 1.0, 0.8, 0.4, 1.0, 1.3, 1.0, 0.4, 0.8, 1.0, 0.8, 0.2};
     }
 
-    auto ts_vec = config.get_vector3<double>("TriangleWindSpeed", {0.2, 0.6, 0.8});
+    auto ts_vec = config.Get<Storm::Math::Types::Vector3<double>>("TriangleWindSpeed", {0.2, 0.6, 0.8});
     ts = toVector(ts_vec);
 
-    auto fs_vec = config.get_vector3<double>("TrapecidalWindSpeed", {0.4, 0.5, 0.6});
+    auto fs_vec = config.Get<Storm::Math::Types::Vector3<double>>("TrapecidalWindSpeed", {0.4, 0.5, 0.6});
     fs = toVector(fs_vec);
 
-    auto ss_vec = config.get_vector3<double>("SquareWindSpeed", {0.4, 0.5, 0.6});
+    auto ss_vec = config.Get<Storm::Math::Types::Vector3<double>>("SquareWindSpeed", {0.4, 0.5, 0.6});
     ss = toVector(ss_vec);
 
-    auto TSailRollForm_vec = config.get_array<double>("rollSSailForm");
+    auto TSailRollForm_vec = config.Get<std::vector<double>>("rollSSailForm", {});
     if (!TSailRollForm_vec.empty()) {
         TSailRollForm.resize(std::size(TSailRollForm_vec));
         std::ranges::move(TSailRollForm_vec, std::begin(TSailRollForm));
