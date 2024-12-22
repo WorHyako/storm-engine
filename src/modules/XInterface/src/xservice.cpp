@@ -199,18 +199,20 @@ void XSERVICE::LoadAllPicturesInfo() {
 
         m_pList[i].pictureStart = std::size(m_pImage);
 
-        PICTUREDESCR picture_descr;
         if (std::size(pictures[0]) > 1) {
             m_pList[i].pictureQuantity = std::size(pictures);
 
             for (auto & picture : pictures) {
+                PICTUREDESCR picture_descr;
                 picture_descr.sPictureName = picture[0];
                 picture_descr.pTextureRect.left = std::stoi(picture[1]);
                 picture_descr.pTextureRect.top = std::stoi(picture[2]);
                 picture_descr.pTextureRect.right = std::stoi(picture[3]);
                 picture_descr.pTextureRect.bottom = std::stoi(picture[4]);
+                m_pImage.emplace_back(picture_descr);
             }
         } else {
+            PICTUREDESCR picture_descr;
             m_pList[i].pictureQuantity = 1;
 
             picture_descr.sPictureName = pictures[0][0];
@@ -218,8 +220,8 @@ void XSERVICE::LoadAllPicturesInfo() {
             picture_descr.pTextureRect.top = std::stoi(pictures[2][0]);
             picture_descr.pTextureRect.right = std::stoi(pictures[3][0]);
             picture_descr.pTextureRect.bottom = std::stoi(pictures[4][0]);
-        }
         m_pImage.emplace_back(picture_descr);
+        }
     }
 }
 

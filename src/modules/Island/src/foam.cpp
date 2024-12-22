@@ -849,7 +849,7 @@ void CoastFoam::Load()
 
         std::ignore = config.select_section(std::string("foam_" + std::to_string(i)));
 
-        auto alpha_vec = config.Get<Storm::Math::Types::Vector2<double>>("Alpha", {148.0, 196.0}).to<float>();
+        auto alpha_vec = config.Get<Storm::Math::Types::Vector2<std::int64_t>>("Alpha", {148, 196}).to<float>();
         pF->fAlphaMin = alpha_vec.x;
         pF->fAlphaMax = alpha_vec.y;
 

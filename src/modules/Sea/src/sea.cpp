@@ -194,7 +194,7 @@ bool SEA::Init()
     CreateVertexDeclaration();
     {
         auto config = Storm::Filesystem::Config::load(Storm::Filesystem::Constants::ConfigNames::engine());
-        std::ignore = config.select_section("Sea");
+        std::ignore = config.select_section("sea");
         bIniFoamEnable = config.Get<std::int64_t>("FoamEnable", 1) != 0;
     }
 

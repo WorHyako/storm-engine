@@ -19,6 +19,9 @@ namespace Storm::Filesystem::Constants::ConfigNames {
     std::filesystem::path particles() noexcept;
 
     [[nodiscard]]
+    std::filesystem::path interfaces() noexcept;
+
+    [[nodiscard]]
     std::filesystem::path loclighter() noexcept;
 
     [[nodiscard]]

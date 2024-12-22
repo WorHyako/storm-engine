@@ -1286,7 +1286,7 @@ void SAIL::LoadSailIni() {
     ROLL_Y_DELTA = config.Get<double>("ROLL_Y_DELTA", 0.001);
     MAXTURNANGL = config.Get<double>("MAXTURNANGL", 0.6);
     SsailWindDepend = config.Get<double>("fSsailWindDepend", 0.05);
-    TsailWindDepend = config.Get<double>("TsailWindDepend", 0.5);
+    TsailWindDepend = config.Get<double>("fTsailWindDepend", 0.5);
     fWindAdding = config.Get<double>("fWindAdding", 0.5);
     FALL_SSAIL_ADD_MIN = config.Get<double>("fFallSSailAddMin", 0.2);
     FALL_SSAIL_ADD_RAND = config.Get<double>("fFallSSailAddRand", 0.2);

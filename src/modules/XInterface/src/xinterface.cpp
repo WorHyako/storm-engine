@@ -1063,76 +1063,42 @@ uint64_t XINTERFACE::ProcessMessage(MESSAGE &message)
     return 0;
 }
 
-static const char *RESOURCE_FILENAME = "resource\\ini\\interfaces\\interfaces.ini";
-
 void XINTERFACE::LoadIni()
 {
     // GUARD(XINTERFACE::LoadIni());
-    char section[256];
-
-    auto ini = fio->OpenIniFile(RESOURCE_FILENAME);
-    if (!ini)
-        throw std::runtime_error("ini file not found!");
-
     auto windowSize = core.GetWindow()->GetWindowSize();
 
     fScale = 1.0f;
     const auto screenSize = core.GetScreenSize();
     dwScreenHeight = screenSize.height;
     dwScreenWidth = windowSize.width * dwScreenHeight / windowSize.height;
-    if (dwScreenWidth < screenSize.width)
-        dwScreenWidth = screenSize.width;
+    dwScreenWidth = dwScreenWidth < screenSize.width ? screenSize.width : dwScreenWidth;
     GlobalScreenRect.top = 0;
-    GlobalScreenRect.bottom = screenSize.height;
+    GlobalScreenRect.bottom = dwScreenHeight;
     GlobalScreenRect.left = (dwScreenWidth - screenSize.width) / 2;
     GlobalScreenRect.right = screenSize.width + GlobalScreenRect.left;
 
-    char platform[23];
-    bool sectionFound = false;
-    if (ini->GetSectionName(platform, sizeof(platform) - 1))
-    {
-        float windowRatio = (float)windowSize.width / (float)windowSize.height;
-        float iniRatio;
-        char splitPlatform[23], *platformW, *platformH;
-        do
-        {
-            if(starts_with(platform, "PC_SCREEN_"))
-            {
-                strcpy_s(splitPlatform, platform);
-                platformW = std::strtok(splitPlatform, "_:"); // PC
-                platformW = std::strtok(nullptr, "_:"); // SCREEN
-                platformW = std::strtok(nullptr, "_:"); // Width
-                platformH = std::strtok(nullptr, "_:"); // Height
-                iniRatio = (float)atoi(platformW) / (float)atoi(platformH);
-                // +- 3%
-                if (iniRatio*0.97  <= windowRatio && windowRatio <= iniRatio*1.03)
-                    sectionFound = true;
-            }
-        } while (!sectionFound && ini->GetSectionNameNext(platform, sizeof(platform) - 1));
-    }
-    if (!sectionFound)
-        strcpy_s(platform, "PC_SCREEN");
-    core.Trace("Using %s parameters", platform);
-    sprintf_s(section, "COMMON");
-
+    auto config = Storm::Filesystem::Config::load(Storm::Filesystem::Constants::ConfigNames::interfaces());
+    std::ignore = config.select_section("COMMON");
     // set screen parameters
-    if (ini->GetInt(platform, "bDynamicScaling", 0) == 0)
+    if (config.Get<std::int64_t>("bDynamicScaling", 0) == 0)
     {
+        std::ignore = config.select_section("PC_SCREEN");
         const auto &canvas_size = core.GetScreenSize();
-        fScale = ini->GetFloat(platform, "fScale", 1.f);
+        fScale = static_cast<float>(config.Get<double>("fScale", 1.0));
         if (fScale < MIN_SCALE || fScale > MAX_SCALE)
             fScale = 1.f;
-        dwScreenWidth = ini->GetInt(platform, "wScreenWidth", canvas_size.width);
-        dwScreenHeight = ini->GetInt(platform, "wScreenHeight", canvas_size.height);
-        GlobalScreenRect.left = ini->GetInt(platform, "wScreenLeft", 0);
-        GlobalScreenRect.top = ini->GetInt(platform, "wScreenTop", canvas_size.height);
-        GlobalScreenRect.right = ini->GetInt(platform, "wScreenRight", canvas_size.width);
-        GlobalScreenRect.bottom = ini->GetInt(platform, "wScreenDown", 0);
+        dwScreenWidth = config.Get<std::int64_t>("wScreenWidth", canvas_size.width);
+        dwScreenHeight = config.Get<std::int64_t>("wScreenHeight", canvas_size.height);
+        GlobalScreenRect.left = config.Get<std::int64_t>("wScreenLeft", 0);
+        GlobalScreenRect.top = config.Get<std::int64_t>("wScreenTop", canvas_size.height);
+        GlobalScreenRect.right = config.Get<std::int64_t>("wScreenRight", canvas_size.width);
+        GlobalScreenRect.bottom = config.Get<std::int64_t>("wScreenDown", 0);
     }
-
-    m_fpMouseOutZoneOffset.x = ini->GetFloat(section, "mouseOutZoneWidth", 0.f);
-    m_fpMouseOutZoneOffset.y = ini->GetFloat(section, "mouseOutZoneHeight", 0.f);
-    m_nMouseLastClickTimeMax = ini->GetInt(section, "mouseDblClickInterval", 300);
+    std::ignore = config.select_section("COMMON");
+    m_fpMouseOutZoneOffset.x = config.Get<std::int64_t>("mouseOutZoneWidth", 0);
+    m_fpMouseOutZoneOffset.y = config.Get<std::int64_t>("mouseOutZoneHeight", 0);
+    m_nMouseLastClickTimeMax = config.Get<std::int64_t>("mouseDblClickInterval", 300);
 
     CMatrix oldmatp;
     pRenderService->GetTransform(D3DTS_PROJECTION, (D3DMATRIX *)&oldmatp);
@@ -1153,18 +1119,20 @@ void XINTERFACE::LoadIni()
     matv.m[3][1] = -(GlobalScreenRect.top + GlobalScreenRect.bottom) / 2.f;
 
     // set key press data
-    m_nMaxPressDelay = ini->GetInt(section, "RepeatDelay", 500);
+    m_nMaxPressDelay = config.Get<std::int64_t>("RepeatDelay", 500);
 
     // set mouse cursor
-    char param[256];
-    ini->ReadString(section, "MousePointer", param, sizeof(param) - 1, "");
+    auto mouse_pointer_arr = config.Get<std::vector<std::string>>("MousePointer", {});
+    std::string mouse_pointer_str{};
+    for (auto& each : mouse_pointer_arr) {
+        mouse_pointer_str += each + ",";
+    }
     char param2[256];
-    sscanf(param, "%[^,],%d,size:(%d,%d),pos:(%d,%d)", param2, &m_lMouseSensitive, &MouseSize.x, &MouseSize.y,
-           &m_lXMouse, &m_lYMouse);
-    m_idTex = pRenderService->TextureCreate(param2);
+    sscanf(mouse_pointer_str.c_str(), "%[^,],%d,size:(%d,%d),pos:(%d,%d)", param2,
+        &m_lMouseSensitive, &MouseSize.x, &MouseSize.y, &m_lXMouse, &m_lYMouse);
+    m_idTex = pRenderService->TextureCreate(mouse_pointer_arr[0].c_str());
 
-    if (auto *editor = core.GetEditor(); editor == nullptr || !editor->IsFocused())
-    {
+    if (auto *editor = core.GetEditor(); editor == nullptr || !editor->IsFocused()) {
         core.GetWindow()->WarpMouseInWindow(windowSize.width / 2, windowSize.height / 2);
     }
 
@@ -1178,18 +1146,18 @@ void XINTERFACE::LoadIni()
     vMouse[1].tv = vMouse[3].tv = 1.f;
     core.GetWindow()->ShowCursor(false);
     // set blind parameters
-    m_fBlindSpeed = ini->GetFloat(section, "BlindTime", 1.f);
+    m_fBlindSpeed = config.Get<double>("BlindTime", 1.f);
     if (m_fBlindSpeed <= 0.0001f)
         m_fBlindSpeed = 1.f;
     m_fBlindSpeed = 0.002f / m_fBlindSpeed;
 
     // set wave parameters
-    m_nColumnQuantity = ini->GetInt(section, "columnQuantity", m_nColumnQuantity);
-    m_fWaveAmplitude = ini->GetFloat(section, "waveAmplitude", m_fWaveAmplitude);
-    m_fWavePhase = ini->GetFloat(section, "wavePhase", m_fWavePhase);
-    m_fWaveSpeed = ini->GetFloat(section, "waveSpeed", m_fWaveSpeed);
-    m_nBlendStepMax = ini->GetInt(section, "waveStepQuantity", m_nBlendStepMax);
-    m_nBlendSpeed = ini->GetInt(section, "blendSpeed", m_nBlendSpeed);
+    m_nColumnQuantity = config.Get<std::int64_t>("columnQuantity", m_nColumnQuantity);
+    m_fWaveAmplitude = config.Get<double>("waveAmplitude", m_fWaveAmplitude);
+    m_fWavePhase = config.Get<double>("wavePhase", m_fWavePhase);
+    m_fWaveSpeed = config.Get<double>("waveSpeed", m_fWaveSpeed);
+    m_nBlendStepMax = config.Get<std::int64_t>("waveStepQuantity", m_nBlendStepMax);
+    m_nBlendSpeed = config.Get<std::int64_t>("blendSpeed", m_nBlendSpeed);
 
     oldKeyState.dwKeyCode = -1;
     DoControl();
