@@ -19,6 +19,7 @@ namespace {
     constexpr std::string_view pictures_config_name{"pictures"};
     constexpr std::string_view defaultnode_config_name{"defaultnode"};
     constexpr std::string_view interfaces_config_name{"interfaces"};
+    constexpr std::string_view sound_scheme_name{"sound_scheme"};
     constexpr std::string_view mast_config_name{"mast"};
 }
 
@@ -28,6 +29,10 @@ std::filesystem::path ConfigNames::engine() noexcept {
 
 std::filesystem::path ConfigNames::animals() noexcept {
     return Paths::ini() / (std::string(animals_config_name) + std::string(config_file_ext));
+}
+
+std::filesystem::path ConfigNames::sound_scheme() noexcept {
+    return Paths::ini() / (std::string(sound_scheme_name) + std::string(config_file_ext));
 }
 
 std::filesystem::path ConfigNames::helpchooser() noexcept {

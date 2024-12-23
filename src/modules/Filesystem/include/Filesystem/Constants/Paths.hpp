@@ -40,5 +40,8 @@ namespace Storm::Filesystem::Constants::Paths {
     std::filesystem::path foam() noexcept;
 
     [[nodiscard]]
+    std::filesystem::path aliases() noexcept;
+
+    [[nodiscard]]
     std::filesystem::path program() noexcept;
 }

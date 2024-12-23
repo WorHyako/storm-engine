@@ -68,6 +68,10 @@ std::filesystem::path Paths::foam() noexcept {
     return {resources() / "foam"};
 }
 
+std::filesystem::path Paths::aliases() noexcept {
+    return {ini() / "aliases"};
+}
+
 std::filesystem::path Paths::program() noexcept {
     return {root() / "Program"};
 }

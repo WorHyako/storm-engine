@@ -129,7 +129,6 @@ class SoundService : public VSoundService
     const char *GetRandomName(const tAlias *alias) const;
     int GetAliasIndexByName(const char *szAliasName);
     void AnalyseNameStringAndAddToAlias(tAlias *_alias, const char *in_string) const;
-    void AddAlias(INIFILE &_iniFile, char *_sectionName);
     void LoadAliasFile(const char *_filename) override;
     void InitAliases();
 
