@@ -193,8 +193,8 @@ bool SEA::Init()
     rs = static_cast<VDX9RENDER *>(core.GetService("dx9render"));
     CreateVertexDeclaration();
     {
-        auto config = Storm::Filesystem::Config::load(Storm::Filesystem::Constants::ConfigNames::engine());
-        std::ignore = config.select_section("sea");
+        auto config = Storm::Filesystem::Config::Load(Storm::Filesystem::Constants::ConfigNames::engine());
+        std::ignore = config.SelectSection("sea");
         bIniFoamEnable = config.Get<std::int64_t>("FoamEnable", 1) != 0;
     }
 

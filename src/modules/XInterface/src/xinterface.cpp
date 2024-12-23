@@ -1078,12 +1078,12 @@ void XINTERFACE::LoadIni()
     GlobalScreenRect.left = (dwScreenWidth - screenSize.width) / 2;
     GlobalScreenRect.right = screenSize.width + GlobalScreenRect.left;
 
-    auto config = Storm::Filesystem::Config::load(Storm::Filesystem::Constants::ConfigNames::interfaces());
-    std::ignore = config.select_section("COMMON");
+    auto config = Storm::Filesystem::Config::Load(Storm::Filesystem::Constants::ConfigNames::interfaces());
+    std::ignore = config.SelectSection("COMMON");
     // set screen parameters
     if (config.Get<std::int64_t>("bDynamicScaling", 0) == 0)
     {
-        std::ignore = config.select_section("PC_SCREEN");
+        std::ignore = config.SelectSection("PC_SCREEN");
         const auto &canvas_size = core.GetScreenSize();
         fScale = static_cast<float>(config.Get<double>("fScale", 1.0));
         if (fScale < MIN_SCALE || fScale > MAX_SCALE)
@@ -1095,7 +1095,7 @@ void XINTERFACE::LoadIni()
         GlobalScreenRect.right = config.Get<std::int64_t>("wScreenRight", canvas_size.width);
         GlobalScreenRect.bottom = config.Get<std::int64_t>("wScreenDown", 0);
     }
-    std::ignore = config.select_section("COMMON");
+    std::ignore = config.SelectSection("COMMON");
     m_fpMouseOutZoneOffset.x = config.Get<std::int64_t>("mouseOutZoneWidth", 0);
     m_fpMouseOutZoneOffset.y = config.Get<std::int64_t>("mouseOutZoneHeight", 0);
     m_nMouseLastClickTimeMax = config.Get<std::int64_t>("mouseDblClickInterval", 300);
@@ -1323,7 +1323,7 @@ void XINTERFACE::CreateNode(const char *sFileName, const char *sNodeType, const 
             return;
         }
     }
-    // auto config = Storm::Filesystem::Config::load(Storm::Filesystem::Constants::ConfigNames::defaultnode());
+    // auto config = Storm::Filesystem::Config::Load(Storm::Filesystem::Constants::ConfigNames::defaultnode());
     auto ownerIni = fio->OpenIniFile("RESOURCE\\INI\\INTERFACES\\defaultnode.ini");
 
     SFLB_CreateNode(ownerIni.get(), ini.get(), sNodeType, sNodeName, priority);

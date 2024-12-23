@@ -411,8 +411,8 @@ bool ISLAND::CreateHeightMap(const std::string_view &pDir, const std::string_vie
         }
     }
 
-    auto config = Storm::Filesystem::Config::load(path.string() + ".toml");
-    std::ignore = config.select_section("Main");
+    auto config = Storm::Filesystem::Config::Load(path.string() + ".toml");
+    std::ignore = config.SelectSection("Main");
     if (bLoad)
     {
         iDMapSize = mzDepth.GetSizeX();

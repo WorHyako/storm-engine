@@ -6,7 +6,7 @@ Config::Config() noexcept
     : _section(nullptr) {
 }
 
-Config Config::load(const std::filesystem::path &file_path) noexcept {
+Config Config::Load(const std::filesystem::path &file_path) noexcept {
     Config config;
     if (!std::filesystem::exists(file_path)) {
         std::printf("Can't open config file - %s\n", file_path.string().c_str());
@@ -21,7 +21,7 @@ Config Config::load(const std::filesystem::path &file_path) noexcept {
     return config;
 }
 
-bool Config::select_section(std::string section_name) noexcept {
+bool Config::SelectSection(std::string section_name) noexcept {
     if (_config.empty()) {
         return false;
     }
@@ -44,7 +44,7 @@ std::vector<std::string> Config::Sections() noexcept {
     return sections;
 }
 
-void Config::write() const noexcept {
+void Config::Write() const noexcept {
     std::ofstream config_file(_config.source().path.get()->c_str());
     if (!config_file.is_open()) {
         return;
@@ -53,7 +53,7 @@ void Config::write() const noexcept {
     config_file.close();
 }
 
-std::string Config::to_lowercase(std::string str) const noexcept {
+std::string Config::ToLowercase(std::string str) const noexcept {
     std::ranges::transform(str, std::begin(str),
                            [](auto &sym) {
                                return std::tolower(sym);
@@ -80,5 +80,5 @@ std::string Config::PrintInfo(const std::string_view& key, const std::string_vie
 toml::node *Config::Node(const std::string &key) const noexcept {
     return _section == nullptr
                ? nullptr
-               : _section->get(to_lowercase(key));
+               : _section->get(ToLowercase(key));
 }

@@ -625,8 +625,8 @@ void VANT::LoadIni()
         ft_old = fio->_GetLastWriteTime(Storm::Filesystem::Constants::ConfigNames::rigging().string().c_str());
     }
 
-    auto config = Storm::Filesystem::Config::load(Storm::Filesystem::Constants::ConfigNames::rigging());
-    std::ignore = config.select_section("VANTS");
+    auto config = Storm::Filesystem::Config::Load(Storm::Filesystem::Constants::ConfigNames::rigging());
+    std::ignore = config.SelectSection("VANTS");
 
     auto texture_name = config.Get<std::string>("TextureName", "vant.tga");
     if (texl != -1)
@@ -695,8 +695,8 @@ void VANTL::LoadIni()
         ft_old = fio->_GetLastWriteTime(Storm::Filesystem::Constants::ConfigNames::rigging().string().c_str());
     }
 
-    auto config = Storm::Filesystem::Config::load(Storm::Filesystem::Constants::ConfigNames::rigging());
-    std::ignore = config.select_section("VANTS_L");
+    auto config = Storm::Filesystem::Config::Load(Storm::Filesystem::Constants::ConfigNames::rigging());
+    std::ignore = config.SelectSection("VANTS_L");
 
     auto texture_name = config.Get<std::string>("TextureName", "vant.tga");
     if (texl != -1)
@@ -764,8 +764,8 @@ void VANTZ::LoadIni()
         ft_old = fio->_GetLastWriteTime(Storm::Filesystem::Constants::ConfigNames::rigging().string().c_str());
     }
 
-    auto config = Storm::Filesystem::Config::load(Storm::Filesystem::Constants::ConfigNames::rigging());
-    std::ignore = config.select_section("VANTS_Z");
+    auto config = Storm::Filesystem::Config::Load(Storm::Filesystem::Constants::ConfigNames::rigging());
+    std::ignore = config.SelectSection("VANTS_Z");
 
     auto texture_name = config.Get<std::string>("TextureName", "vant.tga");
     if (texl != -1)

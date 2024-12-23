@@ -99,8 +99,8 @@ bool SoundService::Init()
     CHECKFMODERR(system->set3DSettings(1.0, DISTANCEFACTOR, 1.0f));
 
     {
-        auto config = Storm::Filesystem::Config::load(Storm::Filesystem::Constants::ConfigNames::engine());
-        std::ignore = config.select_section("sound");
+        auto config = Storm::Filesystem::Config::Load(Storm::Filesystem::Constants::ConfigNames::engine());
+        std::ignore = config.SelectSection("sound");
         fadeTimeInSeconds = config.Get<double>("fade_time", 0.5f);
     }
 
@@ -1045,13 +1045,11 @@ void SoundService::AnalyseNameStringAndAddToAlias(tAlias *_alias, const char *in
 
 void SoundService::LoadAliasFile(const char *_filename)
 {
-    const std::string iniName{(Storm::Filesystem::Constants::Paths::aliases() / _filename).string()};
+    auto config = Storm::Filesystem::Config::Load(Storm::Filesystem::Constants::Paths::aliases() / _filename);
 
-    auto config = Storm::Filesystem::Config::load(iniName);
-
-    auto sections = config.Sections();
-    for (auto& section : sections) {
-        std::ignore = config.select_section(section);
+    const auto sections = config.Sections();
+    for (const auto& section : sections) {
+        std::ignore = config.SelectSection(section);
         Aliases.emplace_back();
         tAlias &alias = Aliases.back();
         alias.Name = section;
@@ -1061,8 +1059,8 @@ void SoundService::LoadAliasFile(const char *_filename)
         alias.fVolume = config.Get<double>("volume", -1.0);
         alias.iPrior = config.Get<std::int64_t>("prior", 128);
 
-        auto names = config.Get<std::vector<std::string>>("name", {});
-        for (auto& name : names) {
+        const auto names = config.Get<std::vector<std::string>>("name", {});
+        for (const auto& name : names) {
             AnalyseNameStringAndAddToAlias(&alias, name.c_str());
         }
     }
@@ -1450,8 +1448,8 @@ void SoundService::ResetScheme()
 
 //--------------------------------------------------------------------
 bool SoundService::AddScheme(const char *_schemeName) {
-    auto config = Storm::Filesystem::Config::load(Storm::Filesystem::Constants::ConfigNames::sound_scheme());
-    std::ignore = config.select_section(_schemeName);
+    auto config = Storm::Filesystem::Config::Load(Storm::Filesystem::Constants::ConfigNames::sound_scheme());
+    std::ignore = config.SelectSection(_schemeName);
 
     if (auto ch_vec = config.Get<std::vector<std::vector<std::string>>>("ch", {}); !ch_vec.empty()) {
         if (std::size(ch_vec[0]) == 1) {

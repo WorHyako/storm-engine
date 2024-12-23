@@ -272,8 +272,8 @@ bool CoreImpl::Initialize()
 void CoreImpl::ProcessEngineIniFile() {
     bEngineIniProcessed = true;
 
-    auto config = Storm::Filesystem::Config::load(Storm::Filesystem::Constants::ConfigNames::engine());
-    std::ignore = config.select_section("Main");
+    auto config = Storm::Filesystem::Config::Load(Storm::Filesystem::Constants::ConfigNames::engine());
+    std::ignore = config.SelectSection("Main");
 
     const auto program_dir = config.Get<std::string>("program_directory", "");
     const auto run = config.Get<std::string>("run");
@@ -294,7 +294,7 @@ void CoreImpl::ProcessEngineIniFile() {
         core_internal.Controls = new CONTROLS;
     }
 
-    std::ignore = config.select_section("compatibility");
+    std::ignore = config.SelectSection("compatibility");
     const auto target_engine_version = config.Get<std::string>("target_version", "latest");
     targetVersion_ = storm::getTargetEngineVersion(target_engine_version);
 
@@ -310,7 +310,7 @@ void CoreImpl::ProcessEngineIniFile() {
         screenSize_ = {800, 600};
     }
 
-    std::ignore = config.select_section("interface");
+    std::ignore = config.SelectSection("interface");
     screenSize_.width = config.Get<std::int64_t>("screen_width", screenSize_.width);
     screenSize_.height = config.Get<std::int64_t>("screen_height", screenSize_.height);
 

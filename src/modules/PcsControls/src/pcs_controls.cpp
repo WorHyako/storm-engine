@@ -28,8 +28,8 @@ PCS_CONTROLS::PCS_CONTROLS() {
     nMouseWheel = 0;
     memset(&ControlsTab[0], 0, sizeof(ControlsTab));
 
-    auto config = Storm::Filesystem::Config::load(Storm::Filesystem::Constants::ConfigNames::engine());
-    std::ignore = config.select_section("controls");
+    auto config = Storm::Filesystem::Config::Load(Storm::Filesystem::Constants::ConfigNames::engine());
+    std::ignore = config.SelectSection("controls");
     m_bIsOffDebugKeys = config.Get<std::int64_t>("ondebugkeys", 0) == 0;
 
     input_ = Input::Create();

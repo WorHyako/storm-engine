@@ -14,13 +14,14 @@ namespace {
     constexpr std::string_view loclighter_config_name{"loclighter"};
     constexpr std::string_view dialog_config_name{"dialog"};
     constexpr std::string_view lights_config_name{"lights"};
-    constexpr std::string_view texture_sequence_name{"TextureSequence"};
+    constexpr std::string_view texture_sequence_config_name{"TextureSequence"};
     constexpr std::string_view helpchooser_config_name{"helpchooser"};
     constexpr std::string_view pictures_config_name{"pictures"};
     constexpr std::string_view defaultnode_config_name{"defaultnode"};
     constexpr std::string_view interfaces_config_name{"interfaces"};
-    constexpr std::string_view sound_scheme_name{"sound_scheme"};
+    constexpr std::string_view sound_scheme_config_name{"sound_scheme"};
     constexpr std::string_view mast_config_name{"mast"};
+    constexpr std::string_view sailors_editor_config_name{"SailorsEditor"};
 }
 
 std::filesystem::path ConfigNames::engine() noexcept {
@@ -31,8 +32,12 @@ std::filesystem::path ConfigNames::animals() noexcept {
     return Paths::ini() / (std::string(animals_config_name) + std::string(config_file_ext));
 }
 
+std::filesystem::path ConfigNames::sailors_editor() noexcept {
+    return Paths::root() / (std::string(sailors_editor_config_name) + std::string(config_file_ext));
+}
+
 std::filesystem::path ConfigNames::sound_scheme() noexcept {
-    return Paths::ini() / (std::string(sound_scheme_name) + std::string(config_file_ext));
+    return Paths::ini() / (std::string(sound_scheme_config_name) + std::string(config_file_ext));
 }
 
 std::filesystem::path ConfigNames::helpchooser() noexcept {
@@ -76,5 +81,5 @@ std::filesystem::path ConfigNames::mast() noexcept {
 }
 
 std::filesystem::path ConfigNames::texture_sequence() noexcept {
-    return Paths::ini() / (std::string(texture_sequence_name) + std::string(config_file_ext));
+    return Paths::ini() / (std::string(texture_sequence_config_name) + std::string(config_file_ext));
 }

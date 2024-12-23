@@ -789,9 +789,8 @@ void ROPE::LoadIni()
 {
     // GUARD(ROPE::LoadIni());
 
-    auto config = Storm::Filesystem::Config::load(Storm::Filesystem::Constants::ConfigNames::rigging());
-
-    std::ignore = config.select_section("ROPES");
+    auto config = Storm::Filesystem::Config::Load(Storm::Filesystem::Constants::ConfigNames::rigging());
+    std::ignore = config.SelectSection("ROPES");
 
     auto texture_name = config.Get<std::string>("TextureName", "sail_rope.tga");
     if (texl != -1)

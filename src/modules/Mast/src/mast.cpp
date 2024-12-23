@@ -429,8 +429,8 @@ void MAST::LoadIni()
         ft_old = fio->_GetLastWriteTime(Storm::Filesystem::Constants::ConfigNames::mast().string().c_str());
     }
 
-    auto config = Storm::Filesystem::Config::load(Storm::Filesystem::Constants::ConfigNames::mast());
-    std::ignore = config.select_section("MAST");
+    auto config = Storm::Filesystem::Config::Load(Storm::Filesystem::Constants::ConfigNames::mast());
+    std::ignore = config.SelectSection("MAST");
 
     // step of movement of the mast when lowering one end into the water
     MAST_MOVE_STEP = config.Get<double>("water_slide_step", MAST_MOVE_STEP);

@@ -12,24 +12,24 @@ namespace Storm::Filesystem {
     class Config final {
     public:
         [[nodiscard]]
-        static Config load(const std::filesystem::path &file_path) noexcept;
+        static Config Load(const std::filesystem::path &file_path) noexcept;
 
         [[nodiscard]]
-        bool select_section(std::string section_name) noexcept;
+        bool SelectSection(std::string section_name) noexcept;
 
     private:
         [[nodiscard]]
-        std::string to_lowercase(std::string str) const noexcept;
+        std::string ToLowercase(std::string str) const noexcept;
 
         [[nodiscard]]
-        std::string PrintInfo(const std::string_view& key, const std::string_view& message) const noexcept;
+        std::string PrintInfo(const std::string_view &key, const std::string_view &message) const noexcept;
 
         /**
          * @brief   Ctor.
          */
         Config() noexcept;
 
-        void write() const noexcept;
+        void Write() const noexcept;
 
         toml::parse_result _config;
 
@@ -156,8 +156,7 @@ namespace Storm::Filesystem {
         auto result = array_value.empty() || std::size(array_value) != 3
                           ? std::nullopt
                           : std::optional{
-                              Math::Types::Vector3<ElementType>(array_value[0], array_value[1],
-                                                                array_value[2])
+                              Math::Types::Vector3<ElementType>(array_value[0], array_value[1], array_value[2])
                           };
         return result;
     }
@@ -194,7 +193,7 @@ namespace Storm::Filesystem {
 
     template<typename ElementType>
     std::vector<ElementType> Config::ArrayVector2Value(toml::node *node) const {
-        std::vector<Math::Types::Vector2<ElementType>> result{};
+        std::vector<Math::Types::Vector2<ElementType> > result{};
         const auto array_value = Matrix<ElementType>(node);
         if (array_value.empty()) {
             return {};
@@ -223,36 +222,30 @@ namespace Storm::Filesystem {
                       || std::is_same_v<ValueType, double>
                       || std::is_same_v<ValueType, std::string>) {
             result = SingleValue<ValueType>(config_node);
-
         } else if constexpr (std::is_same_v<ValueType, std::vector<std::int64_t> >
                              || std::is_same_v<ValueType, std::vector<double> >
                              || std::is_same_v<ValueType, std::vector<std::string> >) {
             result = ArrayValue<typename ValueType::value_type>(config_node);
-
-        } else if constexpr (std::is_same_v<ValueType, std::vector<Math::Types::Vector2<std::int64_t>> >) {
+        } else if constexpr (std::is_same_v<ValueType, std::vector<Math::Types::Vector2<std::int64_t> > >) {
             result = ArrayVector2Value<std::int64_t>(config_node);
-        } else if constexpr (std::is_same_v<ValueType, std::vector<Math::Types::Vector2<double> >>) {
+        } else if constexpr (std::is_same_v<ValueType, std::vector<Math::Types::Vector2<double> > >) {
             result = ArrayVector2Value<double>(config_node);
-        } else if constexpr (std::is_same_v<ValueType, std::vector<Math::Types::Vector2<std::string> >>) {
+        } else if constexpr (std::is_same_v<ValueType, std::vector<Math::Types::Vector2<std::string> > >) {
             result = ArrayVector2Value<std::string>(config_node);
-
-        } else if constexpr (std::is_same_v<ValueType, std::vector<std::vector<std::string> >>) {
+        } else if constexpr (std::is_same_v<ValueType, std::vector<std::vector<std::string> > >) {
             result = Matrix<std::string>(config_node);
-
         } else if constexpr (std::is_same_v<ValueType, Math::Types::Vector2<std::int64_t> >) {
             result = Vector2Value<std::int64_t>(config_node);
         } else if constexpr (std::is_same_v<ValueType, Math::Types::Vector2<double> >) {
             result = Vector2Value<double>(config_node);
         } else if constexpr (std::is_same_v<ValueType, Math::Types::Vector2<std::string> >) {
             result = Vector2Value<std::string>(config_node);
-
         } else if constexpr (std::is_same_v<ValueType, Math::Types::Vector3<std::int64_t> >) {
             result = Vector3Value<std::int64_t>(config_node);
         } else if constexpr (std::is_same_v<ValueType, Math::Types::Vector3<double> >) {
             result = Vector3Value<double>(config_node);
         } else if constexpr (std::is_same_v<ValueType, Math::Types::Vector3<std::string> >) {
             result = Vector3Value<std::string>(config_node);
-
         } else if constexpr (std::is_same_v<ValueType, Math::Types::Vector4<std::int64_t> >) {
             result = Vector4Value<std::int64_t>(config_node);
         } else if constexpr (std::is_same_v<ValueType, Math::Types::Vector4<double> >) {
@@ -279,9 +272,9 @@ namespace Storm::Filesystem {
         if (_section == nullptr) {
             return;
         }
-        auto it = _section->insert_or_assign(to_lowercase(key), value);
+        auto it = _section->insert_or_assign(ToLowercase(key), value);
         if (it.first != _section->end()) {
-            write();
+            Write();
         }
     }
 
@@ -296,7 +289,7 @@ namespace Storm::Filesystem {
         array->replace(array->cbegin() + 1, value.y);
         array->replace(array->cbegin() + 2, value.z);
         array->replace(array->cbegin() + 3, value.w);
-        write();
+        Write();
     }
 
     template<class ValueType>
@@ -309,7 +302,7 @@ namespace Storm::Filesystem {
         array->replace(array->cbegin(), value.x);
         array->replace(array->cbegin() + 1, value.y);
         array->replace(array->cbegin() + 2, value.z);
-        write();
+        Write();
     }
 
     template<class ValueType>
@@ -321,7 +314,7 @@ namespace Storm::Filesystem {
         auto &&array = _section->get_as<toml::array>(key);
         array->replace(array->cbegin(), value.x);
         array->replace(array->cbegin() + 1, value.y);
-        write();
+        Write();
     }
 
 #pragma endregion Accessors/Mutators

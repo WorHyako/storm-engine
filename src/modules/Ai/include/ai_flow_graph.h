@@ -136,8 +136,8 @@ inline bool AIFlowGraph::Load(const std::string_view& config_path)
 {
     ReleaseAll();
 
-    auto config = Storm::Filesystem::Config::load(config_path);
-    std::ignore = config.select_section(sSectionName);
+    auto config = Storm::Filesystem::Config::Load(config_path);
+    std::ignore = config.SelectSection(sSectionName);
 
     while (true) {
         const std::string key{"pnt" + std::to_string(std::size(aPoints))};

@@ -783,8 +783,8 @@ void CoastFoam::Save()
 
     const auto location_name = to_string(AttributesPointer->GetAttribute("id"));
     const auto config_path = Storm::Filesystem::Constants::Paths::locations() / (location_name + ".toml");
-    auto config = Storm::Filesystem::Config::load(config_path);
-    std::ignore = config.select_section("Main");
+    auto config = Storm::Filesystem::Config::Load(config_path);
+    std::ignore = config.SelectSection("Main");
     /**
      * TODO: recreate config file
      */
@@ -795,7 +795,7 @@ void CoastFoam::Save()
 
     for (int32_t i = 0; i < aFoams.size(); i++)
     {
-        std::ignore = config.select_section("foam_" + std::to_string(i));
+        std::ignore = config.SelectSection("foam_" + std::to_string(i));
 
         auto&& pF = aFoams[i];
         config.write<int>("NumParts", pF->aFoamParts.size());
@@ -832,8 +832,8 @@ void CoastFoam::Load()
 {
     const auto location_name = to_string(AttributesPointer->GetAttribute("id"));
     const auto config_path = Storm::Filesystem::Constants::Paths::locations() / (location_name + ".toml");
-    auto config = Storm::Filesystem::Config::load(config_path);
-    std::ignore = config.select_section("Main");
+    auto config = Storm::Filesystem::Config::Load(config_path);
+    std::ignore = config.SelectSection("Main");
 
     clear();
     const auto iNumFoams = config.Get<std::int64_t>("NumFoams", 0);
@@ -847,7 +847,7 @@ void CoastFoam::Load()
         aFoams.push_back(new Foam);
         auto *pF = aFoams.back();
 
-        std::ignore = config.select_section(std::string("foam_" + std::to_string(i)));
+        std::ignore = config.SelectSection(std::string("foam_" + std::to_string(i)));
 
         auto alpha_vec = config.Get<Storm::Math::Types::Vector2<std::int64_t>>("Alpha", {148, 196}).to<float>();
         pF->fAlphaMin = alpha_vec.x;

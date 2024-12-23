@@ -60,8 +60,8 @@ IDirect3DTexture9 *TextureSequence::Initialize(VDX9RENDER *pRS, const char *sect
     m_pRS = pRS;
 
     // open ini file
-    auto config = Storm::Filesystem::Config::load(Storm::Filesystem::Constants::ConfigNames::texture_sequence());
-    std::ignore = config.select_section(std::string(section));
+    auto config = Storm::Filesystem::Config::Load(Storm::Filesystem::Constants::ConfigNames::texture_sequence());
+    std::ignore = config.SelectSection(std::string(section));
 
     m_dwDeltaTime = config.Get<std::int64_t>("timeDelay", 128);
     if (m_dwDeltaTime == 0)

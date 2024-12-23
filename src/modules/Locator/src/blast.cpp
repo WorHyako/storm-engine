@@ -35,8 +35,8 @@ bool BLAST::Init()
         return false;
 
     //    int32_t n;
-    auto config = Storm::Filesystem::Config::load(Storm::Filesystem::Constants::ConfigNames::particles());
-    std::ignore = config.select_section("geo");
+    auto config = Storm::Filesystem::Config::Load(Storm::Filesystem::Constants::ConfigNames::particles());
+    std::ignore = config.SelectSection("geo");
 
     const auto RandomNum = config.Get<std::int64_t>("randomnum", 0);
 

@@ -138,7 +138,7 @@ void BALLSPLASH::Execute(uint32_t dTime)
 //--------------------------------------------------------------------
 void BALLSPLASH::InitializeSplashes()
 {
-    // auto config = Storm::Filesystem::Config::load("resource\\ini\\particles.toml");
+    // auto config = Storm::Filesystem::Config::Load("resource\\ini\\particles.toml");
 
     // auto psIni = fio->OpenIniFile("resource\\ini\\particles.ini");
 

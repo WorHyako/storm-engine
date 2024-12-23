@@ -4,6 +4,9 @@
 #include "shared/messages.h"
 #include "shared/sea_ai/script_defines.h"
 
+#include "Filesystem/Config/Config.hpp"
+#include "Filesystem/Constants/ConfigNames.hpp"
+
 SailorsEditor::SailorsEditor()
     : rs(nullptr), sailors(0), shipID(0), pointID(0), model(nullptr)
 {
@@ -34,7 +37,7 @@ bool SailorsEditor::Init()
     core.SetLayerType(EDITOR_REALIZE, layer_type_t::realize);
     core.AddToLayer(EDITOR_REALIZE, GetId(), 100000);
 
-    LoadFromIni("SailorsEditor.ini");
+    LoadFromIni();
 
     shipID = core.CreateEntity("MODELR");
     core.Send_Message(shipID, "ls", MSG_MODEL_LOAD_GEO, _shipName.c_str());
@@ -142,26 +145,13 @@ void SailorsEditor::SetCamera(uint32_t &dltTime)
     menu.cameraPos = cameraTo;
 
     menu.dltTime = dltTime;
-};
+}
 
-void SailorsEditor::LoadFromIni(std::string fileName)
-{
-    char param[256];
+void SailorsEditor::LoadFromIni() {
+    auto config = Storm::Filesystem::Config::Load(Storm::Filesystem::Constants::ConfigNames::sailors_editor());
+    std::ignore = config.SelectSection("PATH");
 
-    auto pIni = fio->OpenIniFile(fileName.c_str());
-
-    if (!pIni)
-    {
-        core.Trace("Sailors : Can`t open '%s'", fileName.c_str());
-        return;
-    }
-
-    pIni->ReadString("PATH", "ship", param, sizeof(param) - 1);
-    _shipName = param;
-
-    pIni->ReadString("PATH", "filename_save", param, sizeof(param) - 1);
-    menu._fileName_save = param;
-
-    pIni->ReadString("PATH", "filename_load", param, sizeof(param) - 1);
-    menu._fileName_load = param;
-};
+    _shipName = config.Get<std::string>("ship", {});
+    menu._fileName_save = config.Get<std::string>("filename_save", {});
+    menu._fileName_load = config.Get<std::string>("filename_load", {});
+}

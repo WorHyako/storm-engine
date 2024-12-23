@@ -58,12 +58,12 @@ bool Lights::Init()
         throw std::runtime_error("No service: dx9render");
     collide = static_cast<COLLIDE *>(core.GetService("COLL"));
     // read the parameters
-    auto config = Storm::Filesystem::Config::load(Storm::Filesystem::Constants::ConfigNames::lights());
+    auto config = Storm::Filesystem::Config::Load(Storm::Filesystem::Constants::ConfigNames::lights());
 
     const auto sections = config.Sections();
 
     for (const auto &section : sections) {
-        std::ignore = config.select_section(section);
+        std::ignore = config.SelectSection(section);
         LightType light;
         light.name = section;
         fill_light_by_config(light);
@@ -544,8 +544,8 @@ void Lights::PrintDebugInfo()
 }
 
 void Lights::fill_light_by_config(LightType& light) const {
-    auto config = Storm::Filesystem::Config::load(Storm::Filesystem::Constants::ConfigNames::lights());
-    std::ignore = config.select_section(light.name);
+    auto config = Storm::Filesystem::Config::Load(Storm::Filesystem::Constants::ConfigNames::lights());
+    std::ignore = config.SelectSection(light.name);
 
     light.color.r = config.Get<double>("r", 1.0f);
     light.color.g = config.Get<double>("g", 1.0f);

@@ -37,8 +37,8 @@ Lighter::~Lighter()
 bool Lighter::Init()
 {
     // Checking if ini file exists
-    auto config = Storm::Filesystem::Config::load(Storm::Filesystem::Constants::ConfigNames::loclighter());
-    std::ignore = config.select_section("Main");
+    auto config = Storm::Filesystem::Config::Load(Storm::Filesystem::Constants::ConfigNames::loclighter());
+    std::ignore = config.SelectSection("Main");
     auto isLoading = config.Get<std::int64_t>("loading", 0);
     autoTrace = config.Get<std::int64_t>("autotrace", 0) != 0;
     autoSmooth = config.Get<std::int64_t>("autosmooth", 0) != 0;

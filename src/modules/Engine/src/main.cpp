@@ -431,8 +431,8 @@ int main(int argc, char *argv[])
         /**
          * TODO: load config for ALL classes in some place of Engine module once
          */
-        auto config =  Storm::Filesystem::Config::load(Storm::Filesystem::Constants::ConfigNames::engine());
-        std::ignore = config.select_section("Main");
+        auto config =  Storm::Filesystem::Config::Load(Storm::Filesystem::Constants::ConfigNames::engine());
+        std::ignore = config.SelectSection("Main");
         dwMaxFPS = config.Get<std::int64_t>("max_fps", 0);
         bDebugWindow = config.Get<std::int64_t>("DebugWindow", 0) == 1;
         bAcceleration = config.Get<std::string>("Acceleration", "0") == "0";

@@ -183,12 +183,12 @@ void XSERVICE::GetTextureCutForSize(const char *pcImageListName, const FXYPOINT 
 }
 
 void XSERVICE::LoadAllPicturesInfo() {
-    auto config = Storm::Filesystem::Config::load(Storm::Filesystem::Constants::ConfigNames::pictures());
+    auto config = Storm::Filesystem::Config::Load(Storm::Filesystem::Constants::ConfigNames::pictures());
     const auto sections = config.Sections();
 
     m_pList.reserve(std::size(sections));
     for (int i = 0; i < std::size(sections); i++) {
-        std::ignore = config.select_section(sections[i]);
+        std::ignore = config.SelectSection(sections[i]);
         m_pList.emplace_back();
         m_pList[i].sImageListName = sections[i];
         m_pList[i].sTextureName = config.Get<std::string>("sTextureName", "");

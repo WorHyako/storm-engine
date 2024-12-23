@@ -205,8 +205,8 @@ bool HELPCHOOSER::RunChooser(const char *ChooserGroup)
     if (ChooserGroup == nullptr)
         return false;
 
-    auto config = Storm::Filesystem::Config::load(Storm::Filesystem::Constants::ConfigNames::helpchooser());
-    std::ignore = config.select_section(ChooserGroup);
+    auto config = Storm::Filesystem::Config::Load(Storm::Filesystem::Constants::ConfigNames::helpchooser());
+    std::ignore = config.SelectSection(ChooserGroup);
 
     // get the size of the textures
     auto texWidth = config.Get<double>("TextureWidth", 512.f);
@@ -254,7 +254,7 @@ bool HELPCHOOSER::RunChooser(const char *ChooserGroup)
         m_pRectList[i] = std::move(rect);
     }
 
-    std::ignore = config.select_section("COMMON");
+    std::ignore = config.SelectSection("COMMON");
     // set the mouse
     m_fCurMouseX = 0.f;
     m_fCurMouseY = 0.f;

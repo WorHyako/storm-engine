@@ -163,8 +163,8 @@ bool SEAFOAM_PS::Init(const std::string_view& section)
     // if(!gs) return false;
 
 
-    auto config = Storm::Filesystem::Config::load(Storm::Filesystem::Constants::ConfigNames::particles());
-    std::ignore = config.select_section(std::string(section));
+    auto config = Storm::Filesystem::Config::Load(Storm::Filesystem::Constants::ConfigNames::particles());
+    std::ignore = config.SelectSection(std::string(section));
 
     TexturesNum = 0;
     auto texture_name_opt = config.Get<std::vector<std::string>>(PSKEY_TEXTURE);
@@ -753,8 +753,8 @@ bool SEAFOAM_PS::BuildTrack(TRACK_EVENT *Track, const std::string_view& section,
 {
     bool is_full_config = true;
 
-    auto config = Storm::Filesystem::Config::load(Storm::Filesystem::Constants::ConfigNames::particles());
-    std::ignore = config.select_section(std::string(section));
+    auto config = Storm::Filesystem::Config::Load(Storm::Filesystem::Constants::ConfigNames::particles());
+    std::ignore = config.SelectSection(std::string(section));
 
     auto value_time_vec = config.Get<std::vector<std::vector<double>>>(std::string(key), {});
     for (int track_idx = 0, confix_size = std::size(value_time_vec); track_idx < TRACK_EVENT_MAX; track_idx++) {

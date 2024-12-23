@@ -62,8 +62,8 @@ bool GEOMETRY::Init() {
     }
     GSR.SetRenderService(RenderService);
 
-    auto config = Storm::Filesystem::Config::load(Storm::Filesystem::Constants::ConfigNames::engine());
-    std::ignore = config.select_section("Main");
+    auto config = Storm::Filesystem::Config::Load(Storm::Filesystem::Constants::ConfigNames::engine());
+    std::ignore = config.SelectSection("Main");
     geoLog = config.Get<std::int64_t>("geometry_log", 0) == 1;
     return true;
 }

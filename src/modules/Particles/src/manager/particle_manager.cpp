@@ -12,7 +12,10 @@
 #include "../system/data_source/data_string.h"
 #include "string_compare.hpp"
 
+#include "Filesystem/Config/Config.hpp"
+
 #include <filesystem>
+#include <stdio.h>
 #include <thread>
 
 uint32_t GraphRead = 0;
@@ -105,27 +108,12 @@ bool ParticleManager::OpenProject(const char *FileName)
 
     // std::string LongFileName = "resource\\particles\\";
     auto path = std::filesystem::path() / "resource" / "particles" / FileName;
-    auto pathStr = path.extension().string();
-    if (!storm::iEquals(pathStr, ".prj"))
-        path += ".prj";
-    pathStr = path.string();
-    // MessageBoxA(NULL, (LPCSTR)path.c_str(), "", MB_OK); //~!~
-    // LongFileName += FileName;
-    // LongFileName.AddExtention(".prj");
+    path.replace_extension(".prf");
 
-    auto IniFile = fio->OpenIniFile(pathStr.c_str());
-    if (!IniFile)
-    {
-        core.Trace("Can't find project '%s'", pathStr.c_str());
-        return false;
-    }
+    auto config = Storm::Filesystem::Config::Load(path);
+    std::ignore = config.SelectSection("Textures");
 
-    static char IniStringBuffer[8192];
-
-    // Setting the texture of the project
-    IniFile->ReadString("Textures", "MainTexture", IniStringBuffer, 8192, "none");
-    // core.Trace("Manager use texture: %s", IniStringBuffer);
-    SetProjectTexture(IniStringBuffer);
+    SetProjectTexture(config.Get<std::string>("MainTexture", "none").c_str());
 
     /*
       // Load the models into the cache
@@ -142,16 +130,15 @@ bool ParticleManager::OpenProject(const char *FileName)
       }
     */
 
-    // Loading data
-    for (auto n = 0; n < 9999; n++)
-    {
-        char buf[64];
-        snprintf(buf, std::size(buf), "System_%04d", n);
-        // Section.Format("System_%04d", n);
-        const auto ReadSuccess = IniFile->ReadString("Manager", buf, IniStringBuffer, 8192, "none");
-        if (!ReadSuccess)
+    std::ignore = config.SelectSection("Manager");
+    for (int i = 0; ;i++) {
+        std::stringstream ss;
+        ss << "System_" << std::setw(4) << std::setfill('0') << i;
+        auto f = config.Get<std::string>(ss.str(), {});
+        if (f.empty()) {
             break;
-        pDataCache->CacheSystem(IniStringBuffer);
+        }
+        pDataCache->CacheSystem(f.c_str());
     }
 
     // FIX ME !

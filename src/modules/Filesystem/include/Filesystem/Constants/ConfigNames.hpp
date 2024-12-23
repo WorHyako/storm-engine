@@ -10,6 +10,9 @@ namespace Storm::Filesystem::Constants::ConfigNames {
     std::filesystem::path animals() noexcept;
 
     [[nodiscard]]
+    std::filesystem::path sailors_editor() noexcept;
+
+    [[nodiscard]]
     std::filesystem::path sound_scheme() noexcept;
 
     [[nodiscard]]
