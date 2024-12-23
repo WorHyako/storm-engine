@@ -162,6 +162,11 @@ def repair_symbols(file_content) -> str:
     content = split_with_symbol_saving(file_content)
     i = 0
     while i < len(content):
+        content[i] = content[i].replace('\t', ' ').replace('  ', ' ').replace('  ', ' ')
+        if content[i].isspace():
+            content.pop(i)
+            continue
+
         comment_idx = content[i].find(';')
         if comment_idx != -1:
             if comment_idx < 3:
@@ -173,11 +178,6 @@ def repair_symbols(file_content) -> str:
             if not content[i].endswith('\n'):
                 content[i] += '\n'
 
-        content[i] = content[i].replace('\t', ' ').replace('  ', ' ').replace('  ', ' ')
-        if content[i].isspace():
-            content.pop(i)
-            continue
-
         if content[i].startswith(' '):
             content[i] = content[i][1:]
 
@@ -188,16 +188,16 @@ def repair_symbols(file_content) -> str:
         if len(content[i]) > 1 and not content[i].startswith('[') and content[i].find('=') == -1:
             content[i] = content[i][:-1] + ' = 0\n'
 
-        separ_idx = content[i].find(',')
-        if separ_idx != -1:
-            equal_idx = content[i].find('=')
-            content[i] = content[i][:equal_idx + 2] + '[' + content[i][equal_idx + 2:-1] + ']\n'
-
         if content[i] == '\n' or content[i].replace(' ', '') == '':
             content.pop(i)
             continue
 
         equal_idx = content[i].find('=')
+        separ_idx = content[i].find(',')
+        if separ_idx != -1:
+            content[i] = content[i].replace(', ', ',')
+            content[i] = content[i][:equal_idx + 2] + '[' + content[i][equal_idx + 2:-1] + ']\n'
+
         if equal_idx != -1:
             key = content[i][:equal_idx - 1]
             if key.find(' '):
@@ -288,6 +288,11 @@ def main() -> int:
                     if cur - 1 != prev or len(value) == 1:
                         value_arr.append(value[prev:cur])
 
+                    for i in range(len(value_arr)):
+                        if type(value_arr[i]) is list:
+                            value_arr[i] = [each.replace('"', '') for each in value_arr[i]]
+                        else:
+                            value_arr[i] = value_arr[i].replace('"', '')
                     res = []
                     match list_type(value_arr):
                         case ParseResult.STRING:
