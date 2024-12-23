@@ -1,17 +1,20 @@
 import configparser
 import sys
-import ast
-
 import tomlkit
 import enum
 import os
-import shutil
 
 
 class ParseResult(enum.Enum):
     FLOAT = 1
     INT = 2
     STRING = 3
+
+
+def split_with_symbol_saving(file_content) -> list:
+    content = file_content.splitlines()
+    content = [(line + '\n') for line in content]
+    return content
 
 
 def element_type(element) -> ParseResult:
@@ -68,7 +71,7 @@ def list_type(elements) -> ParseResult:
     return ParseResult.STRING
 
 
-def save_file(tomldoc, file_name) -> None:
+def save_file(tomldoc, file_path) -> None:
     """
     Save toml document's content to file
 
@@ -78,12 +81,12 @@ def save_file(tomldoc, file_name) -> None:
     :param  file_name:  File name
     :type   file_name:  str
     """
-    filename, file_extension = os.path.splitext(file_name)
-    with open(f'{filename[:-4]}.toml', 'w', encoding='utf-8') as file:
+    # filename, file_extension = os.path.splitext(file_name)
+    with open(f'{file_path[:-4]}.toml', 'w', encoding='utf-8') as file:
         tomlkit.dump(tomldoc, file)
 
 
-def repair_option_duplicating(file_path) -> None:
+def repair_option_duplicating(file_content) -> str:
     """
 
     1. Searches key in each section.
@@ -92,12 +95,10 @@ def repair_option_duplicating(file_path) -> None:
 
     2.
 
-    :param  file_path:  File path
-    :type   file_path:  str
+    :param  file_content:  File path
+    :type   file_content:  str
     """
-    with open(file_path, 'r', encoding='utf-8') as file:
-        content = file.readlines()
-
+    content = split_with_symbol_saving(file_content)
     i = 0
     while i < len(content) - 1:
         equal_idx = content[i].find("=")
@@ -120,15 +121,11 @@ def repair_option_duplicating(file_path) -> None:
             content.pop(j)
             continue
         i += 1
-
-    with open(file_path, 'w', encoding='utf-8') as file:
-        file.writelines(content)
+    return ''.join(content)
 
 
-def repair_section_duplicating(file_path) -> None:
-    with open(file_path, 'r', encoding='utf-8') as file:
-        content = file.readlines()
-
+def repair_section_duplicating(file_content) -> str:
+    content = split_with_symbol_saving(file_content)
     for i in range(len(content) - 1):
         if not content[i].startswith('[') and not content[i].endswith(']\n'):
             continue
@@ -136,14 +133,12 @@ def repair_section_duplicating(file_path) -> None:
         for j in range(i + 1, len(content) - 1):
             if content[j].find(f'[{section_name}]') == -1:
                 continue
-            content[j] = f'[{section_name}_1]\n'
+            content[j] = f'[{section_name}_]\n'
             break
-
-    with open(file_path, 'w', encoding='utf-8') as file:
-        file.writelines(content)
+    return ''.join(content)
 
 
-def repair_symbols(file_path) -> None:
+def repair_symbols(file_content) -> str:
     """
     Rewrites selected file with fixed next cases:
 
@@ -161,16 +156,17 @@ def repair_symbols(file_path) -> None:
 
     7. If option is array, puts it bracket ("[...]")
 
-    :param file_path:   File to repair
-    :type file_path:    str
+    :param  file_content:  File's content
+    :type   file_content:  str
     """
-    with open(file_path, 'r', encoding='utf-8') as file:
-        content = file.readlines()
-
+    content = split_with_symbol_saving(file_content)
     i = 0
     while i < len(content):
         comment_idx = content[i].find(';')
         if comment_idx != -1:
+            if comment_idx < 3:
+                content.pop(i)
+                continue
             content[i] = content[i][:comment_idx]
             if content[i].endswith(' '):
                 content[i] = content[i][:-1]
@@ -178,6 +174,12 @@ def repair_symbols(file_path) -> None:
                 content[i] += '\n'
 
         content[i] = content[i].replace('\t', ' ').replace('  ', ' ').replace('  ', ' ')
+        if content[i].isspace():
+            content.pop(i)
+            continue
+
+        if content[i].startswith(' '):
+            content[i] = content[i][1:]
 
         percent_symbol_idx = content[i].find('%')
         if percent_symbol_idx != -1:
@@ -195,25 +197,31 @@ def repair_symbols(file_path) -> None:
             content.pop(i)
             continue
 
+        equal_idx = content[i].find('=')
+        if equal_idx != -1:
+            key = content[i][:equal_idx - 1]
+            if key.find(' '):
+                content[i] = key.replace(' ', '_') + content[i][equal_idx - 1:]
+
+        open_bracket_idx = content[i].find('[')
+        close_bracket_idx = content[i].find(']')
+        if open_bracket_idx == 0 and close_bracket_idx != -1:
+            section_name = content[i][open_bracket_idx + 1 : close_bracket_idx]
+            if section_name.find(' ') != -1:
+                section_name = section_name.replace(' ', '_')
+                content[i] = '[' + section_name + ']\n'
         i += 1
-
-    with open(file_path, 'w', encoding='utf-8') as file:
-        file.writelines(content)
+    return ''.join(content)
 
 
-def repair_header_missing(file_path) -> None:
+def repair_header_missing(file_content) -> str:
     """
     Insert default header section `[Main]` in file.
 
-    :param  file_path:  File name
-    :type   file_path:  str
+    :param  file_content:  File's content
+    :type   file_content:  str
     """
-    with open(file_path, 'r', encoding='utf-8') as file:
-        content = file.readlines()
-
-    content.insert(0, "\n[Main]\n")
-    with open(file_path, 'w', encoding='utf-8') as file:
-        file.writelines(content)
+    return '\n[Main]\n' + file_content
 
 
 def main() -> int:
@@ -221,38 +229,36 @@ def main() -> int:
         for name in files:
             file_full_path = os.path.join(root, name)
             filename, file_extension = os.path.splitext(name)
-            if file_extension != ".ini" or filename.endswith("_new"):
+            if file_extension != ".ani" and file_extension != ".ini" or filename.endswith("_new"):
                 continue
 
             if filename == 'fonts' or filename == 'fonts_rus':
                 print('Skipping font file')
                 continue
 
-            ini_file = f'{root}\\{filename}_new{file_extension}'
-            print(f'Work with - {ini_file}')
+            with open(file_full_path, 'r', encoding='utf-8', errors='ignore') as file:
+                file_content = file.read()
+            print(f'Work with - {file_full_path}')
 
-            shutil.copy(file_full_path, ini_file)
+            file_content = repair_symbols(file_content)
 
             parser = configparser.ConfigParser()
-
-            repair_symbols(ini_file)
-
             while True:
                 try:
-                    parser.read(ini_file, 'utf-8')
+                    parser.read_string(file_content)
                     break
 
                 except configparser.MissingSectionHeaderError:
                     print("Fixing file header.")
-                    repair_header_missing(ini_file)
+                    file_content = repair_header_missing(file_content)
 
                 except configparser.DuplicateOptionError:
                     print("Fixing file option duplicating.")
-                    repair_option_duplicating(ini_file)
+                    file_content = repair_option_duplicating(file_content)
 
                 except configparser.DuplicateSectionError:
                     print("Fixing file section duplicating.")
-                    repair_section_duplicating(ini_file)
+                    file_content = repair_section_duplicating(file_content)
 
             toml_doc = tomlkit.document()
 
@@ -306,7 +312,7 @@ def main() -> int:
                         res = res[0]
                     toml_section.add(key, res)
                 toml_doc.add(section, toml_section)
-            save_file(toml_doc, ini_file)
+            save_file(toml_doc, f'{file_full_path}')
     return 0
 
 
