@@ -8,6 +8,7 @@ namespace Storm::Math::Types {
      */
     template<typename T>
     struct Vector4 final {
+        using value_type = T;
         /**
          * x value
          */
