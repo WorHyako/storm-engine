@@ -788,29 +788,29 @@ void CoastFoam::Save()
     /**
      * TODO: recreate config file
      */
-    config.write<int>("NumFoams", aFoams.size());
-    config.write<double>("MaxFoamDistance", fMaxFoamDistance);
-    config.write<double>("FoamDeltaY", fFoamDeltaY);
-    config.write<int>("FoamDivides", iFoamDivides);
+    config.Set<int>("NumFoams", aFoams.size());
+    config.Set<double>("MaxFoamDistance", fMaxFoamDistance);
+    config.Set<double>("FoamDeltaY", fFoamDeltaY);
+    config.Set<int>("FoamDivides", iFoamDivides);
 
     for (int32_t i = 0; i < aFoams.size(); i++)
     {
         std::ignore = config.SelectSection("foam_" + std::to_string(i));
 
         auto&& pF = aFoams[i];
-        config.write<int>("NumParts", pF->aFoamParts.size());
-        config.write_vector2<double>("Alpha", {pF->fAlphaMin, pF->fAlphaMax});
-        config.write_vector2<double>("Speed", {pF->fSpeedMin, pF->fSpeedMax});
-        config.write_vector2<double>("Braking", {pF->fBrakingMin, pF->fBrakingMax});
-        config.write_vector2<double>("Appear", {pF->fAppearMin, pF->fAppearMax});
-        config.write<double>("TexScaleX", pF->fTexScaleX);
-        config.write<int>("NumFoams", pF->iNumFoams);
-        config.write<std::string>("Texture", pF->sTexture);
-        config.write<int>("Type", pF->Type);
+        config.Set<int>("NumParts", pF->aFoamParts.size());
+        config.Set<Storm::Math::Types::Vector2<double>>("Alpha", {pF->fAlphaMin, pF->fAlphaMax});
+        config.Set<Storm::Math::Types::Vector2<double>>("Speed", {pF->fSpeedMin, pF->fSpeedMax});
+        config.Set<Storm::Math::Types::Vector2<double>>("Braking", {pF->fBrakingMin, pF->fBrakingMax});
+        config.Set<Storm::Math::Types::Vector2<double>>("Appear", {pF->fAppearMin, pF->fAppearMax});
+        config.Set<double>("TexScaleX", pF->fTexScaleX);
+        config.Set<int>("NumFoams", pF->iNumFoams);
+        config.Set<std::string>("Texture", pF->sTexture);
+        config.Set<int>("Type", pF->Type);
 
         for (int32_t j = 0; j < pF->aFoamParts.size(); j++) {
             auto *pFP = &pF->aFoamParts[j];
-            config.write_vector4<double>("key_" + std::to_string(j), {pFP->v[0].x, pFP->v[0].z, pFP->v[1].x, pFP->v[1].z});
+            config.Set<Storm::Math::Types::Vector4<double>>("key_" + std::to_string(j), {pFP->v[0].x, pFP->v[0].z, pFP->v[1].x, pFP->v[1].z});
         }
     }
 #ifdef _WIN32 // FIX_LINUX _flushall

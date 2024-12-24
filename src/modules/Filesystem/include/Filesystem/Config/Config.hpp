@@ -18,6 +18,8 @@ namespace Storm::Filesystem {
         bool SelectSection(std::string section_name) noexcept;
 
     private:
+        using SetResultIterator = std::pair<toml::table_iterator, bool>;
+
         [[nodiscard]]
         std::string ToLowercase(std::string str) const noexcept;
 
@@ -52,16 +54,13 @@ namespace Storm::Filesystem {
         std::optional<ValueType> Get(const std::string &key) const noexcept;
 
         template<class ValueType>
-        void write(const std::string &key, ValueType value) noexcept;
+        void Set(const std::string &key, ValueType value) noexcept;
 
         template<class ValueType>
         void write_vector4(const std::string &key, Math::Types::Vector4<ValueType> value) noexcept;
 
         template<class ValueType>
         void write_vector3(const std::string &key, Math::Types::Vector3<ValueType> value) noexcept;
-
-        template<class ValueType>
-        void write_vector2(const std::string &key, Math::Types::Vector2<ValueType> value) noexcept;
 
     private:
         template<class ElementType>
@@ -72,17 +71,29 @@ namespace Storm::Filesystem {
         [[nodiscard]]
         std::optional<ValueType> SingleValue(toml::node *node) const;
 
+        template<typename ValueType>
+        [[nodiscard]]
+        bool SingleValue(const std::string &key, ValueType value) const;
+
         template<typename ElementType>
         [[nodiscard]]
         std::vector<ElementType> ArrayValue(toml::node *node) const;
 
         template<typename ElementType>
         [[nodiscard]]
-        std::vector<ElementType> ArrayVector2Value(toml::node *node) const;
+        std::vector<Math::Types::Vector2<ElementType>> ArrayVector2Value(toml::node *node) const;
+
+        template<typename ElementType>
+        [[nodiscard]]
+        std::vector<Math::Types::Vector3<ElementType>> ArrayVector3Value(toml::node *node) const;
 
         template<typename ElementType>
         [[nodiscard]]
         std::optional<Math::Types::Vector2<ElementType> > Vector2Value(toml::node *node) const;
+
+        template<typename ElementType>
+        [[nodiscard]]
+        bool Vector2Value(const std::string &key, Math::Types::Vector2<ElementType> value) const;
 
         template<typename ElementType>
         [[nodiscard]]
@@ -192,18 +203,35 @@ namespace Storm::Filesystem {
     }
 
     template<typename ElementType>
-    std::vector<ElementType> Config::ArrayVector2Value(toml::node *node) const {
+    std::vector<Math::Types::Vector2<ElementType>> Config::ArrayVector2Value(toml::node *node) const {
         std::vector<Math::Types::Vector2<ElementType> > result{};
-        const auto array_value = Matrix<ElementType>(node);
-        if (array_value.empty()) {
+        const auto matrix = Matrix<ElementType>(node);
+        if (matrix.empty()) {
             return {};
         }
 
-        for (std::vector<ElementType> &&element: *array_value) {
+        for (const std::vector<ElementType> &element: matrix) {
             if (std::size(element) != 2) {
                 return {};
             }
-            result.emplace_back({element[0], element[1]});
+            result.template emplace_back<Math::Types::Vector2<ElementType>>({element[0], element[1]});
+        }
+        return result;
+    }
+
+    template<typename ElementType>
+    std::vector<Math::Types::Vector3<ElementType>> Config::ArrayVector3Value(toml::node *node) const {
+        std::vector<Math::Types::Vector3<ElementType> > result{};
+        const auto matrix = Matrix<ElementType>(node);
+        if (matrix.empty()) {
+            return {};
+        }
+
+        for (const std::vector<ElementType> &element: matrix) {
+            if (std::size(element) != 3) {
+                return {};
+            }
+            result.template emplace_back<Math::Types::Vector3<ElementType>>({element[0], element[1], element[2]});
         }
         return result;
     }
@@ -226,26 +254,38 @@ namespace Storm::Filesystem {
                              || std::is_same_v<ValueType, std::vector<double> >
                              || std::is_same_v<ValueType, std::vector<std::string> >) {
             result = ArrayValue<typename ValueType::value_type>(config_node);
+
         } else if constexpr (std::is_same_v<ValueType, std::vector<Math::Types::Vector2<std::int64_t> > >) {
             result = ArrayVector2Value<std::int64_t>(config_node);
         } else if constexpr (std::is_same_v<ValueType, std::vector<Math::Types::Vector2<double> > >) {
             result = ArrayVector2Value<double>(config_node);
         } else if constexpr (std::is_same_v<ValueType, std::vector<Math::Types::Vector2<std::string> > >) {
             result = ArrayVector2Value<std::string>(config_node);
+
+        } else if constexpr (std::is_same_v<ValueType, std::vector<Math::Types::Vector3<std::int64_t> > >) {
+            result = ArrayVector3Value<std::int64_t>(config_node);
+        } else if constexpr (std::is_same_v<ValueType, std::vector<Math::Types::Vector3<double> > >) {
+            result = ArrayVector3Value<double>(config_node);
+        } else if constexpr (std::is_same_v<ValueType, std::vector<Math::Types::Vector3<std::string> > >) {
+            result = ArrayVector3Value<std::string>(config_node);
+
         } else if constexpr (std::is_same_v<ValueType, std::vector<std::vector<std::string> > >) {
             result = Matrix<std::string>(config_node);
+
         } else if constexpr (std::is_same_v<ValueType, Math::Types::Vector2<std::int64_t> >) {
             result = Vector2Value<std::int64_t>(config_node);
         } else if constexpr (std::is_same_v<ValueType, Math::Types::Vector2<double> >) {
             result = Vector2Value<double>(config_node);
         } else if constexpr (std::is_same_v<ValueType, Math::Types::Vector2<std::string> >) {
             result = Vector2Value<std::string>(config_node);
+
         } else if constexpr (std::is_same_v<ValueType, Math::Types::Vector3<std::int64_t> >) {
             result = Vector3Value<std::int64_t>(config_node);
         } else if constexpr (std::is_same_v<ValueType, Math::Types::Vector3<double> >) {
             result = Vector3Value<double>(config_node);
         } else if constexpr (std::is_same_v<ValueType, Math::Types::Vector3<std::string> >) {
             result = Vector3Value<std::string>(config_node);
+
         } else if constexpr (std::is_same_v<ValueType, Math::Types::Vector4<std::int64_t> >) {
             result = Vector4Value<std::int64_t>(config_node);
         } else if constexpr (std::is_same_v<ValueType, Math::Types::Vector4<double> >) {
@@ -268,14 +308,66 @@ namespace Storm::Filesystem {
     }
 
     template<class ValueType>
-    void Config::write(const std::string &key, ValueType value) noexcept {
+    void Config::Set(const std::string &key, ValueType value) noexcept {
         if (_section == nullptr) {
             return;
         }
-        auto it = _section->insert_or_assign(ToLowercase(key), value);
-        if (it.first != _section->end()) {
+        bool result = false;
+        if constexpr (std::is_same_v<ValueType, std::int64_t>
+                      || std::is_same_v<ValueType, double>
+                      || std::is_same_v<ValueType, std::string>) {
+            result = SingleValue(ToLowercase(key), value);
+        } else if constexpr (std::is_same_v<ValueType, Math::Types::Vector2<std::int64_t> >) {
+            result = Vector2Value<std::int64_t>(ToLowercase(key), value);
+        } else if constexpr (std::is_same_v<ValueType, Math::Types::Vector2<double> >) {
+            result = Vector2Value<double>(ToLowercase(key), value);
+        } else if constexpr (std::is_same_v<ValueType, Math::Types::Vector2<std::string> >) {
+            result = Vector2Value<std::string>(ToLowercase(key), value);
+        }
+        if (result) {
             Write();
         }
+    }
+
+    template<typename ValueType>
+    [[nodiscard]]
+    bool Config::SingleValue(const std::string &key, ValueType value) const {
+        const auto&& node = Node(key);
+        toml::impl::wrap_node<ValueType> *wrap_node = nullptr;
+        if (node == nullptr) {
+            const SetResultIterator it = _section->insert(key, ValueType());
+            wrap_node = it.first->second.as<ValueType>();
+        } else {
+            wrap_node = node->as<ValueType>();
+        }
+
+        if (wrap_node == nullptr) {
+            return false;
+        }
+        *wrap_node = std::move(value);
+        return true;
+    }
+
+    template<typename ElementType>
+    [[nodiscard]]
+    bool Config::Vector2Value(const std::string &key, Math::Types::Vector2<ElementType> value) const {
+        const auto&& node = Node(key);
+        toml::impl::wrap_node<toml::array> *wrap_node = nullptr;
+        if (node == nullptr) {
+            const SetResultIterator it = _section->insert(key, toml::array());
+            wrap_node = it.first->second.as<toml::array>();
+        } else {
+            wrap_node = node->as<toml::array>();
+        }
+
+        if (wrap_node == nullptr) {
+            return false;
+        }
+
+        wrap_node->clear();
+        wrap_node->emplace_back<ElementType>(std::move(value.x));
+        wrap_node->emplace_back<ElementType>(std::move(value.y));
+        return true;
     }
 
     template<class ValueType>
@@ -302,18 +394,6 @@ namespace Storm::Filesystem {
         array->replace(array->cbegin(), value.x);
         array->replace(array->cbegin() + 1, value.y);
         array->replace(array->cbegin() + 2, value.z);
-        Write();
-    }
-
-    template<class ValueType>
-    void Config::write_vector2(const std::string &key, Math::Types::Vector2<ValueType> value) noexcept {
-        auto config_node = Node(key);
-        if (config_node == nullptr || config_node->as_array() == nullptr) {
-            return;
-        }
-        auto &&array = _section->get_as<toml::array>(key);
-        array->replace(array->cbegin(), value.x);
-        array->replace(array->cbegin() + 1, value.y);
         Write();
     }
 

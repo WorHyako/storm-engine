@@ -87,9 +87,9 @@ namespace Storm::Math::Types {
     };
 
     template<typename T>
-    Vector2<T>::Vector2() noexcept {
-        x = static_cast<T>(0);
-        y = static_cast<T>(0);
+    Vector2<T>::Vector2() noexcept
+        : x{},
+          y{} {
     }
 
     template<typename T>

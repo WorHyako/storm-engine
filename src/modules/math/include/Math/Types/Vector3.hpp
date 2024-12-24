@@ -94,10 +94,10 @@ namespace Storm::Math::Types {
     };
 
     template<typename T>
-    Vector3<T>::Vector3() noexcept {
-        x = static_cast<T>(0);
-        y = static_cast<T>(0);
-        z = static_cast<T>(0);
+    Vector3<T>::Vector3() noexcept
+        : x{},
+          y{},
+          z{} {
     }
 
     template<typename T>

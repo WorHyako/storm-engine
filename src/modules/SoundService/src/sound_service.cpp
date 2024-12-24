@@ -1068,7 +1068,7 @@ void SoundService::LoadAliasFile(const char *_filename)
 
 void SoundService::InitAliases()
 {
-    const auto vFilenames = fio->_GetPathsOrFilenamesByMask(Storm::Filesystem::Constants::Paths::aliases().string().c_str(), "*.ini", false);
+    const auto vFilenames = fio->_GetPathsOrFilenamesByMask(Storm::Filesystem::Constants::Paths::aliases().string().c_str(), "*.toml", false);
     for (std::string curName : vFilenames)
     {
         LoadAliasFile(curName.c_str());

@@ -1170,49 +1170,49 @@ void Window::SavePreset(int32_t prs)
         switch (element.type)
         {
         case ListElement::t_smooth:
-            config.write<int>("smoothUseNormals", smoothNorm);
-            config.write<double>("smoothRadius", smoothRad);
+            config.Set<int>("smoothUseNormals", smoothNorm);
+            config.Set<double>("smoothRadius", smoothRad);
             break;
         case ListElement::t_blur:
-            config.write<int>("blurTrace", isTraceBlur);
-            config.write<double>("blurRadius", blurRad);
-            config.write<double>("blurAtt", blurAtt);
-            config.write<double>("blurCos", blurCos);
-            config.write<double>("blurKf", kBlur);
+            config.Set<int>("blurTrace", isTraceBlur);
+            config.Set<double>("blurRadius", blurRad);
+            config.Set<double>("blurAtt", blurAtt);
+            config.Set<double>("blurCos", blurCos);
+            config.Set<double>("blurKf", kBlur);
             break;
         case ListElement::t_amb:
-            config.write<double>("ambient_intens", element.st);
-            config.write<double>("ambient_clrR", element.c.x);
-            config.write<double>("ambient_clrG", element.c.y);
-            config.write<double>("ambient_clrB", element.c.z);
+            config.Set<double>("ambient_intens", element.st);
+            config.Set<double>("ambient_clrR", element.c.x);
+            config.Set<double>("ambient_clrG", element.c.y);
+            config.Set<double>("ambient_clrB", element.c.z);
             break;
             case ListElement::t_light:
-            config.write<double>(l_name + "_intens", element.st);
-            config.write<double>(l_name + "_clrR", element.c.x);
-            config.write<double>(l_name + "_clrG", element.c.y);
-            config.write<double>(l_name + "_clrB", element.c.z);
-            config.write<double>(l_name + "_cosine", *element.cosine);
-            config.write<double>(l_name + "_shadow", *element.shadow);
-            config.write<double>(l_name + "_bright", *element.bright);
-            config.write<double>(l_name + "_contr", *element.contr);
-            config.write<double>(l_name + "_gamma", *element.gamma);
-            config.write<int>(l_name + "_isOn", *element.isOn);
+            config.Set<double>(l_name + "_intens", element.st);
+            config.Set<double>(l_name + "_clrR", element.c.x);
+            config.Set<double>(l_name + "_clrG", element.c.y);
+            config.Set<double>(l_name + "_clrB", element.c.z);
+            config.Set<double>(l_name + "_cosine", *element.cosine);
+            config.Set<double>(l_name + "_shadow", *element.shadow);
+            config.Set<double>(l_name + "_bright", *element.bright);
+            config.Set<double>(l_name + "_contr", *element.contr);
+            config.Set<double>(l_name + "_gamma", *element.gamma);
+            config.Set<int>(l_name + "_isOn", *element.isOn);
             break;
         case ListElement::t_glight:
-            config.write<double>(l_name + "_intens", element.st);
-            config.write<double>(l_name + "_clrR", element.c.x);
-            config.write<double>(l_name + "_clrG", element.c.y);
-            config.write<double>(l_name + "_clrB", element.c.z);
-            config.write<double>(l_name + "_cosine", *element.cosine);
-            config.write<double>(l_name + "_shadow", *element.shadow);
-            config.write<double>(l_name + "_bright", *element.bright);
-            config.write<double>(l_name + "_contr", *element.contr);
-            config.write<double>(l_name + "_gamma", *element.gamma);
-            config.write<double>(l_name + "_att0", *element.att0);
-            config.write<double>(l_name + "_att1", *element.att1);
-            config.write<double>(l_name + "_att2", *element.att2);
-            config.write<double>(l_name + "_range", *element.range);
-            config.write<int>(l_name + "_isOn", *element.isOn);
+            config.Set<double>(l_name + "_intens", element.st);
+            config.Set<double>(l_name + "_clrR", element.c.x);
+            config.Set<double>(l_name + "_clrG", element.c.y);
+            config.Set<double>(l_name + "_clrB", element.c.z);
+            config.Set<double>(l_name + "_cosine", *element.cosine);
+            config.Set<double>(l_name + "_shadow", *element.shadow);
+            config.Set<double>(l_name + "_bright", *element.bright);
+            config.Set<double>(l_name + "_contr", *element.contr);
+            config.Set<double>(l_name + "_gamma", *element.gamma);
+            config.Set<double>(l_name + "_att0", *element.att0);
+            config.Set<double>(l_name + "_att1", *element.att1);
+            config.Set<double>(l_name + "_att2", *element.att2);
+            config.Set<double>(l_name + "_range", *element.range);
+            config.Set<int>(l_name + "_isOn", *element.isOn);
             break;
         default:
             break;

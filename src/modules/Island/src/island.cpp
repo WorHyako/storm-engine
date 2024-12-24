@@ -526,9 +526,9 @@ bool ISLAND::CreateHeightMap(const std::string_view &pDir, const std::string_vie
     mzDepth.Save(fileName + ".zap");
     pDepthMap.clear();
 
-    config.write<std::string>("DepthFile", fileName);
-    config.write_vector3<double>("vBoxCenter", {vBoxCenter.x, vBoxCenter.y, vBoxCenter.z});
-    config.write_vector3<double>("vBoxSize", {vBoxSize.x, vBoxSize.y, vBoxSize.z});
+    config.Set<std::string>("DepthFile", fileName);
+    config.Set<Storm::Math::Types::Vector3<double>>("vBoxCenter", {vBoxCenter.x, vBoxCenter.y, vBoxCenter.z});
+    config.Set<Storm::Math::Types::Vector3<double>>("vBoxSize", {vBoxSize.x, vBoxSize.y, vBoxSize.z});
 
     return true;
 }
