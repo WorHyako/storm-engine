@@ -140,7 +140,7 @@ def repair_section_duplicating(file_content) -> str:
 
 def repair_symbols(file_content) -> str:
     """
-    Rewrites selected file with fixed next cases:
+    Rewrites selected file's content with fixed next cases:
 
     1. Delete all comments
 
@@ -158,6 +158,9 @@ def repair_symbols(file_content) -> str:
 
     :param  file_content:  File's content
     :type   file_content:  str
+
+    :return Fixed content
+    :rtype   str
     """
     content = split_with_symbol_saving(file_content)
     i = 0
@@ -289,9 +292,21 @@ def main() -> int:
                         value_arr.append(value[prev:cur])
 
                     for i in range(len(value_arr)):
+                        if value_arr[i][0] == 'capFG_Credit':
+                            t = 3
                         if type(value_arr[i]) is list:
+                            if len(value_arr[i]) > 1:
+                                for j in range(len(value_arr[i])):
+                                    if j < len(value_arr[i]) - 1:
+                                        if value_arr[i][j].count('"') == 1 and value_arr[i][j + 1].count('"') == 1:
+                                            value_arr[i][j] += ', ' + value_arr[i][j + 1]
+                                            value_arr[i].pop(j + 1)
                             value_arr[i] = [each.replace('"', '') for each in value_arr[i]]
                         else:
+                            if i < len(value_arr) - 2:
+                                if value_arr[i].count('"') == 1 and value_arr[i + 1].count('"') == 1:
+                                    value_arr[i] += value_arr[i + i]
+                                    value_arr.pop(i + 1)
                             value_arr[i] = value_arr[i].replace('"', '')
                     res = []
                     match list_type(value_arr):
