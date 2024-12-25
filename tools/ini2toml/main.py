@@ -204,7 +204,7 @@ def repair_symbols(file_content) -> str:
         if equal_idx != -1:
             key = content[i][:equal_idx - 1]
             if key.find(' '):
-                content[i] = key.replace(' ', '_') + content[i][equal_idx - 1:]
+                content[i] = key.strip().replace(' ', '_') + content[i][equal_idx - 1:]
 
         open_bracket_idx = content[i].find('[')
         close_bracket_idx = content[i].find(']')
@@ -292,15 +292,15 @@ def main() -> int:
                         value_arr.append(value[prev:cur])
 
                     for i in range(len(value_arr)):
-                        if value_arr[i][0] == 'capFG_Credit':
-                            t = 3
                         if type(value_arr[i]) is list:
                             if len(value_arr[i]) > 1:
-                                for j in range(len(value_arr[i])):
-                                    if j < len(value_arr[i]) - 1:
-                                        if value_arr[i][j].count('"') == 1 and value_arr[i][j + 1].count('"') == 1:
-                                            value_arr[i][j] += ', ' + value_arr[i][j + 1]
-                                            value_arr[i].pop(j + 1)
+                                j = 0
+                                while j < len(value_arr[i]) - 1:
+                                    if value_arr[i][j].count('"') == 1:
+                                        value_arr[i][j] += ', ' + value_arr[i][j + 1]
+                                        value_arr[i].pop(j + 1)
+                                        continue
+                                    j += 1
                             value_arr[i] = [each.replace('"', '') for each in value_arr[i]]
                         else:
                             if i < len(value_arr) - 2:
