@@ -22,6 +22,7 @@ namespace {
     constexpr std::string_view sound_scheme_config_name{"sound_scheme"};
     constexpr std::string_view mast_config_name{"mast"};
     constexpr std::string_view sailors_editor_config_name{"SailorsEditor"};
+    constexpr std::string_view language_config_name{"language"};
 }
 
 std::filesystem::path ConfigNames::engine() noexcept {
@@ -30,6 +31,10 @@ std::filesystem::path ConfigNames::engine() noexcept {
 
 std::filesystem::path ConfigNames::animals() noexcept {
     return Paths::ini() / (std::string(animals_config_name) + std::string(config_file_ext));
+}
+
+std::filesystem::path ConfigNames::language() noexcept {
+    return Paths::texts() / (std::string(language_config_name) + std::string(config_file_ext));
 }
 
 std::filesystem::path ConfigNames::sailors_editor() noexcept {

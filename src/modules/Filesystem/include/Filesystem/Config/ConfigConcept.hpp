@@ -10,19 +10,19 @@
 namespace Storm::Filesystem {
 
     template<typename ValueType>
-    concept is_vector2 = std::is_same_v<ValueType, std::vector<Math::Types::Vector2<double> > >
-                         || std::is_same_v<ValueType, std::vector<Math::Types::Vector2<std::int64_t> > >
-                         || std::is_same_v<ValueType, std::vector<Math::Types::Vector2<std::string> > >;
+    concept is_vector2 = std::is_same_v<ValueType, Math::Types::Vector2<double> >
+                         || std::is_same_v<ValueType, Math::Types::Vector2<std::int64_t> >
+                         || std::is_same_v<ValueType, Math::Types::Vector2<std::string> >;
 
     template<typename ValueType>
-    concept is_vector3 = std::is_same_v<ValueType, std::vector<Math::Types::Vector3<double> > >
-                         || std::is_same_v<ValueType, std::vector<Math::Types::Vector3<std::int64_t> > >
-                         || std::is_same_v<ValueType, std::vector<Math::Types::Vector3<std::string> > >;
+    concept is_vector3 = std::is_same_v<ValueType, Math::Types::Vector3<double> >
+                         || std::is_same_v<ValueType, Math::Types::Vector3<std::int64_t> >
+                         || std::is_same_v<ValueType, Math::Types::Vector3<std::string> >;
 
     template<typename ValueType>
-    concept is_vector4 = std::is_same_v<ValueType, std::vector<Math::Types::Vector4<double> > >
-                         || std::is_same_v<ValueType, std::vector<Math::Types::Vector4<std::int64_t> > >
-                         || std::is_same_v<ValueType, std::vector<Math::Types::Vector4<std::string> > >;
+    concept is_vector4 = std::is_same_v<ValueType, Math::Types::Vector4<double> >
+                         || std::is_same_v<ValueType, Math::Types::Vector4<std::int64_t> >
+                         || std::is_same_v<ValueType, Math::Types::Vector4<std::string> >;
 
     template<typename ValueType>
     concept is_single = std::is_same_v<ValueType, double>

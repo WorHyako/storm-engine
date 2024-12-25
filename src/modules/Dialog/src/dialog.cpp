@@ -489,7 +489,7 @@ void DIALOG::LoadFromIni()
     m_BackParams.m_idBackTex = RenderService->TextureCreate(texture_path.c_str());
 
     FPOINT fpScrSize = toFPOINT(config.Get<Storm::Math::Types::Vector2<std::int64_t>>("baseScreenSize", {-1, -1}));
-    FPOINT fpScrOffset = toFPOINT(config.Get<Storm::Math::Types::Vector2<double>>("baseScreenOffset",{}));
+    FPOINT fpScrOffset = toFPOINT(config.Get<Storm::Math::Types::Vector2<std::int64_t>>("baseScreenOffset",{}));
     const auto &screenSize = core.GetScreenSize();
     fpScrSize.x = fpScrSize.x <= 0.0f ? static_cast<float>(screenSize.width) : fpScrSize.x;
     fpScrSize.y = fpScrSize.y <= 0.0f ? static_cast<float>(screenSize.height) : fpScrSize.y;

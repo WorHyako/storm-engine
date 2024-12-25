@@ -10,6 +10,9 @@ namespace Storm::Filesystem::Constants::Paths {
     std::filesystem::path stash() noexcept;
 
     [[nodiscard]]
+    std::filesystem::path texts() noexcept;
+
+    [[nodiscard]]
     std::filesystem::path animation() noexcept;
 
     [[nodiscard]]
