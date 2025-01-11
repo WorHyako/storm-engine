@@ -37,6 +37,8 @@ class SDLWindow : public OSWindow
 
     void ProcessEvent(const SDL_WindowEvent &evt) const;
 
+    uint32_t GetRequiredExtension(std::vector<const char*>& extensions);
+
   private:
     static int SDLCALL SDLEventHandler(void *userdata, SDL_Event *evt);
 
