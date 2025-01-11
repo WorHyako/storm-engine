@@ -71,6 +71,7 @@
 [submodule "sd-teho-public"]
 	path = sd-teho-public
 	url = https://github.com/WorHyako/sd-teho-public.git
+	
 [submodule "src/rhi/RHIProto"]
 	path = src/rhi/RHIProto
 	url = https://github.com/Mathematic1/RHIProto.git

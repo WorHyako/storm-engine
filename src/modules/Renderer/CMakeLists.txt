@@ -21,4 +21,5 @@ target_compile_definitions(renderer
 target_link_libraries(renderer
         PUBLIC
         storm::d3dx9
-        storm::core)
+        storm::core
+        rhiProto)

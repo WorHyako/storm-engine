@@ -1,6 +1,7 @@
 #include "sdl_window.hpp"
 
 #include <SDL_syswm.h>
+#include <SDL_vulkan.h>
 
 namespace storm
 {
@@ -8,9 +9,9 @@ SDLWindow::SDLWindow(int width, int height, int preferred_display, bool fullscre
     : fullscreen_(fullscreen)
 {
     uint32_t flags = (fullscreen ? SDL_WINDOW_FULLSCREEN : 0) | SDL_WINDOW_HIDDEN;
-#if !defined(_WIN32) && !defined(STORM_MESA_NINE) // DXVK-Native
+//#if !defined(_WIN32) && !defined(STORM_MESA_NINE) // DXVK-Native
     flags |= SDL_WINDOW_VULKAN;
-#endif
+//#endif
     window_ = std::unique_ptr<SDL_Window, std::function<void(SDL_Window *)>>(
         SDL_CreateWindow("", SDL_WINDOWPOS_CENTERED_DISPLAY(preferred_display),
                          SDL_WINDOWPOS_CENTERED_DISPLAY(preferred_display), width, height, flags),
@@ -170,6 +171,19 @@ void SDLWindow::ProcessEvent(const SDL_WindowEvent &evt) const
 
     for (auto handler : handlers_)
         handler.second(winEvent);
+}
+
+uint32_t SDLWindow::GetRequiredExtension(std::vector<const char*>& extensions)
+{
+    uint32_t extensionsCount = 0;
+    const char** sdlExtensions;
+    if(SDL_Vulkan_GetInstanceExtensions(SDLHandle(), &extensionsCount, sdlExtensions))
+    {
+        for (uint32_t i = 0; i < extensionsCount; i++) {
+            extensions.push_back(sdlExtensions[i]);
+        }
+    }
+    return extensionsCount;
 }
 
 std::shared_ptr<OSWindow> OSWindow::Create(int width, int height, int preferred_display, bool fullscreen, bool bordered)

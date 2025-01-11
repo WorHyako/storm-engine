@@ -1,5 +1,10 @@
 cmake_minimum_required(VERSION 3.15)
 
+# ------- #
+#   rhi   #
+# ------- #
+add_subdirectory(rhi/RHIProto)
+
 # ----------- #
 #   Modules   #
 # ----------- #
