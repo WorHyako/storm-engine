@@ -1716,29 +1716,58 @@ int32_t RENDER::CreateIndexBuffer(size_t size, uint32_t usage)
 }
 
 //################################################################################
-void RENDER::CreateInputLayout(RHI::IInputLayout* inputLayout)
-{
 
-    RHI::VertexInputAttributeDesc attributes[] = {
-            RHI::VertexInputAttributeDesc()
-                .setFormat(RHI::Format::RGB32_FLOAT)
-                .setOffset(offsetof(Vertex, position))
-                .setBinding(0)
-                .setLocation(0),
-            RHI::VertexInputAttributeDesc()
-                .setFormat(RHI::Format::RG32_FLOAT)
-                .setOffset(offsetof(Vertex, uv))
-                .setBinding(0)
-                .setLocation(1)
-    };
+void RENDER::CreateInputLayout(const VertexFVFBits vertexBindingsFormat, RHI::IInputLayout* inputLayout)
+{
+    uint32_t attributeOffset = 0;
+    uint32_t location = 0;
+    uint32_t stride = 0;
+    std::vector<RHI::VertexInputAttributeDesc> attributes;
+    if ((vertexBindingsFormat | VertexFVFBits::XYZ) != 0)
+    {
+        RHI::VertexInputAttributeDesc attributeDesc = RHI::VertexInputAttributeDesc{};
+        attributeDesc.setFormat(RHI::Format::RGB32_FLOAT)
+            .setOffset(attributeOffset)
+            .setBinding(0)
+            .setLocation(location);
+        attributes.push_back(attributeDesc);
+        attributeOffset += 3 * sizeof(float);
+        location++;
+        stride += 3 * sizeof(float);
+    }
+    if ((vertexBindingsFormat | VertexFVFBits::Color) != 0)
+    {
+        RHI::VertexInputAttributeDesc attributeDesc = RHI::VertexInputAttributeDesc{};
+        attributeDesc.setFormat(RHI::Format::RGB32_FLOAT)
+            .setOffset(attributeOffset)
+            .setBinding(0)
+            .setLocation(location);
+        attributes.push_back(attributeDesc);
+        attributeOffset += 3 * sizeof(float);
+        location++;
+        stride += 3 * sizeof(float);
+    }
+    if ((vertexBindingsFormat | VertexFVFBits::UV1) != 0)
+    {
+        RHI::VertexInputAttributeDesc attributeDesc = RHI::VertexInputAttributeDesc{};
+        attributeDesc.setFormat(RHI::Format::RG32_FLOAT)
+            .setOffset(attributeOffset)
+            .setBinding(0)
+            .setLocation(location);
+        attributes.push_back(attributeDesc);
+        attributeOffset += 2 * sizeof(float);
+        location++;
+        stride += 2 * sizeof(float);
+    }
 
     RHI::VertexInputBindingDesc bindings[] =
     {
     RHI::VertexInputBindingDesc()
     .setBinding(0)
-    .setStride(sizeof(Vertex))
+    .setStride(stride)
     };
-    inputLayout = device->createInputLayout(attributes, bindings);
+
+    inputLayout = device->createInputLayout(attributes.data(), bindings);
 }
 
 void RENDER::MakeVertexBindings(RHI::BufferHandle vertexBuffer, const VertexFVFBits vertexBindingsFormat, std::vector<RHI::VertexBufferBinding>& vertexBufferBindings)
@@ -1765,23 +1794,46 @@ void RENDER::MakeVertexBindings(RHI::BufferHandle vertexBuffer, const VertexFVFB
     }
 }
 
-void RENDER::DrawBuffer(int32_t vbuff, int32_t stride, int32_t ibuff, int32_t minv, size_t numv, size_t startidx, size_t numtrg,
-    const char* cBlockName)
+void RENDER::CreateGraphicsPipeline(RHI::ShaderHandle vertexShader, RHI::ShaderHandle pixelShader,
+    RHI::IInputLayout* inputLayout, RHI::IBindingLayout* bindingLayout,
+    RHI::FramebufferHandle framebuffer, RHI::GraphicsPipelineHandle pipeline)
+{
+    RHI::GraphicsPipelineDesc pipelineDesc;
+    pipelineDesc.VS = vertexShader;
+    pipelineDesc.PS = pixelShader;
+    pipelineDesc.inputLayout = inputLayout;
+    pipelineDesc.bindingLayouts = { bindingLayout };
+    pipelineDesc.primType = RHI::PrimitiveType::TriangleList;
+    pipelineDesc.renderState.depthStencilState.depthTestEnable = true;
+
+    pipeline = device->createGraphicsPipeline(pipelineDesc, framebuffer.get());
+}
+
+RHI::GraphicsState RENDER::CreateGraphicsState(RHI::GraphicsPipelineHandle pipeline, RHI::FramebufferHandle framebuffer,
+    RHI::IBindingSet* bindingSet, RHI::BufferHandle vertexBuffer, RHI::BufferHandle indexBuffer)
+{
+    RHI::GraphicsState state{};
+    // Pick the right binding set for this view.
+    state.bindingSets = { bindingSet };
+    state.indexBufferBinding = { indexBuffer.get(), 0, 0 };
+    // Bind the vertex buffers in reverse order to test the RHI implementation of binding slots
+    MakeVertexBindings(vertexBuffer, vertexFormat, state.vertexBufferBindings);
+    state.pipeline = pipeline.get();
+    state.framebuffer = framebuffer.get();
+
+    return state;
+}
+
+void RENDER::DrawBuffer(uint32_t vertexBufferIndex, uint32_t indexBufferIndex, size_t vertexCount, size_t instanceCount,
+    size_t startIndexLocation, size_t startVertexLocation, const char* cBlockName)
 {
     bool bDraw = true;
 
-    if (vbuff >= 0)
-        vertexFormat = static_cast<VertexFVFBits>(VertexBuffers[vbuff].type);
+    if (VertexBuffers.size() < vertexBufferIndex)
+        vertexFormat = static_cast<VertexFVFBits>(VertexBuffers[vertexBufferIndex].type);
     // else VertexBuffer already set
 
-    RHI::GraphicsState state{};
-    // Pick the right binding set for this view.
-    state.bindingSets = { m_BindingSets[viewIndex] };
-    state.indexBufferBinding = { IndexBuffers[ibuff].buff.get(), 0, 0 };
-    // Bind the vertex buffers in reverse order to test the RHI implementation of binding slots
-    MakeVertexBindings(VertexBuffers[vbuff].buff, vertexFormat, state.vertexBufferBindings);
-    state.pipeline = m_GraphicsPipeline;
-    state.framebuffer = framebuffer;
+    RHI::GraphicsState state = CreateGraphicsState(, , , VertexBuffers[vertexBufferIndex].buff, IndexBuffers[indexBufferIndex].buff);
 
     // Update the pipeline, bindings, and other state.
     commandList->setGraphicsState(state);
@@ -1796,37 +1848,46 @@ void RENDER::DrawBuffer(int32_t vbuff, int32_t stride, int32_t ibuff, int32_t mi
 
             // Draw the model.
             RHI::DrawArguments drawArgs = {};
-            drawArgs.vertexCount = numv;
-            drawArgs.startIndexLocation = startidx;
-            drawArgs.startVertexLocation = 0;
+            drawArgs.vertexCount = vertexCount;
+            drawArgs.instanceCount = instanceCount;
+            drawArgs.startIndexLocation = startIndexLocation;
+            drawArgs.startVertexLocation = startVertexLocation;
             commandList->drawIndexed(drawArgs);
             //CHECKERR(d3d9->DrawIndexedPrimitive(RHI::PrimitiveType::TriangleList, minv, 0, numv, startidx, numtrg));
         } while (cBlockName && cBlockName[0] && TechniqueExecuteNext());
 }
 
-void RENDER::DrawIndexedPrimitiveNoVShader(RHI::PrimitiveType dwPrimitiveType, int32_t iVBuff, int32_t iStride, int32_t iIBuff,
-    int32_t iMinV, int32_t iNumV, int32_t iStartIdx, int32_t iNumTrg,
-    const char* cBlockName)
+void RENDER::DrawIndexedPrimitiveNoVShader(RHI::PrimitiveType primitiveType, uint32_t vertexBufferIndex, uint32_t indexBufferIndex, size_t vertexCount, size_t instanceCount,
+    size_t startIndexLocation, size_t startVertexLocation, const char* cBlockName)
 {
     bool bDraw = true;
 
-    if (CHECKERR(d3d9->SetIndices(IndexBuffers[iIBuff].buff)) == true)
-        return;
+    if (VertexBuffers.size() < vertexBufferIndex)
+        vertexFormat = static_cast<VertexFVFBits>(VertexBuffers[vertexBufferIndex].type);
+    // else VertexBuffer already set
 
-    if (iVBuff >= 0)
-    {
-        if (CHECKERR(d3d9->SetStreamSource(0, VertexBuffers[iVBuff].buff, 0, iStride)) == true)
-            return;
-    }
+    RHI::GraphicsState state = CreateGraphicsState(, , , VertexBuffers[vertexBufferIndex].buff, IndexBuffers[indexBufferIndex].buff);
+
+    // Update the pipeline, bindings, and other state.
+    commandList->setGraphicsState(state);
 
     if (cBlockName && cBlockName[0])
         bDraw = TechniqueExecuteStart(cBlockName);
+
     if (bDraw)
         do
         {
             dwNumDrawPrimitive++;
-            CHECKERR(d3d9->DrawIndexedPrimitive(dwPrimitiveType, iMinV, 0, iNumV, iStartIdx, iNumTrg));
-        } while (cBlockName && TechniqueExecuteNext());
+
+            // Draw the model.
+            RHI::DrawArguments drawArgs = {};
+            drawArgs.vertexCount = vertexCount;
+            drawArgs.instanceCount = instanceCount;
+            drawArgs.startIndexLocation = startIndexLocation;
+            drawArgs.startVertexLocation = startVertexLocation;
+            commandList->drawIndexed(drawArgs);
+            //CHECKERR(d3d9->DrawIndexedPrimitive(RHI::PrimitiveType::TriangleList, minv, 0, numv, startidx, numtrg));
+        } while (cBlockName && cBlockName[0] && TechniqueExecuteNext());
 }
 
 void RENDER::DrawIndexedPrimitiveUP(RHI::PrimitiveType dwPrimitiveType, uint32_t dwMinIndex, uint32_t dwNumVertices,
