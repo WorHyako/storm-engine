@@ -345,11 +345,10 @@ public:
     void DrawLines(RS_LINE* pRSL, uint32_t dwLinesNum, const char* cBlockName = nullptr) override;
     void DrawLines2D(RS_LINE2D* pRSL2D, size_t dwLinesNum, const char* cBlockName = nullptr) override;
 
-    void DrawBuffer(int32_t vbuff, int32_t stride, int32_t ibuff, int32_t minv, size_t numv, size_t startidx, size_t numtrg,
-        const char* cBlockName = nullptr) override;
-    void DrawIndexedPrimitiveNoVShader(RHI::PrimitiveType dwPrimitiveType, int32_t iVBuff, int32_t iStride, int32_t iIBuff,
-        int32_t iMinV, int32_t iNumV, int32_t iStartIdx, int32_t iNumTrg,
-        const char* cBlockName = nullptr) override;
+    void DrawBuffer(uint32_t vertexBufferIndex, uint32_t indexBufferIndex, size_t vertexCount, size_t instanceCount,
+        size_t startIndexLocation, size_t startVertexLocation, const char* cBlockName = nullptr) override;
+    void DrawIndexedPrimitiveNoVShader(RHI::PrimitiveType primitiveType, uint32_t vertexBufferIndex, uint32_t indexBufferIndex, size_t vertexCount, size_t instanceCount,
+        size_t startIndexLocation, size_t startVertexLocation, const char* cBlockName = nullptr) override;
     void DrawPrimitive(RHI::PrimitiveType dwPrimitiveType, int32_t iVBuff, int32_t iStride, int32_t iStartV, int32_t iNumPT,
         const char* cBlockName = nullptr) override;
     void DrawPrimitiveUP(RHI::PrimitiveType dwPrimitiveType, VertexFVFBits dwVertexBufferFormat, uint32_t dwNumPT,
@@ -726,5 +725,10 @@ private:
     VertexFVFBits vertexFormat = 0;
 
     void MakeVertexBindings(RHI::BufferHandle vertexBuffer, const VertexFVFBits vertexBindingsFormat, std::vector<RHI::VertexBufferBinding>& vertexBufferBindings);
-    void CreateInputLayout(RHI::IInputLayout* inputLayout);
+    void CreateInputLayout(const VertexFVFBits vertexBindingsFormat, RHI::IInputLayout* inputLayout);
+    void CreateGraphicsPipeline(RHI::ShaderHandle vertexShader, RHI::ShaderHandle pixelShader,
+        RHI::IInputLayout* inputLayout, RHI::IBindingLayout* bindingLayout,
+        RHI::FramebufferHandle framebuffer, RHI::GraphicsPipelineHandle pipeline);
+    RHI::GraphicsState CreateGraphicsState(RHI::GraphicsPipelineHandle pipeline, RHI::FramebufferHandle framebuffer,
+        RHI::IBindingSet* bindingSet, RHI::BufferHandle vertexBuffer, RHI::BufferHandle indexBuffer);
 };
