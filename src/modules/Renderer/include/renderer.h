@@ -345,18 +345,17 @@ public:
     void DrawLines(RS_LINE* pRSL, uint32_t dwLinesNum, const char* cBlockName = nullptr) override;
     void DrawLines2D(RS_LINE2D* pRSL2D, size_t dwLinesNum, const char* cBlockName = nullptr) override;
 
-    void DrawBuffer(uint32_t vertexBufferIndex, uint32_t indexBufferIndex, size_t vertexCount, size_t instanceCount,
+    void DrawBuffer(RHI::PrimitiveType primitiveType, uint32_t vertexBufferIndex, int32_t iStride, size_t vertexCount,
+        size_t instanceCount, size_t startVertexLocation, const char* cBlockName = nullptr) override;
+    void DrawIndexedBuffer(RHI::PrimitiveType primitiveType, uint32_t vertexBufferIndex, uint32_t indexBufferIndex, size_t vertexCount, size_t instanceCount,
         size_t startIndexLocation, size_t startVertexLocation, const char* cBlockName = nullptr) override;
-    void DrawIndexedPrimitiveNoVShader(RHI::PrimitiveType primitiveType, uint32_t vertexBufferIndex, uint32_t indexBufferIndex, size_t vertexCount, size_t instanceCount,
+    void DrawIndexedBufferNoVShader(RHI::PrimitiveType primitiveType, uint32_t vertexBufferIndex, uint32_t indexBufferIndex, size_t vertexCount, size_t instanceCount,
         size_t startIndexLocation, size_t startVertexLocation, const char* cBlockName = nullptr) override;
-    void DrawPrimitive(RHI::PrimitiveType dwPrimitiveType, int32_t iVBuff, int32_t iStride, int32_t iStartV, int32_t iNumPT,
-        const char* cBlockName = nullptr) override;
-    void DrawPrimitiveUP(RHI::PrimitiveType dwPrimitiveType, VertexFVFBits dwVertexBufferFormat, uint32_t dwNumPT,
-        const void* pVerts, uint32_t dwStride, const char* cBlockName = nullptr) override;
-    void DrawIndexedPrimitiveUP(RHI::PrimitiveType dwPrimitiveType, uint32_t dwMinIndex, uint32_t dwNumVertices,
-        uint32_t dwPrimitiveCount, const void* pIndexData, RHI::Format IndexDataFormat,
-        const void* pVertexData, uint32_t dwVertexStride,
-        const char* cBlockName = nullptr) override;
+    void DrawPrimitive(RHI::PrimitiveType primitiveType, VertexFVFBits vertexBufferFormat, size_t vertexCount, size_t instanceCount,
+        size_t startVertexLocation, RHI::BufferHandle vertexBuffer, uint32_t stride, const char* cBlockName = nullptr)
+    void DrawIndexedPrimitive(RHI::PrimitiveType primitiveType, RHI::BufferHandle vertexBuffer, VertexFVFBits vertexDataFormat,
+        RHI::BufferHandle indexBuffer, RHI::Format indexDataFormat, size_t vertexCount, size_t instanceCount,
+        size_t startIndexLocation, size_t startVertexLocation, const char* cBlockName = nullptr) override;
 
     // Render: Video Section
     void PlayToTexture() override;
@@ -399,7 +398,6 @@ public:
     RHI::DeviceParams& GetDeviceParams() const;
 
     // D3D
-    int32_t DrawPrimitive(RHI::PrimitiveType PrimitiveType, uint32_t StartVertex, uint32_t PrimitiveCount);
     int32_t Release(IUnknown* pSurface) override;
 
     // Vertex/Index Buffers Section
@@ -730,5 +728,5 @@ private:
         RHI::IInputLayout* inputLayout, RHI::IBindingLayout* bindingLayout,
         RHI::FramebufferHandle framebuffer, RHI::GraphicsPipelineHandle pipeline);
     RHI::GraphicsState CreateGraphicsState(RHI::GraphicsPipelineHandle pipeline, RHI::FramebufferHandle framebuffer,
-        RHI::IBindingSet* bindingSet, RHI::BufferHandle vertexBuffer, RHI::BufferHandle indexBuffer);
+        RHI::IBindingSet* bindingSet, RHI::BufferHandle vertexBuffer = nullptr, RHI::BufferHandle indexBuffer = nullptr);
 };

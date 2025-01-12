@@ -1824,7 +1824,38 @@ RHI::GraphicsState RENDER::CreateGraphicsState(RHI::GraphicsPipelineHandle pipel
     return state;
 }
 
-void RENDER::DrawBuffer(uint32_t vertexBufferIndex, uint32_t indexBufferIndex, size_t vertexCount, size_t instanceCount,
+void RENDER::DrawBuffer(RHI::PrimitiveType primitiveType, uint32_t vertexBufferIndex, int32_t iStride, size_t vertexCount,
+    size_t instanceCount, size_t startVertexLocation, const char* cBlockName)
+{
+    bool bDraw = true;
+
+    if (VertexBuffers.size() < vertexBufferIndex)
+		vertexFormat = static_cast<VertexFVFBits>(VertexBuffers[vertexBufferIndex].type);
+
+    RHI::GraphicsState state = CreateGraphicsState(, , , VertexBuffers[vertexBufferIndex].buff);
+
+    // Update the pipeline, bindings, and other state.
+    commandList->setGraphicsState(state);
+
+    if (cBlockName && cBlockName[0])
+        bDraw = TechniqueExecuteStart(cBlockName);
+
+    if (bDraw)
+        do
+        {
+            dwNumDrawPrimitive++;
+
+            // Draw the model.
+            RHI::DrawArguments drawArgs = {};
+            drawArgs.vertexCount = vertexCount;
+            drawArgs.instanceCount = instanceCount;
+            drawArgs.startVertexLocation = startVertexLocation;
+            commandList->drawIndexed(drawArgs);
+            //CHECKERR(d3d9->DrawIndexedPrimitive(RHI::PrimitiveType::TriangleList, minv, 0, numv, startidx, numtrg));
+        } while (cBlockName && cBlockName[0] && TechniqueExecuteNext());
+}
+
+void RENDER::DrawIndexedBuffer(RHI::PrimitiveType primitiveType, uint32_t vertexBufferIndex, uint32_t indexBufferIndex, size_t vertexCount, size_t instanceCount,
     size_t startIndexLocation, size_t startVertexLocation, const char* cBlockName)
 {
     bool bDraw = true;
@@ -1857,14 +1888,12 @@ void RENDER::DrawBuffer(uint32_t vertexBufferIndex, uint32_t indexBufferIndex, s
         } while (cBlockName && cBlockName[0] && TechniqueExecuteNext());
 }
 
-void RENDER::DrawIndexedPrimitiveNoVShader(RHI::PrimitiveType primitiveType, uint32_t vertexBufferIndex, uint32_t indexBufferIndex, size_t vertexCount, size_t instanceCount,
+void RENDER::DrawIndexedBufferNoVShader(RHI::PrimitiveType primitiveType, uint32_t vertexBufferIndex, uint32_t indexBufferIndex, size_t vertexCount, size_t instanceCount,
     size_t startIndexLocation, size_t startVertexLocation, const char* cBlockName)
 {
     bool bDraw = true;
 
-    if (VertexBuffers.size() < vertexBufferIndex)
-        vertexFormat = static_cast<VertexFVFBits>(VertexBuffers[vertexBufferIndex].type);
-    // else VertexBuffer already set
+    vertexFormat = VertexFVFBits::XYZ;
 
     RHI::GraphicsState state = CreateGraphicsState(, , , VertexBuffers[vertexBufferIndex].buff, IndexBuffers[indexBufferIndex].buff);
 
@@ -1886,61 +1915,69 @@ void RENDER::DrawIndexedPrimitiveNoVShader(RHI::PrimitiveType primitiveType, uin
             drawArgs.startIndexLocation = startIndexLocation;
             drawArgs.startVertexLocation = startVertexLocation;
             commandList->drawIndexed(drawArgs);
-            //CHECKERR(d3d9->DrawIndexedPrimitive(RHI::PrimitiveType::TriangleList, minv, 0, numv, startidx, numtrg));
         } while (cBlockName && cBlockName[0] && TechniqueExecuteNext());
 }
 
-void RENDER::DrawIndexedPrimitiveUP(RHI::PrimitiveType dwPrimitiveType, uint32_t dwMinIndex, uint32_t dwNumVertices,
-    uint32_t dwPrimitiveCount, const void* pIndexData, RHI::Format IndexDataFormat,
-    const void* pVertexData, uint32_t dwVertexStride, const char* cBlockName)
+// TODO: Use as dx09->DrawPrimitiveUP analog with correct vertex buffer or Model matrix
+void RENDER::DrawPrimitive(RHI::PrimitiveType primitiveType, VertexFVFBits vertexBufferFormat, size_t vertexCount, size_t instanceCount,
+    size_t startVertexLocation, RHI::BufferHandle vertexBuffer, uint32_t stride, const char* cBlockName)
 {
     bool bDraw = true;
+
+    vertexFormat = vertexBufferFormat;
+
+    RHI::GraphicsState state = CreateGraphicsState(, , , vertexBuffer);
+
+    // Update the pipeline, bindings, and other state.
+    commandList->setGraphicsState(state);
+
     if (cBlockName && cBlockName[0])
         bDraw = TechniqueExecuteStart(cBlockName);
+
     if (bDraw)
         do
         {
             dwNumDrawPrimitive++;
-            CHECKERR(d3d9->DrawIndexedPrimitiveUP(dwPrimitiveType, dwMinIndex, dwNumVertices, dwPrimitiveCount,
-                pIndexData, IndexDataFormat, pVertexData, dwVertexStride));
-        } while (cBlockName && TechniqueExecuteNext());
+
+            // Draw the model.
+            RHI::DrawArguments drawArgs = {};
+            drawArgs.vertexCount = vertexCount;
+            drawArgs.instanceCount = instanceCount;
+            drawArgs.startVertexLocation = startVertexLocation;
+            commandList->draw(drawArgs);
+        } while (cBlockName && cBlockName[0] && TechniqueExecuteNext());
 }
 
-void RENDER::DrawPrimitiveUP(RHI::PrimitiveType dwPrimitiveType, VertexFVFBits dwVertexBufferFormat, uint32_t dwNumPT,
-    const void* pVerts, uint32_t dwStride, const char* cBlockName)
+// TODO: Use as dx09->DrawIndexedPrimitiveUP analog with correct vertex buffer or Model matrix
+void RENDER::DrawIndexedPrimitive(RHI::PrimitiveType primitiveType, RHI::BufferHandle vertexBuffer, VertexFVFBits vertexDataFormat,
+    RHI::BufferHandle indexBuffer, RHI::Format indexDataFormat, size_t vertexCount, size_t instanceCount,
+    size_t startIndexLocation, size_t startVertexLocation, const char* cBlockName)
 {
     bool bDraw = true;
 
-    vertexFormat = dwVertexBufferFormat;
+    vertexFormat = vertexDataFormat;
+
+    RHI::GraphicsState state = CreateGraphicsState(, , , vertexBuffer, indexBuffer);
+
+    // Update the pipeline, bindings, and other state.
+    commandList->setGraphicsState(state);
 
     if (cBlockName && cBlockName[0])
         bDraw = TechniqueExecuteStart(cBlockName);
+
     if (bDraw)
         do
         {
             dwNumDrawPrimitive++;
-            CHECKERR(d3d9->DrawPrimitiveUP(dwPrimitiveType, dwNumPT, pVerts, dwStride));
-        } while (cBlockName && TechniqueExecuteNext());
-}
 
-void RENDER::DrawPrimitive(RHI::PrimitiveType dwPrimitiveType, int32_t iVBuff, int32_t iStride, int32_t iStartV, int32_t iNumPT,
-    const char* cBlockName)
-{
-    bool bDraw = true;
-
-    vertexFormat = static_cast<VertexFVFBits>(VertexBuffers[iVBuff].type);
-
-    if (CHECKERR(d3d9->SetStreamSource(0, VertexBuffers[iVBuff].buff, 0, iStride)) == true)
-        return;
-
-    if (cBlockName && cBlockName[0])
-        bDraw = TechniqueExecuteStart(cBlockName);
-    if (bDraw)
-        do
-        {
-            dwNumDrawPrimitive++;
-            CHECKERR(d3d9->DrawPrimitive(dwPrimitiveType, iStartV, iNumPT));
-        } while (cBlockName && TechniqueExecuteNext());
+            // Draw the model.
+            RHI::DrawArguments drawArgs = {};
+            drawArgs.vertexCount = vertexCount;
+            drawArgs.instanceCount = instanceCount;
+            drawArgs.startIndexLocation = startIndexLocation;
+            drawArgs.startVertexLocation = startVertexLocation;
+            commandList->drawIndexed(drawArgs);
+        } while (cBlockName && cBlockName[0] && TechniqueExecuteNext());
 }
 
 //################################################################################
@@ -2160,9 +2197,9 @@ void RENDER::RestoreRender()
         SetTextureStageState(s, D3DTSS_TEXCOORDINDEX, s);
 
         // texture filtering
-        SetSamplerState(s, D3DSAMP_MAGFILTER, D3DTEXF_LINEAR);
-        SetSamplerState(s, D3DSAMP_MINFILTER, D3DTEXF_LINEAR);
-        SetSamplerState(s, D3DSAMP_MIPFILTER, D3DTEXF_LINEAR);
+        defaultSamplerDesc.magFilter = RHI::SamplerFilter::LINEAR;
+        defaultSamplerDesc.minFilter = RHI::SamplerFilter::LINEAR;
+        defaultSamplerDesc.mipFilter = RHI::SamplerFilter::LINEAR;
     }
     // set base texture and diffuse+specular lighting
     SetTextureStageState(0, D3DTSS_COLORARG1, D3DTA_DIFFUSE);
@@ -2437,7 +2474,7 @@ int32_t RENDER::ExtPrint(int32_t nFontNum, uint32_t foreColor, uint32_t backColo
     vsnprintf(Buff_4k, sizeof(Buff_4k), format, args);
     va_end(args);
 
-    std::unique_ptr<RHI::IFramebuffer> BackBuffer{ m_DynamicRHI->GetFramebuffer(m_DynamicRHI->GetCurrentBackBufferIndex()) };
+    RHI::FramebufferHandle BackBuffer = m_DynamicRHI->GetFramebuffer(m_DynamicRHI->GetCurrentBackBufferIndex());
     const int32_t xs = static_cast<int32_t>(BackBuffer->framebufferWidth);
     const int32_t ys = static_cast<int32_t>(BackBuffer->framebufferHeight);
     if (scrWidth == 0)
@@ -2997,14 +3034,15 @@ void RENDER::DrawRects(RS_RECT* pRSR, uint32_t dwRectsNum, const char* cBlockNam
         }
         // Draw a buffer
         // Setup format and copy staging buffer
+        VertexFVFBits vertexFVF = VertexFVFBits::XYZ | VertexFVFBits::Color | VertexFVFBits::UV1;
         if (cBlockName && cBlockName[0])
             bDraw = TechniqueExecuteStart(cBlockName);
         if (bDraw)
             do
             {
                 // Setup vertex buffer + draw vertex buffer as triangle list
-                CHECKERR(SetStreamSource(0, rectsVBuffer, sizeof(RECT_VERTEX)));
-                CHECKERR(DrawPrimitive(RHI::PrimitiveType::TriangleList, 0, drawCount * 2));
+                // TODO: fix value for stride param
+                /*CHECKERR*/(DrawPrimitive(RHI::PrimitiveType::TriangleList, vertexFVF, 6, 1, 0, rectsVBuffer, 24));
             } while (cBlockName && TechniqueExecuteNext());
     }
 
@@ -3039,7 +3077,7 @@ void RENDER::DrawSprites(RS_SPRITE* pRSS, uint32_t dwSpritesNum, const char* cBl
     if (bDraw)
         do
         {
-            DrawIndexedPrimitiveUP(RHI::PrimitiveType::TriangleList, 0, dwSpritesNum * 4, dwSpritesNum * 2, pIndices, RHI::Format::R16_UINT,
+            DrawIndexedPrimitive(RHI::PrimitiveType::TriangleList, 0, dwSpritesNum * 4, dwSpritesNum * 2, pIndices, RHI::Format::R16_UINT,
                 pRSS, sizeof(RS_SPRITE));
         } while (cBlockName && TechniqueExecuteNext());
     delete[] pIndices;
@@ -3059,7 +3097,7 @@ void RENDER::DrawLines(RS_LINE* pRSL, uint32_t dwLinesNum, const char* cBlockNam
     if (bDraw)
         do
         {
-            DrawPrimitiveUP(RHI::PrimitiveType::LineList, vertexFormat, dwLinesNum, pRSL, sizeof(RS_LINE));
+            DrawPrimitive(RHI::PrimitiveType::LineList, vertexFVF, dwLinesNum, pRSL, sizeof(RS_LINE));
         } while (cBlockName && TechniqueExecuteNext());
 }
 
@@ -3068,7 +3106,7 @@ void RENDER::DrawLines2D(RS_LINE2D* pRSL2D, size_t dwLinesNum, const char* cBloc
     if (!pRSL2D || dwLinesNum == 0)
         return;
 
-    VertexFVFBits vertexFormat = VertexFVFBits::XYZ | VertexFVFBits::Color;
+    VertexFVFBits vertexFVF = VertexFVFBits::XYZ | VertexFVFBits::Color;
 
     bool bDraw = true;
 
@@ -3077,7 +3115,7 @@ void RENDER::DrawLines2D(RS_LINE2D* pRSL2D, size_t dwLinesNum, const char* cBloc
     if (bDraw)
         do
         {
-            DrawPrimitiveUP(RHI::PrimitiveType::LineList, vertexFormat, dwLinesNum, pRSL2D, sizeof(RS_LINE2D));
+            DrawPrimitive(RHI::PrimitiveType::LineList, vertexFVF, dwLinesNum, pRSL2D, sizeof(RS_LINE2D));
         } while (cBlockName && TechniqueExecuteNext());
 }
 
@@ -3094,12 +3132,6 @@ RHI::BufferHandle RENDER::CreateVertexBufferAndUpload(size_t vertexBufferSize, c
     commandList->writeBuffer(vertexBuffer.get(), vertexBufferSize, pVertexData);
 
     return vertexBuffer;
-}
-
-int32_t RENDER::DrawPrimitive(RHI::PrimitiveType dwPrimitiveType, uint32_t StartVertex, uint32_t PrimitiveCount)
-{
-    dwNumDrawPrimitive++;
-    return CHECKERR(d3d9->DrawPrimitive(dwPrimitiveType, StartVertex, PrimitiveCount));
 }
 
 int32_t RENDER::Release(IUnknown* pObject)
