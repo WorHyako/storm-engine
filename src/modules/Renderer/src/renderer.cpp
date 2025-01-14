@@ -1435,6 +1435,32 @@ uint32_t RENDER::LoadCubmapSide(std::fstream& fileS, RHI::TextureHandle tex, Cub
 }
 
 //################################################################################
+bool RENDER::TextureSet(uint32_t textureIndex, uint32_t textureBindingIndex, RHI::SamplerHandle sampler, RHI::DescriptorSetInfo& dsInfos)
+{
+    if (textureIndex >= Textures.size())
+    {
+        return false;
+    }
+
+    RHI::TextureAttachment textureAttachment = {};
+    textureAttachment
+        .setDescriptorInfo(RHI::DescriptorInfo{ RHI::DescriptorType::COMBINED_IMAGE_SAMPLER, RHI::ShaderStageFlagBits::FRAGMENT_BIT })
+        .setTexture(Textures[textureIndex].tex.get())
+        .setSampler(sampler.get());
+
+    if(dsInfos.textures.size() <= textureBindingIndex)
+    {
+        dsInfos.textures[textureBindingIndex] = textureAttachment;
+    }
+    else
+    {
+        dsInfos.textures.push_back(textureAttachment);
+    }
+
+    return true;
+}
+
+//################################################################################
 bool RENDER::TextureRelease(int32_t texid)
 {
     if (texid == -1)
@@ -2976,16 +3002,14 @@ void RENDER::DrawRects(RS_RECT* pRSR, uint32_t dwRectsNum, const char* cBlockNam
         if (drawCount > rectsVBuffer_SizeInRects)
             drawCount = rectsVBuffer_SizeInRects;
         // Buffer
-        RECT_VERTEX* data = nullptr;
-        if (rectsVBuffer->Lock(0, drawCount * 6 * sizeof(RECT_VERTEX), (void**)&data, D3DLOCK_DISCARD) != D3D_OK)
-            return;
-        if (!data)
+        RECT_VERTEX* rectData = new RECT_VERTEX[drawCount * 6];
+        if (!rectData)
             return;
         // Filling the buffer
         for (uint32_t i = 0; i < drawCount && cnt < dwRectsNum; i++)
         {
             // Local array of a particle
-            RECT_VERTEX* buffer = &data[i * 6];
+            RECT_VERTEX* buffer = &rectData[i * 6];
             RS_RECT& rect = pRSR[cnt++];
             CVECTOR pos = camMtx * (rect.vPos + vWordRelationPos);
             const float sizex = rect.fSize * fScaleX;
@@ -3035,6 +3059,11 @@ void RENDER::DrawRects(RS_RECT* pRSR, uint32_t dwRectsNum, const char* cBlockNam
         // Draw a buffer
         // Setup format and copy staging buffer
         VertexFVFBits vertexFVF = VertexFVFBits::XYZ | VertexFVFBits::Color | VertexFVFBits::UV1;
+
+        commandList->writeBuffer(rectsVBuffer.get(), sizeof(rectData), rectData);
+
+        delete[] rectData;
+
         if (cBlockName && cBlockName[0])
             bDraw = TechniqueExecuteStart(cBlockName);
         if (bDraw)
@@ -3053,11 +3082,11 @@ void RENDER::DrawRects(RS_RECT* pRSR, uint32_t dwRectsNum, const char* cBlockNam
 void RENDER::DrawSprites(RS_SPRITE* pRSS, uint32_t dwSpritesNum, const char* cBlockName)
 {
     uint32_t i;
-#define RS_SPRITE_VERTEX_FORMAT (D3DFVF_XYZRHW | D3DFVF_DIFFUSE | D3DFVF_TEX1)
     if (dwSpritesNum == 0)
         return;
 
     auto* pIndices = new uint16_t[dwSpritesNum * 6];
+    const uint32_t indicesArraySize = dwSpritesNum * 6 * 2;
 
     for (i = 0; i < dwSpritesNum; i++)
     {
@@ -3068,6 +3097,24 @@ void RENDER::DrawSprites(RS_SPRITE* pRSS, uint32_t dwSpritesNum, const char* cBl
         pIndices[i * 6 + 4] = static_cast<uint16_t>(i * 4 + 2);
         pIndices[i * 6 + 5] = static_cast<uint16_t>(i * 4 + 1);
     }
+
+    RHI::BufferDesc indexBufferDesc = {};
+    indexBufferDesc.setSize(indicesArraySize)
+        .setFormat(RHI::Format::R16_UINT)
+        .setIsTransferDst(true)
+        .setIsIndexBuffer(true);
+    RHI::BufferHandle indexBuffer = device->createBuffer(indexBufferDesc);
+
+    commandList->writeBuffer(indexBuffer.get(), indicesArraySize, pIndices);
+
+    RHI::BufferDesc vertexBufferDesc = {};
+    vertexBufferDesc.setSize()
+        .setIsTransferDst(true)
+        .setIsVertexBuffer(true);
+
+    RHI::BufferHandle vertexBuffer = device->createBuffer(vertexBufferDesc);
+
+    commandList->writeBuffer(vertexBuffer.get(), )
 
     vertexFormat = VertexFVFBits::XYZ | VertexFVFBits::Color | VertexFVFBits::UV1;
 
@@ -3171,7 +3218,7 @@ int32_t RENDER::SetRenderTarget(RHI::TextureHandle pRenderTarget, RHI::TextureHa
     return 0;
 }
 
-HRESULT RENDER::Clear(uint32_t Count, const D3DRECT* pRects, uint32_t Flags, D3DCOLOR Color, float Z,
+int32_t RENDER::Clear(uint32_t Count, const D3DRECT* pRects, uint32_t Flags, Color Color, float Z,
     uint32_t Stencil)
 {
     return CHECKERR(d3d9->Clear(Count, pRects, Flags, Color, Z, Stencil));
@@ -3258,27 +3305,28 @@ HRESULT RENDER::GetLevelDesc(IDirect3DCubeTexture9* ppCubeTexture, UINT Level, D
     return CHECKERR(ppCubeTexture->GetLevelDesc(Level, pDesc));
 }
 
-HRESULT RENDER::LockRect(IDirect3DCubeTexture9* ppCubeTexture, D3DCUBEMAP_FACES FaceType, UINT Level,
-    D3DLOCKED_RECT* pLockedRect, const RECT* pRect, uint32_t Flags)
-{
-    return CHECKERR(ppCubeTexture->LockRect(FaceType, Level, pLockedRect, pRect, Flags));
-}
-
-HRESULT RENDER::LockRect(IDirect3DTexture9* ppTexture, UINT Level, D3DLOCKED_RECT* pLockedRect, const RECT* pRect,
-    uint32_t Flags)
-{
-    return CHECKERR(ppTexture->LockRect(Level, pLockedRect, pRect, Flags));
-}
-
-HRESULT RENDER::UnlockRect(IDirect3DCubeTexture9* pCubeTexture, D3DCUBEMAP_FACES FaceType, UINT Level)
-{
-    return CHECKERR(pCubeTexture->UnlockRect(FaceType, Level));
-}
-
-HRESULT RENDER::UnlockRect(IDirect3DTexture9* pTexture, UINT Level)
-{
-    return CHECKERR(pTexture->UnlockRect(Level));
-}
+// TODO: use RHI updateTextureImage() instead rect lock/unlock or create analog for it 
+//HRESULT RENDER::LockRect(IDirect3DCubeTexture9* ppCubeTexture, D3DCUBEMAP_FACES FaceType, UINT Level,
+//    D3DLOCKED_RECT* pLockedRect, const RECT* pRect, uint32_t Flags)
+//{
+//    return CHECKERR(ppCubeTexture->LockRect(FaceType, Level, pLockedRect, pRect, Flags));
+//}
+//
+//HRESULT RENDER::LockRect(IDirect3DTexture9* ppTexture, UINT Level, D3DLOCKED_RECT* pLockedRect, const RECT* pRect,
+//    uint32_t Flags)
+//{
+//    return CHECKERR(ppTexture->LockRect(Level, pLockedRect, pRect, Flags));
+//}
+//
+//HRESULT RENDER::UnlockRect(IDirect3DCubeTexture9* pCubeTexture, D3DCUBEMAP_FACES FaceType, UINT Level)
+//{
+//    return CHECKERR(pCubeTexture->UnlockRect(FaceType, Level));
+//}
+//
+//HRESULT RENDER::UnlockRect(IDirect3DTexture9* pTexture, UINT Level)
+//{
+//    return CHECKERR(pTexture->UnlockRect(Level));
+//}
 
 HRESULT RENDER::GetSurfaceLevel(IDirect3DTexture9* ppTexture, UINT Level, IDirect3DSurface9** ppSurfaceLevel)
 {
@@ -3299,24 +3347,28 @@ HRESULT RENDER::StretchRect(IDirect3DSurface9* pSourceSurface, const RECT* pSour
     return CHECKERR(d3d9->StretchRect(pSourceSurface, pSourceRect, pDestSurface, pDestRect, Filter));
 }
 
-HRESULT RENDER::GetRenderTargetData(RHI::TextureHandle pRenderTarget, RHI::TextureHandle pDestSurface)
+int32_t RENDER::GetRenderTargetData(RHI::TextureHandle pRenderTarget, RHI::TextureHandle pDestSurface)
 {
-    const RHI::TextureDesc& desc = pRenderTarget->getDesc();
+    const RHI::TextureDesc& RTDesc = pRenderTarget->getDesc();
 
-    if (desc.MultiSampleType != D3DMULTISAMPLE_NONE)
+    if (RTDesc.sampleCount != 1)
     {
-        IDirect3DSurface9* pNonsampledSurface = nullptr;
+        RHI::TextureDesc desc = {};
+        desc.setWidth(RTDesc.width)
+            .setHeight(RTDesc.height)
+            .setFormat(RTDesc.format)
+            .setIsTransferDst(true)
+            .setIsRenderTarget(true)
+            .setSampleCount(1);
 
-        if (CHECKERR(d3d9->CreateRenderTarget(desc.Width, desc.Height, desc.Format, D3DMULTISAMPLE_NONE, 0, FALSE,
-            &pNonsampledSurface, nullptr)))
+        RHI::TextureHandle pNonsampledSurface = device->createImage(desc);
+        if (pNonsampledSurface.get() == nullptr)
         {
-            return D3DERR_WRONGTEXTUREFORMAT;
+            core.Trace("Failed to create NonsampledSurface");
+            return -1; //D3DERR_WRONGTEXTUREFORMAT
         }
 
-        if (CHECKERR(pDestSurface->GetDesc(&desc)))
-        {
-            return D3DERR_WRONGTEXTUREFORMAT;
-        }
+        const RHI::TextureDesc& DestDesc = pDestSurface->getDesc();
 
         if (CHECKERR(d3d9->StretchRect(pRenderTarget, nullptr, pNonsampledSurface, nullptr, D3DTEXF_NONE)))
         {
@@ -3332,8 +3384,7 @@ HRESULT RENDER::GetRenderTargetData(RHI::TextureHandle pRenderTarget, RHI::Textu
         {
             error = UpdateSurface(pNonsampledSurface, nullptr, 0, pDestSurface, nullptr);
         }
-
-        pNonsampledSurface->Release();
+        
         return error ? D3DERR_WRONGTEXTUREFORMAT : D3D_OK;
     }
 
@@ -3715,13 +3766,13 @@ void RENDER::ProgressView()
     v[2].v = 1.0f;
     v[3].u = 1.0f;
     v[3].v = 1.0f;
-    TextureSet(0, back0Texture);
+    TextureSet(back0Texture, 0, );
     if (back0Texture < 0)
         for (i = 0; i < 4; i++)
             v[i].color = 0;
     if (back0Texture >= 0)
     {
-        DrawPrimitiveUP(RHI::PrimitiveType::TriangleStrip, VertexFVFBits::XYZ | VertexFVFBits::Color | VertexFVFBits::UV1, 2, v, sizeof(v[0]),
+        DrawPrimitive(RHI::PrimitiveType::TriangleStrip, VertexFVFBits::XYZ | VertexFVFBits::Color | VertexFVFBits::UV1, 4, 1, 0, , 24,
             "ProgressBackTech");
     }
 
@@ -3752,7 +3803,7 @@ void RENDER::ProgressView()
     v[3].u = 1.0f;
     v[3].v = 1.0f;
 
-    TextureSet(0, backTexture);
+    TextureSet(backTexture, 0, );
     if (backTexture < 0)
     {
         for (i = 0; i < 4; i++)
@@ -3762,13 +3813,13 @@ void RENDER::ProgressView()
     {
         if (progressTipsTexture >= 0)
         {
-            TextureSet(1, progressTipsTexture);
-            DrawPrimitiveUP(RHI::PrimitiveType::TriangleStrip, VertexFVFBits::XYZ | VertexFVFBits::Color | VertexFVFBits::UV1, 2, v, sizeof(v[0]),
+            TextureSet(progressTipsTexture, 1, );
+            DrawPrimitive(RHI::PrimitiveType::TriangleStrip, VertexFVFBits::XYZ | VertexFVFBits::Color | VertexFVFBits::UV1, 4, 1, 0, v, sizeof(v[0]),
                 "ProgressBackTechWithTips");
         }
         else
         {
-            DrawPrimitiveUP(RHI::PrimitiveType::TriangleStrip, VertexFVFBits::XYZ | VertexFVFBits::Color | VertexFVFBits::UV1, 2, v, sizeof(v[0]),
+            DrawPrimitive(RHI::PrimitiveType::TriangleStrip, VertexFVFBits::XYZ | VertexFVFBits::Color | VertexFVFBits::UV1, 4, 1, 0, v, sizeof(v[0]),
                 "ProgressBackTech");
         }
     }
@@ -3806,8 +3857,8 @@ void RENDER::ProgressView()
     v[3].u = (fx + 1.0f) / float(sizeX);
     v[3].v = (fy + 1.0f) / float(sizeY);
     // Draw
-    TextureSet(0, progressTexture);
-    DrawPrimitiveUP(RHI::PrimitiveType::TriangleStrip, VertexFVFBits::XYZ | VertexFVFBits::Color | VertexFVFBits::UV1, 2, v, sizeof(v[0]),
+    TextureSet(progressTexture, 0);
+    DrawPrimitive(RHI::PrimitiveType::TriangleStrip, VertexFVFBits::XYZ | VertexFVFBits::Color | VertexFVFBits::UV1, 4, 1, 0, v, sizeof(v[0]),
         "ProgressTech");
     EndScene();
     d3d9->Present(nullptr, nullptr, nullptr, nullptr);
