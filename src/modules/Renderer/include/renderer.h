@@ -312,6 +312,7 @@ public:
     // DX9Render: Textures Section
     int32_t TextureCreate(const char* fname) override;
     int32_t TextureCreate(uint32_t width, uint32_t height, uint32_t levels, uint32_t usage, RHI::Format format, RHI::MemoryPropertiesBits pool) override;
+    bool TextureSet(uint32_t textureIndex, uint32_t textureBindingIndex, RHI::SamplerHandle sampler, RHI::DescriptorSetInfo& dsInfos);
     bool TextureRelease(int32_t texid) override;
     bool TextureIncReference(int32_t texid) override;
 
@@ -418,12 +419,6 @@ public:
     HRESULT SetTexture(uint32_t Stage, IDirect3DBaseTexture9* pTexture) override;
     HRESULT GetLevelDesc(IDirect3DTexture9* ppTexture, UINT Level, D3DSURFACE_DESC* pDesc) override;
     HRESULT GetLevelDesc(IDirect3DCubeTexture9* ppCubeTexture, UINT Level, D3DSURFACE_DESC* pDesc) override;
-    HRESULT LockRect(IDirect3DCubeTexture9* ppCubeTexture, D3DCUBEMAP_FACES FaceType, UINT Level,
-        D3DLOCKED_RECT* pLockedRect, const RECT* pRect, uint32_t Flags) override;
-    HRESULT LockRect(IDirect3DTexture9* ppTexture, UINT Level, D3DLOCKED_RECT* pLockedRect, const RECT* pRect,
-        uint32_t Flags) override;
-    HRESULT UnlockRect(IDirect3DCubeTexture9* pCubeTexture, D3DCUBEMAP_FACES FaceType, UINT Level) override;
-    HRESULT UnlockRect(IDirect3DTexture9* pTexture, UINT Level) override;
     HRESULT GetSurfaceLevel(IDirect3DTexture9* ppTexture, UINT Level, IDirect3DSurface9** ppSurfaceLevel) override;
     HRESULT UpdateSurface(IDirect3DSurface9* pSourceSurface, const RECT* pSourceRectsArray, UINT cRects,
         IDirect3DSurface9* pDestinationSurface, const POINT* pDestPointsArray) override;
@@ -439,7 +434,7 @@ public:
     // D3D Render Target/Begin/End/Clear
     int32_t GetRenderTarget(RHI::TextureHandle pRenderTarget) override;
     int32_t SetRenderTarget(RHI::TextureHandle pRenderTarget, RHI::TextureHandle pNewZStencil) override;
-    HRESULT Clear(uint32_t Count, const D3DRECT* pRects, uint32_t Flags, D3DCOLOR Color, float Z,
+    int32_t Clear(uint32_t Count, const D3DRECT* pRects, uint32_t Flags, Color Color, float Z,
         uint32_t Stencil) override;
 
     int32_t ImageBlt(const char* pName, Rect* pDstRect, Rect* pSrcRect);
