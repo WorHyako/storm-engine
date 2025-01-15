@@ -528,8 +528,8 @@ public:
 
     bool PushRenderTarget() override;
     bool PopRenderTarget() override;
-    bool SetRenderTarget(IDirect3DCubeTexture9* pCubeTex, uint32_t dwFaceType, uint32_t dwLevel,
-        IDirect3DSurface9* pNewZStencil) override;
+    bool SetRenderTarget(RHI::TextureHandle pCubeTex, uint32_t dwFaceType, uint32_t dwLevel,
+        RHI::TextureHandle pNewZStencil) override;
     void SetView(const CMatrix& mView);
     void SetWorld(const CMatrix& mView);
     void SetProjection(const CMatrix& mView) override;
@@ -537,8 +537,8 @@ public:
     const CMatrix& GetWorld() const;
     const CMatrix& GetProjection() const;
 
-    IDirect3DVolumeTexture9* CreateVolumeTexture(uint32_t Width, uint32_t Height, uint32_t Depth, uint32_t Levels,
-        uint32_t Usage, D3DFORMAT Format, D3DPOOL Pool) override;
+    RHI::TextureHandle CreateVolumeTexture(uint32_t Width, uint32_t Height, uint32_t Depth, uint32_t Levels,
+        uint32_t Usage, RHI::Format Format, RHI::MemoryPropertiesBits Pool) override;
 
     void MakePostProcess() override;
     void SetGLOWParams(float _fBlurBrushSize, int32_t _GlowIntensity, int32_t _GlowPasses) override;
@@ -716,6 +716,7 @@ private:
     std::bitset<8> enabledLightsBitMask;
     Material material;
     VertexFVFBits vertexFormat = 0;
+    uint32_t textureFactorColor = 0;
 
     void MakeVertexBindings(RHI::BufferHandle vertexBuffer, const VertexFVFBits vertexBindingsFormat, std::vector<RHI::VertexBufferBinding>& vertexBufferBindings);
     void CreateInputLayout(const VertexFVFBits vertexBindingsFormat, RHI::IInputLayout* inputLayout);
