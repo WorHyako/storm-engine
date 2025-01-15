@@ -748,7 +748,7 @@ void RENDER::CopyGlowToScreen()
     const uint32_t dwTFactor = (bGLOW << 24) | (bGLOW << 16) | (bGLOW << 8) | bGLOW;
 
     // Draw the GLOW screen
-    SetRenderState(D3DRS_TEXTUREFACTOR, dwTFactor);
+    textureFactorColor = dwTFactor;
 
     SetTexture(0, pSmallPostProcessTexture);
     SetTexture(1, pSmallPostProcessTexture);
@@ -798,7 +798,7 @@ void RENDER::CopyPostProcessToScreen()
 
 void RENDER::ClearPostProcessTexture(RHI::TextureHandle tex)
 {
-    HRESULT hr = SetRenderTarget(pSurf, nullptr);
+    HRESULT hr = SetRenderTarget(tex, nullptr);
     hr = BeginScene();
     hr = d3d9->Clear(0, nullptr, D3DCLEAR_TARGET, 0x0, 0.0f, 0x0);
     hr = EndScene();
@@ -3351,44 +3351,24 @@ int32_t RENDER::GetRenderTargetData(RHI::TextureHandle pRenderTarget, RHI::Textu
 {
     const RHI::TextureDesc& RTDesc = pRenderTarget->getDesc();
 
+    commandList->transitionImageLayout(pRenderTarget.get(), RHI::ImageLayout::COLOR_ATTACHMENT_OPTIMAL, RHI::ImageLayout::TRANSFER_SRC_OPTIMAL);
+    commandList->transitionImageLayout(pDestSurface.get(), RHI::ImageLayout::UNDEFINED, RHI::ImageLayout::TRANSFER_DST_OPTIMAL);
+
     if (RTDesc.sampleCount != 1)
     {
-        RHI::TextureDesc desc = {};
-        desc.setWidth(RTDesc.width)
-            .setHeight(RTDesc.height)
-            .setFormat(RTDesc.format)
-            .setIsTransferDst(true)
-            .setIsRenderTarget(true)
-            .setSampleCount(1);
-
-        RHI::TextureHandle pNonsampledSurface = device->createImage(desc);
-        if (pNonsampledSurface.get() == nullptr)
-        {
-            core.Trace("Failed to create NonsampledSurface");
-            return -1; //D3DERR_WRONGTEXTUREFORMAT
-        }
-
         const RHI::TextureDesc& DestDesc = pDestSurface->getDesc();
 
-        if (CHECKERR(d3d9->StretchRect(pRenderTarget, nullptr, pNonsampledSurface, nullptr, D3DTEXF_NONE)))
-        {
-            return D3DERR_WRONGTEXTUREFORMAT;
-        }
-
-        bool error;
-        if (desc.Pool == D3DPOOL_SYSTEMMEM || desc.Pool == D3DPOOL_SCRATCH)
-        {
-            error = CHECKERR(d3d9->GetRenderTargetData(pNonsampledSurface, pDestSurface));
-        }
-        else
-        {
-            error = UpdateSurface(pNonsampledSurface, nullptr, 0, pDestSurface, nullptr);
-        }
-        
-        return error ? D3DERR_WRONGTEXTUREFORMAT : D3D_OK;
+        commandList->resolveTexture(pRenderTarget.get(), pDestSurface.get());
+    }
+    else
+    {
+        commandList->copyTexture(pRenderTarget.get(), pDestSurface.get());
     }
 
-    return CHECKERR(d3d9->GetRenderTargetData(pRenderTarget, pDestSurface));
+    commandList->transitionImageLayout(pRenderTarget.get(), RHI::ImageLayout::TRANSFER_SRC_OPTIMAL, RHI::ImageLayout::COLOR_ATTACHMENT_OPTIMAL);
+    commandList->transitionImageLayout(pDestSurface.get(), RHI::ImageLayout::TRANSFER_DST_OPTIMAL, RHI::ImageLayout::SHADER_READ_ONLY_OPTIMAL);
+
+    return 0;
 }
 
 RHI::DeviceParams& RENDER::GetDeviceParams() const
@@ -3568,7 +3548,7 @@ int32_t RENDER::ImageBlt(int32_t TextureID, Rect* pDstRect, Rect* pSrcRect)
     v[5].tu = 1.0f;
     v[5].tv = 1.0f;
 
-    TextureSet(0, TextureID);
+    TextureSet(TextureID, 0, ,);
 
     const bool bDraw = TechniqueExecuteStart("texturedialogfon");
     if (bDraw)
@@ -3579,7 +3559,7 @@ int32_t RENDER::ImageBlt(int32_t TextureID, Rect* pDstRect, Rect* pSrcRect)
             drawArgs.instanceCount = 2;
             drawArgs.vertexCount = 6;
             commandList->draw(drawArgs);
-            res = d3d9->DrawPrimitiveUP(RHI::PrimitiveType::TriangleList, 2, &v, sizeof(F3DVERTEX));
+            //res = d3d9->DrawPrimitiveUP(RHI::PrimitiveType::TriangleList, 2, &v, sizeof(F3DVERTEX));
             dwNumDrawPrimitive++;
         } while (TechniqueExecuteNext());
 
@@ -3974,7 +3954,7 @@ void RENDER::DrawSphere(const CVECTOR& vPos, float fRadius, uint32_t dwColor)
     m.m[1][1] = fRadius;
     m.m[2][2] = fRadius;
 
-    SetRenderState(D3DRS_TEXTUREFACTOR, dwColor);
+    textureFactorColor = dwColor;
     SetTransform(TSType::TS_WORLD, m);
     DrawPrimitiveUP(RHI::PrimitiveType::TriangleList, VertexFVFBits::XYZ | VertexFVFBits::Color, sphereNumTrgs, sphereVertex,
         sizeof(SphereVertex), "DXSphere");
@@ -4000,8 +3980,8 @@ void RENDER::SetLoadTextureEnable(bool bEnable)
     bLoadTextureEnabled = bEnable;
 }
 
-IDirect3DVolumeTexture9* RENDER::CreateVolumeTexture(uint32_t Width, uint32_t Height, uint32_t Depth,
-    uint32_t Levels, uint32_t Usage, D3DFORMAT Format, D3DPOOL Pool)
+RHI::TextureHandle RENDER::CreateVolumeTexture(uint32_t Width, uint32_t Height, uint32_t Depth, uint32_t Levels,
+    uint32_t Usage, RHI::Format Format, RHI::MemoryPropertiesBits Pool)
 {
     IDirect3DVolumeTexture9* pVolumeTexture = nullptr;
     CHECKERR(d3d9->CreateVolumeTexture(Width, Height, Depth, Levels, Usage, Format, Pool, &pVolumeTexture, NULL));
@@ -4037,12 +4017,15 @@ bool RENDER::PopRenderTarget()
     return true;
 }
 
-bool RENDER::SetRenderTarget(IDirect3DCubeTexture9* pRenderTarget, uint32_t FaceType, uint32_t dwLevel,
-    IDirect3DSurface9* pZStencil)
+bool RENDER::SetRenderTarget(/*IDirect3DCubeTexture9**/ RHI::TextureHandle pRenderTarget, uint32_t FaceType, uint32_t dwLevel,
+    RHI::TextureHandle pZStencil)
 {
-    IDirect3DSurface9* pSurface;
+    currentRenderTarget.pRenderTarget = pRenderTarget; // cubemap face
+    currentRenderTarget.pDepthSurface = pZStencil;
+    return true;
+    /*IDirect3DSurface9* pSurface;
     return !CHECKERR(pRenderTarget->GetCubeMapSurface(static_cast<D3DCUBEMAP_FACES>(FaceType), dwLevel, &pSurface)) &&
-        !CHECKERR(SetRenderTarget(pSurface, pZStencil)) && Release(pSurface) == D3D_OK;
+        !CHECKERR(SetRenderTarget(pSurface, pZStencil)) && Release(pSurface) == D3D_OK;*/
 }
 
 void RENDER::SetView(const CMatrix& mView)
