@@ -42,7 +42,7 @@ void FillIndexBuffer(VDX9RENDER &renderService, int32_t indexBuffer, size_t spri
     renderService.UnLockIndexBuffer(indexBuffer);
 }
 
-constexpr FRECT ScaleUv(FRECT uv)
+FRECT ScaleUv(FRECT uv)
 {
     constexpr float hScale = 1.f / 1024.f;
     constexpr float vScale = 1.f / 256.f;
@@ -61,11 +61,11 @@ struct SpriteInfo
     FRECT uv{};
 };
 
-constexpr const size_t DIALOG_MAX_LINES = 8;
-constexpr const float DIVIDER_HEIGHT = 10;
-constexpr const int32_t DIALOG_LINE_HEIGHT = 26;
+constexpr std::size_t DIALOG_MAX_LINES = 8;
+constexpr float DIVIDER_HEIGHT = 10;
+constexpr std::int32_t DIALOG_LINE_HEIGHT = 26;
 
-constexpr std::array SPRITE_DATA = {
+std::array SPRITE_DATA = {
     // Head overlay
     SpriteInfo{
         {29, 25, 147, 37},

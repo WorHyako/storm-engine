@@ -100,7 +100,7 @@ bool XSERVICE::GetTexturePos(int32_t pictureNum, FXYRECT &texRect) {
 }
 
 bool XSERVICE::GetTexturePos(int32_t pictureNum, XYRECT &texRect) {
-    texRect = {};
+    texRect = XYRECT();
     if (static_cast<std::size_t>(pictureNum) > std::size(m_pImage)) {
         return false;
     }
@@ -119,7 +119,7 @@ bool XSERVICE::GetTexturePos(const char *sImageListName, const char *sImageName,
 }
 
 bool XSERVICE::GetTexturePos(int nTextureModify, int32_t pictureNum, FXYRECT &texRect) {
-    texRect = {};
+    texRect = FXYRECT();
     if (static_cast<std::size_t>(pictureNum) > std::size(m_pImage)) {
         return false;
     }

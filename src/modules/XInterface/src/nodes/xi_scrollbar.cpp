@@ -1,5 +1,8 @@
 #include "xi_scrollbar.h"
 
+using namespace Storm::Filesystem;
+using namespace Storm::Math;
+
 #define CLICK_TYPE_CENTER 0
 #define CLICK_TYPE_LEFT 1
 #define CLICK_TYPE_RIGHT 2
@@ -7,7 +10,6 @@
 CXI_SCROLLBAR::CXI_SCROLLBAR()
 {
     m_idTex = -1;
-    m_sGroupName = nullptr;
     m_rs = nullptr;
 
     m_fXShadow = 0.f;
@@ -137,67 +139,65 @@ void CXI_SCROLLBAR::Draw(bool bSelected, uint32_t Delta_Time)
     }
 }
 
-bool CXI_SCROLLBAR::Init(INIFILE *ini1, const char *name1, INIFILE *ini2, const char *name2, VDX9RENDER *rs,
-                         XYRECT &hostRect, XYPOINT &ScreenSize)
-{
-    if (!CINODE::Init(ini1, name1, ini2, name2, rs, hostRect, ScreenSize))
-        return false;
-    return true;
+bool CXI_SCROLLBAR::Init(const Config& node_config, const Config& def_config,
+    VDX9RENDER *rs, XYRECT &hostRect, XYPOINT &ScreenSize) {
+    return CINODE::Init(node_config, def_config, rs, hostRect, ScreenSize);
 }
 
-void CXI_SCROLLBAR::LoadIni(INIFILE *ini1, const char *name1, INIFILE *ini2, const char *name2)
-{
-    char param[255];
+void CXI_SCROLLBAR::LoadIni(const Config& node_config, const Config& def_config) {
+    std::pair<const Config&, const Config&> configs{node_config, def_config};
     FXYPOINT fPnt;
 
     // get font number
     m_nFontID = -1;
-    if (ReadIniString(ini1, name1, ini2, name2, "fontID", param, sizeof(param), ""))
-        if ((m_nFontID = m_rs->LoadFont(param)) == -1)
-            core.Trace("can not load font:'%s'", param);
+    auto font = Config::GetOrGet<std::string>(configs, "fontID", {});
+    if (!font.empty()) {
+        m_nFontID = m_rs->LoadFont(font);
+        if (m_nFontID == -1) {
+            core.Trace("can not load font:'%s'", font.c_str());
+        }
+    }
     // get font color
-    m_dwFontColor = GetIniARGB(ini1, name1, ini2, name2, "fontColor", 0xFFFFFFFF);
+    auto font_color = Config::GetOrGet<Types::Vector4<std::int64_t>>(configs, "fontColor", {255, 255, 255, 255});
+    m_dwFontColor = ARGB(font_color.x, font_color.y, font_color.z, font_color.w);
     // get font scale
-    m_fFontScale = GetIniFloat(ini1, name1, ini2, name2, "fontScale", 1.f);
+    m_fFontScale = static_cast<float>(Config::GetOrGet<double>(configs, "fontScale", 1.0));
     // get font offset
-    m_pntFontOffset = GetIniLongPoint(ini1, name1, ini2, name2, "fontOffset", XYPOINT(0, 0));
+    m_pntFontOffset = Config::GetOrGet<Types::Vector2<std::int64_t>>(configs, "fontOffset", {0, 0});
 
     // get face color
-    m_dwFaceColor = GetIniARGB(ini1, name1, ini2, name2, "faceColor", 0xFFFFFFFF);
+    auto face_color = Config::GetOrGet<Types::Vector4<std::int64_t>>(configs, "faceColor", {255, 255, 255, 255});
+    m_dwFaceColor = ARGB(face_color.x, face_color.y, face_color.z, face_color.w);
 
     // get shadow color
-    m_dwShadowColor = GetIniARGB(ini1, name1, ini2, name2, "shadowColor", ARGB(255, 0, 0, 0));
+    auto shadow_color = Config::GetOrGet<Types::Vector4<std::int64_t>>(configs, "shadowColor", {255, 0, 0, 0});
+    m_dwShadowColor = ARGB(shadow_color.x, shadow_color.y, shadow_color.z, shadow_color.w);
 
     // get group name and get texture for this
     m_idTex = -1;
-    m_sGroupName = nullptr;
-    if (ReadIniString(ini1, name1, ini2, name2, "group", param, sizeof(param), ""))
-    {
-        const auto len = strlen(param) + 1;
-        m_sGroupName = new char[len];
-        if (m_sGroupName == nullptr)
-            throw std::runtime_error("allocate memory error");
-        memcpy(m_sGroupName, param, len);
-        m_idTex = pPictureService->GetTextureID(param);
+    m_sGroupName = Config::GetOrGet<std::string>(configs, "group", "");
+    if (m_sGroupName.empty()) {
+        throw std::runtime_error("allocate memory error");
     }
+    m_idTex = pPictureService->GetTextureID(m_sGroupName.c_str());
 
     // get offset button image in case pressed button
-    fPnt = GetIniFloatPoint(ini1, name1, ini2, name2, "pressPictureOffset", FXYPOINT(0.f, 0.f));
+    fPnt = Config::GetOrGet<Types::Vector2<double>>(configs, "pressPictureOffset", {0.0, 0.0});
     m_fXDeltaPress = fPnt.x;
     m_fYDeltaPress = fPnt.y;
 
     // get offset button shadow in case pressed button
-    fPnt = GetIniFloatPoint(ini1, name1, ini2, name2, "shadowOffset", FXYPOINT(0.f, 0.f));
+    fPnt = Config::GetOrGet<Types::Vector2<double>>(configs, "shadowOffset", {0.0, 0.0});
     m_fXShadow = fPnt.x;
     m_fYShadow = fPnt.y;
 
     // get offset button shadow in case not pressed button
-    fPnt = GetIniFloatPoint(ini1, name1, ini2, name2, "pressShadowOffset", FXYPOINT(0.f, 0.f));
+    fPnt = Config::GetOrGet<Types::Vector2<double>>(configs, "pressShadowOffset", {0.0, 0.0});
     m_fXShadowPress = fPnt.x;
     m_fYShadowPress = fPnt.y;
 
     // get press delay
-    m_nMaxDelay = GetIniLong(ini1, name1, ini2, name2, "pressDelay", 20);
+    m_nMaxDelay = Config::GetOrGet<std::int64_t>(configs, "pressDelay", 20);
 
     m_nVert = 12 * 6;    //
     m_nIndx = 3 * 2 * 3; // 3 rectangle * 2 treangle into rectangle * 3 vertex into triangle
@@ -242,17 +242,29 @@ void CXI_SCROLLBAR::LoadIni(INIFILE *ini1, const char *name1, INIFILE *ini2, con
     m_rs->UnLockVertexBuffer(m_idVBuf);
     m_rs->UnLockIndexBuffer(m_idIBuf);
 
-    if (ReadIniString(ini1, name1, ini2, name2, "leftPicture", param, sizeof(param), ""))
-        pPictureService->GetTexturePos(m_sGroupName, param, m_frLeftTex);
-    if (ReadIniString(ini1, name1, ini2, name2, "rightPicture", param, sizeof(param), ""))
-        pPictureService->GetTexturePos(m_sGroupName, param, m_frRightTex);
-    if (ReadIniString(ini1, name1, ini2, name2, "centerPicture", param, sizeof(param), ""))
-        pPictureService->GetTexturePos(m_sGroupName, param, m_rectCenterTex);
-    if (ReadIniString(ini1, name1, ini2, name2, "selectCenterPicture", param, sizeof(param), ""))
-        pPictureService->GetTexturePos(m_sGroupName, param, m_rectSelectCenterTex);
+    auto left_picture = Config::GetOrGet<std::string>(configs, "leftPicture", "");
+    if (!left_picture.empty()) {
+        pPictureService->GetTexturePos(m_sGroupName.c_str(), left_picture.c_str(), m_frLeftTex);
+    }
+
+    auto right_picture = Config::GetOrGet<std::string>(configs, "rightPicture", "");
+    if (!right_picture.empty()) {
+        pPictureService->GetTexturePos(m_sGroupName.c_str(), right_picture.c_str(), m_frRightTex);
+    }
+
+    auto center_picture = Config::GetOrGet<std::string>(configs, "centerPicture", "");
+    if (!center_picture.empty()) {
+        pPictureService->GetTexturePos(m_sGroupName.c_str(), center_picture.c_str(), m_frRightTex);
+    }
+
+    auto selected_center_picture = Config::GetOrGet<std::string>(configs, "selectCenterPicture", "");
+    if (!selected_center_picture.empty()) {
+        pPictureService->GetTexturePos(m_sGroupName.c_str(), selected_center_picture.c_str(), m_frRightTex);
+    }
+
     m_bPrevSelectStatus = false;
-    m_nBarWidth = GetIniLong(ini1, name1, ini2, name2, "barWidth", -1);
-    m_nSideWidth = GetIniLong(ini1, name1, ini2, name2, "sideWidth", -1);
+    m_nBarWidth = Config::GetOrGet<std::int64_t>(configs, "barWidth", -1);
+    m_nSideWidth = Config::GetOrGet<std::int64_t>(configs, "sideWidth", -1);
     if (m_nSideWidth >= 0)
         m_nBarWidth = -1;
     if (m_nBarWidth < 0 && m_nSideWidth < 0)
@@ -261,12 +273,12 @@ void CXI_SCROLLBAR::LoadIni(INIFILE *ini1, const char *name1, INIFILE *ini2, con
     m_nIndx /= 3;
     UpdatePosition();
 
-    m_bShowString = GetIniBool(ini1, name1, ini2, name2, "valueShow", false);
-    m_fMinValue = GetIniFloat(ini1, name1, ini2, name2, "valueMin", 0.f);
-    m_fMaxValue = GetIniFloat(ini1, name1, ini2, name2, "valueMax", 10.f);
-    m_fStartValue = GetIniFloat(ini1, name1, ini2, name2, "valueStart", 10.f);
-    m_fStepValue = GetIniFloat(ini1, name1, ini2, name2, "valueStep", 1.f);
-    m_fSpeedMultiplay = GetIniFloat(ini1, name1, ini2, name2, "valueStepMultiply", 10.f);
+    m_bShowString = Config::GetOrGet<std::int64_t>(configs, "valueShow", 0);
+    m_fMinValue = Config::GetOrGet<double>(configs, "valueMin", 0.0);
+    m_fMaxValue = Config::GetOrGet<double>(configs, "valueMax", 10.0);
+    m_bShowString = Config::GetOrGet<double>(configs, "valueStart", 10.0);
+    m_fStepValue = Config::GetOrGet<double>(configs, "valueStep", 1.0);
+    m_fSpeedMultiplay = Config::GetOrGet<double>(configs, "valueStepMultiply", 10.0);
     m_fCurValue = m_fStartValue;
     auto *pA = ptrOwner->AttributesPointer;
     if (pA)
@@ -278,8 +290,7 @@ void CXI_SCROLLBAR::LoadIni(INIFILE *ini1, const char *name1, INIFILE *ini2, con
 
 void CXI_SCROLLBAR::ReleaseAll()
 {
-    PICTURE_TEXTURE_RELEASE(pPictureService, m_sGroupName, m_idTex);
-    STORM_DELETE(m_sGroupName);
+    PICTURE_TEXTURE_RELEASE(pPictureService, m_sGroupName.c_str(), m_idTex);
     VERTEX_BUFFER_RELEASE(m_rs, m_idVBuf);
     INDEX_BUFFER_RELEASE(m_rs, m_idIBuf);
     FONT_RELEASE(m_rs, m_nFontID);

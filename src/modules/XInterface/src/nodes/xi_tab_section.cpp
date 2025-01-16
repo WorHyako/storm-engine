@@ -1,6 +1,8 @@
 #include "xi_tab_section.h"
 #include <stdio.h>
 
+using namespace Storm::Filesystem;
+
 CXI_TABSECTION::CXI_TABSECTION()
 {
     m_rs = nullptr;
@@ -30,12 +32,9 @@ void CXI_TABSECTION::Draw(bool bSelected, uint32_t Delta_Time)
     // Output headers
 }
 
-bool CXI_TABSECTION::Init(INIFILE *ini1, const char *name1, INIFILE *ini2, const char *name2, VDX9RENDER *rs,
-                          XYRECT &hostRect, XYPOINT &ScreenSize)
-{
-    if (!CINODE::Init(ini1, name1, ini2, name2, rs, hostRect, ScreenSize))
-        return false;
-    return true;
+bool CXI_TABSECTION::Init(const Config& node_config, const Config& def_config,
+    VDX9RENDER *rs, XYRECT &hostRect, XYPOINT &ScreenSize) {
+    return CINODE::Init(node_config, def_config, rs, hostRect, ScreenSize);
 }
 
 void CXI_TABSECTION::ReleaseAll()
@@ -101,8 +100,7 @@ uint32_t CXI_TABSECTION::MessageProc(int32_t msgcode, MESSAGE &message)
     return 0;
 }
 
-void CXI_TABSECTION::LoadIni(INIFILE *ini1, const char *name1, INIFILE *ini2, const char *name2)
-{
+void CXI_TABSECTION::LoadIni(const Config& node_config, const Config& def_config) {
     SetGlowCursor(false);
 }
 

@@ -2,6 +2,9 @@
 
 #include "string_compare.hpp"
 
+using namespace Storm::Filesystem;
+using namespace Storm::Math;
+
 #define MAXIMAGEQUANTITY 100
 
 int32_t GetTexFromEvent(VDATA *vdat)
@@ -334,124 +337,129 @@ void CXI_SCROLLIMAGE::Draw(bool bSelected, uint32_t Delta_Time)
     }
 }
 
-bool CXI_SCROLLIMAGE::Init(INIFILE *ini1, const char *name1, INIFILE *ini2, const char *name2, VDX9RENDER *rs,
-                           XYRECT &hostRect, XYPOINT &ScreenSize)
+bool CXI_SCROLLIMAGE::Init(const Config& node_config, const Config& def_config,
+    VDX9RENDER *rs, XYRECT &hostRect, XYPOINT &ScreenSize)
 {
-    if (!CINODE::Init(ini1, name1, ini2, name2, rs, hostRect, ScreenSize))
-        return false;
-    return true;
+    return CINODE::Init(node_config, def_config, rs, hostRect, ScreenSize);
 }
 
-void CXI_SCROLLIMAGE::LoadIni(INIFILE *ini1, const char *name1, INIFILE *ini2, const char *name2)
-{
-    int i, n;
-    char param[256];
-    char param1[256];
-    const char *tmpstr;
-
+void CXI_SCROLLIMAGE::LoadIni(const Config& node_config, const Config& def_config) {
     // Set space
-    m_rAbsolutePosition = GetIniLongRect(ini1, name1, ini2, name2, "position", m_hostRect);
+    std::pair<const Config&, const Config&> configs{node_config, def_config};
+    auto abs_position_opt = Config::GetOrGet<Types::Vector4<std::int64_t>>(configs, "position");
+    if (abs_position_opt.has_value()) {
+        m_rAbsolutePosition = *abs_position_opt;
+    } else {
+        m_rAbsolutePosition = m_hostRect;
+    }
     GetAbsoluteRect(m_rAbsolutePosition, 0);
     m_pCenter.x = (m_rAbsolutePosition.right + m_rAbsolutePosition.left) / 2;
     m_pCenter.y = (m_rAbsolutePosition.top + m_rAbsolutePosition.bottom) / 2;
-    m_pntCenterOffset.x = GetIniLong(ini1, name1, ini2, name2, "centerXoffset", m_pCenter.x - m_rAbsolutePosition.left);
-    m_pntCenterOffset.y = GetIniLong(ini1, name1, ini2, name2, "centerYoffset", m_pCenter.y - m_rAbsolutePosition.top);
+    m_pntCenterOffset.x = Config::GetOrGet<std::int64_t>(configs,"centerXoffset", m_pCenter.x - m_rAbsolutePosition.left);
+    m_pntCenterOffset.y = Config::GetOrGet<std::int64_t>(configs,"centerYoffset", m_pCenter.y - m_rAbsolutePosition.top);
     m_pCenter.x = m_rAbsolutePosition.left + m_pntCenterOffset.x;
     m_pCenter.y = m_rAbsolutePosition.top + m_pntCenterOffset.y;
 
     // set center of scrolling list
-    m_fDeltaMoveBase = GetIniFloat(ini1, name1, ini2, name2, "fMoveDelta", 1.f);
-    m_nSpeedMul = GetIniLong(ini1, name1, ini2, name2, "speedMul", 5);
+    m_fDeltaMoveBase = Config::GetOrGet<double>(configs, "fMoveDelta", 1.0);
+    m_nSpeedMul = Config::GetOrGet<std::int64_t>(configs, "speedMul", 5);
 
     // set image size
-    m_ImageSize = GetIniLongPoint(ini1, name1, ini2, name2, "imageSize", XYPOINT(128, 128));
+    m_ImageSize = Config::GetOrGet<Types::Vector2<std::int64_t>>(configs, "imageSize", {128, 128});
 
     // set parameters for blend & minimize far images
-    m_fScale = GetIniFloat(ini1, name1, ini2, name2, "fBoundScale", 1.f);
-    m_lDelta = GetIniLong(ini1, name1, ini2, name2, "wDelta", 0);
-    m_dwBlendColor = GetIniARGB(ini1, name1, ini2, name2, "blendColor", 0xFFFFFFFF);
+    m_fScale = Config::GetOrGet<double>(configs, "fBoundScale", 1.0);
+    m_lDelta = Config::GetOrGet<std::int64_t>(configs, "wDelta", 0);
+    
+    auto blend_color = Config::GetOrGet<Types::Vector4<std::int64_t>>(configs, "blendColor", {255, 255, 255, 255});
+    m_dwOneStrForeColor = ARGB(blend_color.x, blend_color.y, blend_color.z, blend_color.w);
 
     //
-    m_nMaxBlindCounter = GetIniLong(ini1, name1, ini2, name2, "blindDelay", 2000);
+    m_nMaxBlindCounter = Config::GetOrGet<std::int64_t>(configs, "blindDelay", 2000);
     m_bDoBlind = true;
     m_bColorType = true;
     m_nBlindCounter = m_nMaxBlindCounter;
 
-    m_nSlotsQnt = GetIniLong(ini1, name1, ini2, name2, "LayerQuantity", 0);
+    m_nSlotsQnt = Config::GetOrGet<std::int64_t>(configs, "LayerQuantity", 0);
 
-    if (m_nSlotsQnt > 0)
-    {
+    if (m_nSlotsQnt > 0) {
         m_dwCurColor = new uint32_t[m_nSlotsQnt];
         m_dwNormalColor = new uint32_t[m_nSlotsQnt];
         m_dwSelectColor = new uint32_t[m_nSlotsQnt];
         m_pPicOffset = new int32_t[m_nSlotsQnt];
         m_idBadTexture = new int32_t[m_nSlotsQnt];
         m_idBadPic = new int32_t[m_nSlotsQnt];
-        if (!m_dwCurColor || !m_dwNormalColor || !m_dwSelectColor || !m_pPicOffset || !m_idBadTexture || !m_idBadPic)
-        {
+        if (!m_dwCurColor || !m_dwNormalColor || !m_dwSelectColor || !m_pPicOffset || !m_idBadTexture || !m_idBadPic) {
             throw std::runtime_error("allocate memory error");
         }
     }
 
     // set parameters for blind
-    for (i = 0; i < m_nSlotsQnt; i++)
-    {
-        sprintf_s(param, "dwNormalColorARGB%d", i + 1);
-        m_dwCurColor[i] = m_dwNormalColor[i] = GetIniARGB(ini1, name1, ini2, name2, param, ARGB(255, 128, 128, 128));
-        sprintf_s(param, "dwSelectColorARGB%d", i + 1);
-        m_dwSelectColor[i] = GetIniARGB(ini1, name1, ini2, name2, param, ARGB(255, 64, 64, 64));
-        sprintf_s(param, "PicOffset%d", i + 1);
-        m_pPicOffset[i] = GetIniLong(ini1, name1, ini2, name2, param, 0);
+    for (int i = 0; i < m_nSlotsQnt; i++) {
+        std::string key{"dwNormalColorARGB" + std::to_string(i + 1)};
+        auto normal_color = Config::GetOrGet<Types::Vector4<std::int64_t>>(configs, key, {255, 128, 128, 128});
+        m_dwCurColor[i] = m_dwNormalColor[i] = ARGB(normal_color.x, normal_color.y, normal_color.z, normal_color.w);
+        key = "dwSelectColorARGB" + std::to_string(i + 1);
+        auto select_color = Config::GetOrGet<Types::Vector4<std::int64_t>>(configs, key, {255, 64, 64, 64});
+        m_dwSelectColor[i] = ARGB(select_color.x, select_color.y, select_color.z, select_color.w);
+        key = "PicOffset" + std::to_string(i + 1);
+        m_pPicOffset[i] = Config::GetOrGet<std::int64_t>(configs, key, 0);
         m_idBadTexture[i] = -1;
         m_idBadPic[i] = -1;
     }
 
     // set stringes
-    m_bUseOneString = GetIniBool(ini1, name1, ini2, name2, "UseOneString", false);
-    m_bUseTwoString = GetIniBool(ini1, name1, ini2, name2, "UseTwoString", false);
-    if (m_bUseOneString)
-    {
-        m_nOneStrScale = GetIniFloat(ini1, name1, ini2, name2, "scale1", 1.f);
-        if (ReadIniString(ini1, name1, ini2, name2, "font1", param, sizeof(param), ""))
-            if ((m_nOneStrFont = m_rs->LoadFont(param)) == -1)
-                core.Trace("can not load font:'%s'", param);
-        m_lOneStrX = GetIniLong(ini1, name1, ini2, name2, "dwXOffset1", 0);
+    m_bUseOneString = Config::GetOrGet<std::int64_t>(configs, "UseOneString", 0);
+    m_bUseTwoString = Config::GetOrGet<std::int64_t>(configs, "UseTwoString", 0);
+    if (m_bUseOneString) {
+        m_nOneStrScale = Config::GetOrGet<double>(configs, "scale1", 1.0);
+        m_nOneStrFont = m_rs->LoadFont(Config::GetOrGet<std::string>(configs, "font1", {}));
+        if (m_nOneStrFont == -1) {
+            throw std::runtime_error("load font error");
+        }
+        m_lOneStrX = Config::GetOrGet<std::int64_t>(configs, "dwXOffset1", 0);
         if (m_lOneStrX > 0)
             m_nOneStrAlign = PR_ALIGN_RIGHT;
         else if (m_lOneStrX < 0)
             m_nOneStrAlign = PR_ALIGN_LEFT;
         else
             m_nOneStrAlign = PR_ALIGN_CENTER;
-        m_lOneStrOffset = GetIniLong(ini1, name1, ini2, name2, "dwYOffset1", 0);
-        m_dwOneStrForeColor = GetIniARGB(ini1, name1, ini2, name2, "dwForeColor1", 0xFFFFFFFF);
-        m_dwOneStrBackColor = GetIniARGB(ini1, name1, ini2, name2, "dwBackColor1", 0);
+        m_lOneStrOffset = Config::GetOrGet<std::int64_t>(configs, "dwYOffset1", 0);
+        auto fore_color1 = Config::GetOrGet<Types::Vector4<std::int64_t>>(configs, "dwForeColor1", {255, 255, 255, 255});
+        m_dwOneStrForeColor = ARGB(fore_color1.x, fore_color1.y, fore_color1.z, fore_color1.w);
+        auto back_color1 = Config::GetOrGet<Types::Vector4<std::int64_t>>(configs, "dwBackColor1", {});
+        m_dwOneStrBackColor = ARGB(back_color1.x, back_color1.y, back_color1.z, back_color1.w);
     }
-    if (m_bUseTwoString)
-    {
-        m_nTwoStrScale = GetIniFloat(ini1, name1, ini2, name2, "scale2", 1.f);
-        if (ReadIniString(ini1, name1, ini2, name2, "font2", param, sizeof(param), ""))
-            if ((m_nTwoStrFont = m_rs->LoadFont(param)) == -1)
-                core.Trace("can not load font:'%s'", param);
-        m_lTwoStrX = GetIniLong(ini1, name1, ini2, name2, "dwXOffset2", 0);
+    if (m_bUseTwoString) {
+        m_nTwoStrScale = Config::GetOrGet<double>(configs, "scale2", 1.0);
+        
+        m_nOneStrScale = Config::GetOrGet<double>(configs, "scale1", 1.0);
+        m_nTwoStrFont = m_rs->LoadFont(Config::GetOrGet<std::string>(configs, "font2", {}));
+        if (m_nOneStrFont == -1) {
+            throw std::runtime_error("load font error");
+        }
+        m_lTwoStrX = Config::GetOrGet<std::int64_t>(configs, "dwXOffset2", 0);
         if (m_lTwoStrX > 0)
             m_nTwoStrAlign = PR_ALIGN_RIGHT;
         else if (m_lTwoStrX < 0)
             m_nTwoStrAlign = PR_ALIGN_LEFT;
         else
             m_nTwoStrAlign = PR_ALIGN_CENTER;
-        m_lTwoStrOffset = GetIniLong(ini1, name1, ini2, name2, "dwYOffset2", 0);
-        m_dwTwoStrForeColor = GetIniARGB(ini1, name1, ini2, name2, "dwForeColor2", 0xFFFFFFFF);
-        m_dwTwoStrBackColor = GetIniARGB(ini1, name1, ini2, name2, "dwBackColor2", 0);
+        m_lTwoStrOffset = m_lTwoStrX;
+        
+        auto fore_color2 = Config::GetOrGet<Types::Vector4<std::int64_t>>(configs, "dwForeColor2", {255, 255, 255, 255});
+        m_dwTwoStrForeColor = ARGB(fore_color2.x, fore_color2.y, fore_color2.z, fore_color2.w);
+
+        auto back_color2 = Config::GetOrGet<Types::Vector4<std::int64_t>>(configs, "dwBackColor2", {});;
+        m_dwTwoStrBackColor = ARGB(back_color2.x, back_color2.y, back_color2.z, back_color2.w);
     }
 
     ATTRIBUTES *pAttribute = core.Entity_GetAttributeClass(g_idInterface, m_nodeName);
-    if (pAttribute != nullptr)
-    {
+    if (pAttribute != nullptr) {
         // get special technique name and color
         m_dwSpecTechniqueARGB = pAttribute->GetAttributeAsDword("SpecTechniqueColor");
         const char *sTechnique = pAttribute->GetAttribute("SpecTechniqueName");
-        if (sTechnique != nullptr)
-        {
+        if (sTechnique != nullptr) {
             const auto len = strlen(sTechnique) + 1;
             if ((m_sSpecTechniqueName = new char[len]) == nullptr)
             {
@@ -472,26 +480,22 @@ void CXI_SCROLLIMAGE::LoadIni(INIFILE *ini1, const char *name1, INIFILE *ini2, c
 
         // get textures
         ATTRIBUTES *pA = pAttribute->GetAttributeClass("ImagesGroup");
-        if (pA != nullptr)
-        {
+        if (pA != nullptr) {
             m_nGroupQuantity = pA->GetAttributesNum();
             if (m_nGroupQuantity != 0)
             {
                 m_nGroupTex = new int32_t[m_nGroupQuantity];
                 m_sGroupName = new char *[m_nGroupQuantity];
-                if (m_nGroupTex == nullptr || m_sGroupName == nullptr)
-                {
+                if (m_nGroupTex == nullptr || m_sGroupName == nullptr) {
                     throw std::runtime_error("allocate memory error");
                 }
-                for (i = 0; i < m_nGroupQuantity; i++)
-                {
+                for (int i = 0; i < m_nGroupQuantity; i++) {
                     const char *stmp = pA->GetAttribute(i);
                     if (stmp == nullptr)
                         continue;
                     const auto len = strlen(stmp) + 1;
                     m_sGroupName[i] = new char[len];
-                    if (m_sGroupName[i] == nullptr)
-                    {
+                    if (m_sGroupName[i] == nullptr) {
                         throw std::runtime_error("allocate memory error");
                     }
                     memcpy(m_sGroupName[i], stmp, len);
@@ -501,26 +505,19 @@ void CXI_SCROLLIMAGE::LoadIni(INIFILE *ini1, const char *name1, INIFILE *ini2, c
         }
 
         // get bad picture
-        for (n = 0; n < m_nSlotsQnt; n++)
+        for (int n = 0; n < m_nSlotsQnt; n++)
         {
-            const char *sBadPict;
-            sprintf_s(param, "BadPicture%d", n + 1);
-            if ((sBadPict = pAttribute->GetAttribute(param)) != nullptr)
-            {
+            const char *sBadPict = sBadPict = pAttribute->GetAttribute("BadPicture" + std::to_string(n + 1));
+            if (sBadPict != nullptr) {
                 m_idBadTexture[n] = m_rs->TextureCreate(sBadPict);
                 m_idBadPic[n] = -1;
-            }
-            else
-            {
-                sprintf_s(param, "BadTex%d", n + 1);
-                m_idBadTexture[n] = pAttribute->GetAttributeAsDword(param, -1);
-                if (m_idBadTexture[n] >= 0)
-                {
-                    sprintf_s(param, "BadPic%d", n + 1);
-                    m_idBadPic[n] =
-                        pPictureService->GetImageNum(m_sGroupName[m_idBadTexture[n]], pAttribute->GetAttribute(param));
-                }
-                else
+            } else {
+                std::string bad_tex_key{"BadTex" + std::to_string(n + 1)};
+                m_idBadTexture[n] = pAttribute->GetAttributeAsDword(bad_tex_key.c_str(), -1);
+                if (m_idBadTexture[n] >= 0) {
+                    m_idBadPic[n] = pPictureService->GetImageNum(m_sGroupName[m_idBadTexture[n]],
+                    pAttribute->GetAttribute("BadPic" + std::to_string(n + 1)));
+                } else
                     m_idBadPic[n] = -1;
                 if (m_idBadPic[n] == -1)
                     m_idBadTexture[n] = -1;
@@ -528,12 +525,9 @@ void CXI_SCROLLIMAGE::LoadIni(INIFILE *ini1, const char *name1, INIFILE *ini2, c
         }
 
         // get all scroll entity
-        for (i = 0; i < m_Image.size(); i++)
-        {
-            char attrName[256];
+        for (int i = 0; i < m_Image.size(); i++) {
             const char *sStringName;
-            sprintf_s(attrName, "pic%d", i + 1);
-            ATTRIBUTES *pListEntity = pAttribute->GetAttributeClass(attrName);
+            ATTRIBUTES *pListEntity = pAttribute->GetAttributeClass("pic" + std::to_string(i + 1));
 
             // Fill image descriptor by default value
             //------------------------------------------------------
@@ -542,71 +536,57 @@ void CXI_SCROLLIMAGE::LoadIni(INIFILE *ini1, const char *name1, INIFILE *ini2, c
             m_Image[i].string2.clear();
 
             m_Image[i].slots.clear();
-            if (m_nSlotsQnt > 0)
-            {
+            if (m_nSlotsQnt > 0) {
                 m_Image[i].slots.resize(m_nSlotsQnt);
             }
 
-            if (pListEntity != nullptr)
-            {
+            if (pListEntity != nullptr) {
                 // set one string
-                if (m_bUseOneString)
-                {
+                if (m_bUseOneString) {
                     sStringName = pListEntity->GetAttribute("str1");
-                    if (sStringName != nullptr && sStringName[0] == '#')
-                    {
+                    if (sStringName != nullptr && sStringName[0] == '#') {
                         m_Image[i].string1 = std::string_view(sStringName).substr(1);
-                    }
-                    else
+                    } else
                         m_Image[i].str1 = pStringService->GetStringNum(sStringName);
                 }
 
                 // set two string
-                if (m_bUseTwoString)
-                {
+                if (m_bUseTwoString) {
                     sStringName = pListEntity->GetAttribute("str2");
-                    if (sStringName != nullptr && sStringName[0] == '#')
-                    {
+                    if (sStringName != nullptr && sStringName[0] == '#') {
                         m_Image[i].string2 = std::string_view(sStringName).substr(1);
-                    }
-                    else
+                    } else
                         m_Image[i].str2 = pStringService->GetStringNum(sStringName);
                 }
 
                 // set pictures
-                const char *tmpStr;
-                for (n = 0; n < m_nSlotsQnt; n++)
-                {
-                    sprintf_s(param, "name%d", n + 1);
-                    tmpStr = pListEntity->GetAttribute(param);
-                    if (tmpStr != nullptr)
-                    {
+                for (int n = 0; n < m_nSlotsQnt; n++) {
+                    const char *tmpStr = pListEntity->GetAttribute("name" + std::to_string(n + 1));
+                    if (tmpStr != nullptr) {
                         m_Image[i].slots[n].saveName = tmpStr;
                     }
-                    sprintf_s(param, "tex%d", n + 1);
-                    m_Image[i].slots[n].tex = pListEntity->GetAttributeAsDword(param, -1);
-                    sprintf_s(param, "img%d", n + 1);
-                    if (m_Image[i].slots[n].tex != -1)
-                    {
-                        m_Image[i].slots[n].img = pPictureService->GetImageNum(m_sGroupName[m_Image[i].slots[n].tex],
-                                                                               pListEntity->GetAttribute(param));
-                    }
-                    else
-                    {
+                    std::string tex_key{"tex" + std::to_string(n + 1)};
+                    m_Image[i].slots[n].tex = pListEntity->GetAttributeAsDword(tex_key.c_str(), -1);
+                    if (m_Image[i].slots[n].tex != -1) {
+                        m_Image[i].slots[n].img = pPictureService->GetImageNum(
+                            m_sGroupName[m_Image[i].slots[n].tex],
+                            pListEntity->GetAttribute("img" + std::to_string(n + 1)));
+                    } else {
                         m_Image[i].slots[n].img = -1;
                     }
-                    sprintf_s(param, "spec%d", n + 1);
-                    m_Image[i].slots[n].useSpecTechnique = pListEntity->GetAttributeAsDword(param, 0) != 0;
+                    std::string spec_key{"spec" + std::to_string(n + 1)};
+                    m_Image[i].slots[n].useSpecTechnique = pListEntity->GetAttributeAsDword(spec_key.c_str(), 0) != 0;
                 }
             }
         }
     }
 
     // get border picture
-    m_nShowOrder = GetIniLong(ini1, name1, ini2, name2, "borderShowOrder", 100); // boredrShowUp
-    if (ReadIniString(ini1, name1, ini2, name2, "border", param, sizeof(param), ""))
-    {
-        tmpstr = GetSubStr(param, param1, sizeof(param1));
+    m_nShowOrder = Config::GetOrGet<std::int64_t>(configs, "borderShowOrder", 100);
+    auto border = Config::GetOrGet<std::string>(configs, "border", {});
+    if (!border.empty()) {
+        char param1[256];
+        const char *tmpstr = GetSubStr(border.c_str(), param1, sizeof(param1));
         const auto len = strlen(param1) + 1;
         if ((m_sBorderGroupName = new char[len]) == nullptr)
             throw std::runtime_error("allocate memory error");
@@ -614,9 +594,7 @@ void CXI_SCROLLIMAGE::LoadIni(INIFILE *ini1, const char *name1, INIFILE *ini2, c
         m_texBorder = pPictureService->GetTextureID(m_sBorderGroupName);
         m_nBorderPicture = pPictureService->GetImageNum(m_sBorderGroupName, tmpstr);
         m_bShowBorder = m_texBorder != -1;
-    }
-    else
-    {
+    } else {
         m_bShowBorder = false;
         m_texBorder = -1;
         m_sBorderGroupName = nullptr;

@@ -142,7 +142,7 @@ inline bool AIFlowGraph::Load(const std::string_view& config_path)
     while (true) {
         const std::string key{"pnt" + std::to_string(std::size(aPoints))};
         auto array_opt = config.Get<std::vector<std::string>>(key);
-        if (!array_opt.has_value() || array_opt.value().empty()) {
+        if (!array_opt.has_value() || array_opt->empty()) {
             break;
         }
         auto&& array = array_opt.value();

@@ -10,6 +10,9 @@
 #define ALIGN_TOP 17
 #define NOTUSE_OFFSET -1000.f
 
+using namespace Storm::Filesystem;
+using namespace Storm::Math;
+
 XI_TableLineDescribe::XI_TableLineDescribe(CXI_TABLE *pTable)
     : m_dwSpecColor(0)
 {
@@ -442,12 +445,9 @@ void CXI_TABLE::Draw(bool bSelected, uint32_t Delta_Time)
     }
 }
 
-bool CXI_TABLE::Init(INIFILE *ini1, const char *name1, INIFILE *ini2, const char *name2, VDX9RENDER *rs,
-                     XYRECT &hostRect, XYPOINT &ScreenSize)
-{
-    if (!CINODE::Init(ini1, name1, ini2, name2, rs, hostRect, ScreenSize))
-        return false;
-    return true;
+bool CXI_TABLE::Init(const Config& node_config, const Config& def_config,
+    VDX9RENDER *rs, XYRECT &hostRect, XYPOINT &ScreenSize) {
+    return CINODE::Init(node_config, def_config, rs, hostRect, ScreenSize);
 }
 
 void CXI_TABLE::ReleaseAll()
@@ -767,228 +767,209 @@ void CXI_TABLE::ScrollerChanged(float fRelativeScrollPos)
     }
 }
 
-void CXI_TABLE::LoadIni(INIFILE *ini1, const char *name1, INIFILE *ini2, const char *name2)
-{
+void CXI_TABLE::LoadIni(const Config& node_config, const Config& def_config) {
     SetGlowCursor(false);
+    std::pair<const Config&, const Config&> configs{node_config, def_config};
 
-    char param[1024], pctmp[128];
-    int32_t n, nCommonWidth, nUsedQ;
-
-    // font list
-    if (ini1 && name1)
-    {
-        for (n = 0; n < 100; n++)
-        {
-            sprintf_s(pctmp, sizeof(pctmp), "fontlist%d", n + 1);
-            if (!ini1->ReadString(name1, pctmp, param, sizeof(param), ""))
+    if (!node_config.Empty()) {
+        for (int n = 0; n < 100; n++) {
+            auto font_list = node_config.Get<std::string>("fontlist" + std::to_string(n + 1), {});
+            if (font_list.empty()) {
                 break;
-            m_anFontList.push_back(m_rs->LoadFont(param));
+            }
+            m_anFontList.emplace_back(m_rs->LoadFont(font_list.c_str()));
         }
     }
 
-    if (ReadIniString(ini1, name1, ini2, name2, "fontcell", param, sizeof(param), ""))
-        m_nFontCellID = m_rs->LoadFont(param);
-
-    // cell font
-    if (ReadIniString(ini1, name1, ini2, name2, "fontcell", param, sizeof(param), ""))
-        m_nFontCellID = m_rs->LoadFont(param);
-    m_dwFontCellColor = GetIniARGB(ini1, name1, ini2, name2, "fontcellcolor", ARGB(255, 255, 255, 255));
-    m_fFontCellScale = GetIniFloat(ini1, name1, ini2, name2, "fontcellscale", 1.f);
+    const auto font_cell = Config::GetOrGet<std::string>(configs, "fontcell", {});
+    if (!font_cell.empty()) {
+        m_nFontCellID = m_rs->LoadFont(font_cell.c_str());
+    }
+    auto font_cell_color = Config::GetOrGet<Types::Vector4<std::int64_t>>(configs, "fontcellcolor", {255, 255, 255, 255});
+    m_dwFontCellColor = ARGB(font_cell_color.x, font_cell_color.y, font_cell_color.z, font_cell_color.w);
+    m_fFontCellScale = Config::GetOrGet<double>(configs, "fontcellscale", 1.0);
     m_nFontCellAlignment = PR_ALIGN_LEFT;
     m_nFontCellVAlignment = ALIGN_TOP;
-    if (ReadIniString(ini1, name1, ini2, name2, "fontcellalignment", param, sizeof(param), ""))
-    {
-        if (storm::iEquals(param, "center"))
-            m_nFontCellAlignment = PR_ALIGN_CENTER;
-        if (storm::iEquals(param, "right"))
-            m_nFontCellAlignment = PR_ALIGN_RIGHT;
-    }
-    if (ReadIniString(ini1, name1, ini2, name2, "fontcellvalignment", param, sizeof(param), ""))
-    {
-        if (storm::iEquals(param, "center"))
-            m_nFontCellVAlignment = PR_ALIGN_CENTER;
-        if (storm::iEquals(param, "bottom"))
-            m_nFontCellVAlignment = ALIGN_BOTTOM;
+    const auto font_cell_align = Config::GetOrGet<std::string>(configs, "fontcellalignment", {});
+    if (font_cell_align == "center") {
+        m_nFontCellAlignment = PR_ALIGN_CENTER;
+    } else if (font_cell_align == "right") {
+        m_nFontCellAlignment = PR_ALIGN_RIGHT;
     }
 
-    // title font
-    if (ReadIniString(ini1, name1, ini2, name2, "fonttitle", param, sizeof(param), ""))
-        m_nFontTitleID = m_rs->LoadFont(param);
-    m_dwFontTitleColor = GetIniARGB(ini1, name1, ini2, name2, "fonttitlecolor", ARGB(255, 255, 255, 255));
-    m_fFontTitleScale = GetIniFloat(ini1, name1, ini2, name2, "fonttitlescale", 1.f);
+    const auto font_cell_v_align = Config::GetOrGet<std::string>(configs, "fontcellvalignment", {});
+    if (font_cell_v_align == "center") {
+        m_nFontCellVAlignment = PR_ALIGN_CENTER;
+    } else if (font_cell_v_align == "bottom") {
+        m_nFontCellVAlignment = ALIGN_BOTTOM;
+    }
+
+    const auto font_title = Config::GetOrGet<std::string>(configs, "fonttitle", {});
+    if (!font_title.empty()) {
+        m_nFontTitleID = m_rs->LoadFont(font_title.c_str());
+    }
+    auto font_title_color = Config::GetOrGet<Types::Vector4<std::int64_t>>(configs, "fonttitlecolor", {255, 255, 255, 255});
+    m_dwFontTitleColor = ARGB(font_title_color.x, font_title_color.y, font_title_color.z, font_title_color.w);
+    m_fFontTitleScale = Config::GetOrGet<double>(configs, "fonttitlescale", 1.0);
     m_nFontTitleAlignment = PR_ALIGN_LEFT;
     m_nFontTitleVAlignment = ALIGN_TOP;
-    if (ReadIniString(ini1, name1, ini2, name2, "fonttitlealignment", param, sizeof(param), ""))
-    {
-        if (storm::iEquals(param, "center"))
-            m_nFontTitleAlignment = PR_ALIGN_CENTER;
-        if (storm::iEquals(param, "right"))
-            m_nFontTitleAlignment = PR_ALIGN_RIGHT;
-    }
-    if (ReadIniString(ini1, name1, ini2, name2, "fonttitlevalignment", param, sizeof(param), ""))
-    {
-        if (storm::iEquals(param, "center"))
-            m_nFontTitleVAlignment = PR_ALIGN_CENTER;
-        if (storm::iEquals(param, "bottom"))
-            m_nFontTitleVAlignment = ALIGN_BOTTOM;
+
+    const auto font_title_align = Config::GetOrGet<std::string>(configs, "fonttitlealignment", {});
+    if (font_title_align == "center") {
+        m_nFontTitleAlignment = PR_ALIGN_CENTER;
+    } else if (font_title_align == "right") {
+        m_nFontTitleAlignment = PR_ALIGN_RIGHT;
     }
 
-    // select image
-    if (ReadIniString(ini1, name1, ini2, name2, "selectimage", param, sizeof(param), ""))
-    {
-        m_SelectImg.LoadAccordingToString(param);
+    const auto font_title_v_align = Config::GetOrGet<std::string>(configs, "fonttitlevalignment", {});
+    if (font_title_v_align == "center") {
+        m_nFontTitleVAlignment = PR_ALIGN_CENTER;
+    } else if (font_title_v_align == "bottom") {
+        m_nFontTitleVAlignment = ALIGN_BOTTOM;
     }
-    m_bDoColsSelect = GetIniBool(ini1, name1, ini2, name2, "iscolselect", false);
+
+    const auto select_image = Config::GetOrGet<std::string>(configs, "selectimage", {});
+    if (!select_image.empty()) {
+        m_SelectImg.LoadAccordingToString(select_image.c_str());
+    }
+    m_bDoColsSelect = Config::GetOrGet<std::int64_t>(configs, "iscolselect", 0);
     if (m_bDoColsSelect)
         m_nSelectColIndex = 0;
 
-    // border
-    if (ReadIniString(ini1, name1, ini2, name2, "bordericongroup", param, sizeof(param), ""))
-    {
-        m_sBorderIconGroupName = param;
-        m_idBorderTexture = pPictureService->GetTextureID(param);
+    const auto border_icon_group = Config::GetOrGet<std::string>(configs, "bordericongroup", {});
+    if (!border_icon_group.empty()) {
+        m_sBorderIconGroupName = border_icon_group;
+        m_idBorderTexture = pPictureService->GetTextureID(border_icon_group.c_str());
     }
-    //
-    m_nBorderIcon_LeftTop = -1;
-    if (ReadIniString(ini1, name1, ini2, name2, "borderlefttop", param, sizeof(param), ""))
-        m_nBorderIcon_LeftTop = pPictureService->GetImageNum(m_sBorderIconGroupName.c_str(), param);
-    //
-    m_nBorderIcon_LeftBottom = -1;
-    if (ReadIniString(ini1, name1, ini2, name2, "borderleftbottom", param, sizeof(param), ""))
-        m_nBorderIcon_LeftBottom = pPictureService->GetImageNum(m_sBorderIconGroupName.c_str(), param);
-    //
-    m_nBorderIcon_RightTop = -1;
-    if (ReadIniString(ini1, name1, ini2, name2, "borderrighttop", param, sizeof(param), ""))
-        m_nBorderIcon_RightTop = pPictureService->GetImageNum(m_sBorderIconGroupName.c_str(), param);
-    //
-    m_nBorderIcon_RightBottom = -1;
-    if (ReadIniString(ini1, name1, ini2, name2, "borderrightbottom", param, sizeof(param), ""))
-        m_nBorderIcon_RightBottom = pPictureService->GetImageNum(m_sBorderIconGroupName.c_str(), param);
-    //
-    m_nBorderIcon_Left = -1;
-    if (ReadIniString(ini1, name1, ini2, name2, "borderleft", param, sizeof(param), ""))
-        m_nBorderIcon_Left = pPictureService->GetImageNum(m_sBorderIconGroupName.c_str(), param);
-    //
-    m_nBorderIcon_Right = -1;
-    if (ReadIniString(ini1, name1, ini2, name2, "borderright", param, sizeof(param), ""))
-        m_nBorderIcon_Right = pPictureService->GetImageNum(m_sBorderIconGroupName.c_str(), param);
-    //
-    m_nBorderIcon_Top = -1;
-    if (ReadIniString(ini1, name1, ini2, name2, "bordertop", param, sizeof(param), ""))
-        m_nBorderIcon_Top = pPictureService->GetImageNum(m_sBorderIconGroupName.c_str(), param);
-    //
-    m_nBorderIcon_Bottom = -1;
-    if (ReadIniString(ini1, name1, ini2, name2, "borderbottom", param, sizeof(param), ""))
-        m_nBorderIcon_Bottom = pPictureService->GetImageNum(m_sBorderIconGroupName.c_str(), param);
-    //
-    m_nBorderIcon_VLine = -1;
-    if (ReadIniString(ini1, name1, ini2, name2, "bordervline", param, sizeof(param), ""))
-        m_nBorderIcon_VLine = pPictureService->GetImageNum(m_sBorderIconGroupName.c_str(), param);
-    //
-    m_nBorderIcon_HLine = -1;
-    if (ReadIniString(ini1, name1, ini2, name2, "borderhline", param, sizeof(param), ""))
-        m_nBorderIcon_HLine = pPictureService->GetImageNum(m_sBorderIconGroupName.c_str(), param);
 
-    m_dwBorderColor = GetIniARGB(ini1, name1, ini2, name2, "bordercolor", ARGB(255, 128, 128, 128));
-    m_nBorderWidth = GetIniLong(ini1, name1, ini2, name2, "borderwidth", 0);
-    m_nVLineWidth = GetIniLong(ini1, name1, ini2, name2, "vlinewidth", 0);
-    m_nHLineHeight = GetIniLong(ini1, name1, ini2, name2, "hlineheight", 0);
-    m_nHeaderLineHeight = GetIniLong(ini1, name1, ini2, name2, "headerlineheight", 0);
-    m_bHLineIsBreakable = GetIniBool(ini1, name1, ini2, name2, "hlineisbreakable", true);
-    m_pntBorderCornerSize.x = m_pntBorderCornerSize.y = 9;
-    m_pntBorderCornerSize = GetIniLongPoint(ini1, name1, ini2, name2, "bordercornersize", m_pntBorderCornerSize);
-    m_pntSpaceSize.x = m_pntSpaceSize.y = 4;
-    m_pntSpaceSize = GetIniLongPoint(ini1, name1, ini2, name2, "cellspacesize", m_pntSpaceSize);
+    auto border_left_top = Config::GetOrGet<std::string>(configs, "borderlefttop", {});
+    m_nBorderIcon_LeftTop = !border_left_top.empty()
+        ? pPictureService->GetImageNum(m_sBorderIconGroupName.c_str(), border_left_top.c_str())
+        : -1;
 
-    m_nRowQuantity = GetIniLong(ini1, name1, ini2, name2, "rowquantity", 1);
-    m_nColQuantity = GetIniLong(ini1, name1, ini2, name2, "colquantity", 1);
+    auto border_left_bottom = Config::GetOrGet<std::string>(configs, "borderleftbottom", {});
+    m_nBorderIcon_LeftBottom = !border_left_bottom.empty()
+        ? pPictureService->GetImageNum(m_sBorderIconGroupName.c_str(), border_left_bottom.c_str())
+        : -1;
 
-    m_bVariableLineHeight = GetIniBool(ini1, name1, ini2, name2, "IsVariableLineHeight", false);
-    m_nNormalLineHeight = GetIniLong(ini1, name1, ini2, name2, "NormalLineHeight", 32);
+    auto border_right_top = Config::GetOrGet<std::string>(configs, "borderrighttop", {});
+    m_nBorderIcon_RightTop = !border_right_top.empty()
+        ? pPictureService->GetImageNum(m_sBorderIconGroupName.c_str(), border_right_top.c_str())
+        : -1;
 
-    nUsedQ = 0;       // hard-coded strings
-    nCommonWidth = 0; // the total height of these lines
+    auto border_right_bottom = Config::GetOrGet<std::string>(configs, "borderrightbottom", {});
+    m_nBorderIcon_RightBottom = !border_right_bottom.empty()
+        ? pPictureService->GetImageNum(m_sBorderIconGroupName.c_str(), border_right_bottom.c_str())
+        : -1;
+
+    auto border_left = Config::GetOrGet<std::string>(configs, "borderleft", {});
+    m_nBorderIcon_Left = !border_left.empty()
+        ? pPictureService->GetImageNum(m_sBorderIconGroupName.c_str(), border_left.c_str())
+        : -1;
+
+    auto border_right = Config::GetOrGet<std::string>(configs, "borderright", {});
+    m_nBorderIcon_Right = !border_right.empty()
+        ? pPictureService->GetImageNum(m_sBorderIconGroupName.c_str(), border_right.c_str())
+        : -1;
+
+    auto border_top = Config::GetOrGet<std::string>(configs, "bordertop", {});
+    m_nBorderIcon_Top = !border_top.empty()
+        ? pPictureService->GetImageNum(m_sBorderIconGroupName.c_str(), border_top.c_str())
+        : -1;
+
+    auto border_bottom = Config::GetOrGet<std::string>(configs, "borderbottom", {});
+    m_nBorderIcon_Bottom = !border_bottom.empty()
+        ? pPictureService->GetImageNum(m_sBorderIconGroupName.c_str(), border_bottom.c_str())
+        : -1;
+
+    auto border_v_line = Config::GetOrGet<std::string>(configs, "bordervline", {});
+    m_nBorderIcon_VLine = !border_v_line.empty()
+        ? pPictureService->GetImageNum(m_sBorderIconGroupName.c_str(), border_v_line.c_str())
+        : -1;
+
+    auto border_h_line = Config::GetOrGet<std::string>(configs, "borderhline", {});
+    m_nBorderIcon_HLine = !border_h_line.empty()
+        ? pPictureService->GetImageNum(m_sBorderIconGroupName.c_str(), border_h_line.c_str())
+        : -1;
+
+    auto border_color = Config::GetOrGet<Types::Vector4<std::int64_t>>(configs, "bordercolor", {255, 128, 128, 128});
+    m_dwBorderColor = ARGB(border_color.x, border_color.y, border_color.z, border_color.w);
+
+    m_nBorderWidth = Config::GetOrGet<std::int64_t>(configs, "borderwidth", 0);
+    m_nVLineWidth = Config::GetOrGet<std::int64_t>(configs, "vlinewidth", 0);
+    m_nHLineHeight = Config::GetOrGet<std::int64_t>(configs, "hlineheight", 0);
+    m_nHeaderLineHeight = Config::GetOrGet<std::int64_t>(configs, "headerlineheight", 0);
+    m_bHLineIsBreakable = Config::GetOrGet<std::int64_t>(configs, "hlineisbreakable", 1);
+    m_pntBorderCornerSize = Config::GetOrGet<Types::Vector2<std::int64_t>>(configs, "bordercornersize", {9, 9});
+
+    m_pntSpaceSize = Config::GetOrGet<Types::Vector2<std::int64_t>>(configs, "cellspacesize", {4, 4});
+
+    m_nRowQuantity = Config::GetOrGet<std::int64_t>(configs, "rowquantity", 1);
+    m_nColQuantity = Config::GetOrGet<std::int64_t>(configs, "colquantity", 1);
+
+    m_bVariableLineHeight = Config::GetOrGet<std::int64_t>(configs, "IsVariableLineHeight", 0);
+    m_nNormalLineHeight = Config::GetOrGet<std::int64_t>(configs, "NormalLineHeight", 32);
+
     m_anRowsHeights.clear();
-    if (ReadIniString(ini1, name1, ini2, name2, "rowsheight", param, sizeof(param), ""))
-    {
-        const char *pcTmp = param;
-        char pcTmpBuf[256];
-        while (pcTmp && pcTmp[0])
-        {
-            pcTmp = GetSubStr(pcTmp, pcTmpBuf, sizeof(pcTmpBuf));
-            int32_t nTmp = atol(pcTmpBuf);
-            if (nTmp <= 0)
-                nTmp = 0;
-            else
-                nUsedQ++;
-            nCommonWidth += nTmp;
-            m_anRowsHeights.push_back(nTmp);
-        }
-    }
-    for (n = m_anRowsHeights.size(); n < m_nRowQuantity; n++)
-        m_anRowsHeights.push_back(0);
-    if (m_nRowQuantity > nUsedQ && m_rect.bottom - m_rect.top > nCommonWidth)
-    {
+
+    auto rows_vec = Config::GetOrGet<std::vector<std::int64_t>>(configs, "rowsheight", {});
+    std::int32_t nUsedQ = std::size(m_anRowsHeights);       // hard-coded strings
+    m_anColsWidth.resize(nUsedQ);
+    std::ranges::move(rows_vec, std::begin(m_anColsWidth));
+    std::int32_t nCommonWidth{0}; // the total height of these lines
+    std::ranges::for_each(m_anRowsHeights,
+        [&nCommonWidth](std::int64_t row_height) {
+            nCommonWidth += row_height;
+    });
+
+    for (int n = std::size(m_anRowsHeights); n < m_nRowQuantity; n++)
+        m_anRowsHeights.emplace_back(0);
+    if (m_nRowQuantity > nUsedQ && m_rect.bottom - m_rect.top > nCommonWidth) {
         const int32_t nH = (m_rect.bottom - m_rect.top - nCommonWidth) / (m_nRowQuantity - nUsedQ);
-        for (n = 0; n < m_anRowsHeights.size(); n++)
+        for (int n = 0; n < std::size(m_anRowsHeights); n++)
             if (m_anRowsHeights[n] == 0)
                 m_anRowsHeights[n] = nH;
     }
     // bring the height of the table to the total value
     m_rect.bottom = m_rect.top + m_nBorderWidth;
-    for (n = 0; n < m_anRowsHeights.size(); n++)
-    {
+    for (int n = 0; n < m_anRowsHeights.size(); n++) {
         m_rect.bottom += m_anRowsHeights[n];
     }
 
     // filling columns
-    nUsedQ = 0;       // hard-coded columns
-    nCommonWidth = 0; // the total width of these columns
     m_anColsWidth.clear();
-    // read from INI
-    if (ReadIniString(ini1, name1, ini2, name2, "colswidth", param, sizeof(param), ""))
-    {
-        const char *pcTmp = param;
-        char pcTmpBuf[256];
-        while (pcTmp && pcTmp[0])
-        {
-            pcTmp = GetSubStr(pcTmp, pcTmpBuf, sizeof(pcTmpBuf));
-            int32_t nTmp = atol(pcTmpBuf);
-            if (nTmp <= 0)
-                nTmp = 0; // width 0 - default
-            else
-                nUsedQ++; // otherwise this value is hardcoded
-            nCommonWidth += nTmp;
-            m_anColsWidth.push_back(nTmp);
-        }
-    }
-    for (n = m_anColsWidth.size(); n < m_nColQuantity; n++)
+    auto cols_vec = Config::GetOrGet<std::vector<std::int64_t>>(configs, "colswidth", {});
+    std::ranges::move(cols_vec, std::begin(m_anColsWidth));
+    nUsedQ = std::size(m_anColsWidth);
+    nCommonWidth = 0; // the total height of these lines
+    std::ranges::for_each(m_anColsWidth,
+        [&nCommonWidth](std::int64_t col_width) {
+            nCommonWidth += col_width;
+    });
+    for (int n = std::size(m_anColsWidth); n < m_nColQuantity; n++)
         m_anColsWidth.push_back(0);
-    if (m_nColQuantity > nUsedQ && m_rect.right - m_rect.left > nCommonWidth)
-    {
+    if (m_nColQuantity > nUsedQ && m_rect.right - m_rect.left > nCommonWidth) {
         const int32_t nW = (m_rect.right - m_rect.left - m_nBorderWidth - nCommonWidth) / (m_nColQuantity - nUsedQ);
-        for (n = 0; n < m_anColsWidth.size(); n++)
+        for (int n = 0; n < std::size(m_anColsWidth); n++)
             if (m_anColsWidth[n] == 0)
                 m_anColsWidth[n] = nW;
     }
     // change the width of the table to the total value
     m_rect.right = m_rect.left + m_nBorderWidth;
-    for (n = 0; n < m_anColsWidth.size(); n++)
-    {
+    for (int n = 0; n < std::size(m_anColsWidth); n++) {
         m_rect.right += m_anColsWidth[n];
     }
 
     // back
     m_bBackPresent = false;
-    if (ReadIniString(ini1, name1, ini2, name2, "backimage", param, sizeof(param), ""))
-    {
+    const auto back_image = Config::GetOrGet<std::string>(configs, "backimage", {});
+    if (!back_image.empty()) {
         m_bBackPresent = true;
-        m_BackImg.LoadAccordingToString(param);
+        m_BackImg.LoadAccordingToString(back_image.c_str());
         m_BackImg.SetPosition(m_rect);
     }
 
-    if (ReadIniString(ini1, name1, ini2, name2, "scroller", param, sizeof(param), ""))
-        m_sScrollerName = param;
+    m_sScrollerName = Config::GetOrGet<std::string>(configs, "scroller", {});
     m_nSelectIndex = 0;
 
     UpdateBorders();

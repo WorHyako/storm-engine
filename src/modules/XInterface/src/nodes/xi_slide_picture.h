@@ -9,8 +9,8 @@ class CXI_SLIDEPICTURE : public CINODE
     CXI_SLIDEPICTURE();
     ~CXI_SLIDEPICTURE() override;
     void Draw(bool bSelected, uint32_t Delta_Time) override;
-    bool Init(INIFILE *ini1, const char *name1, INIFILE *ini2, const char *name2, VDX9RENDER *rs, XYRECT &hostRect,
-              XYPOINT &ScreenSize) override;
+    bool Init(const Storm::Filesystem::Config& node_config, const Storm::Filesystem::Config& def_config,
+        VDX9RENDER *rs, XYRECT &hostRect, XYPOINT &ScreenSize) override;
     void ReleaseAll() override;
     int CommandExecute(int wActCode) override;
     bool IsClick(int buttonID, int32_t xPos, int32_t yPos) override;
@@ -25,7 +25,7 @@ class CXI_SLIDEPICTURE : public CINODE
     void SetNewPicture(char *sNewTexName);
 
   protected:
-    void LoadIni(INIFILE *ini1, const char *name1, INIFILE *ini2, const char *name2) override;
+    void LoadIni(const Storm::Filesystem::Config& node_config, const Storm::Filesystem::Config& def_config) override;
     void Update(uint32_t Delta_Time);
     int32_t m_idTex;
     XI_ONETEX_VERTEX m_v[4];
@@ -48,5 +48,5 @@ class CXI_SLIDEPICTURE : public CINODE
 
     int32_t nSlideListSize;
 
-    char *strTechniqueName;
+    std::string strTechniqueName;
 };

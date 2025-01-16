@@ -116,8 +116,8 @@ class CXI_TABLE : public CINODE
     ~CXI_TABLE() override;
 
     void Draw(bool bSelected, uint32_t Delta_Time) override;
-    bool Init(INIFILE *ini1, const char *name1, INIFILE *ini2, const char *name2, VDX9RENDER *rs, XYRECT &hostRect,
-              XYPOINT &ScreenSize) override;
+    bool Init(const Storm::Filesystem::Config& node_config, const Storm::Filesystem::Config& def_config,
+        VDX9RENDER *rs, XYRECT &hostRect, XYPOINT &ScreenSize) override;
     void ReleaseAll() override;
     int CommandExecute(int wActCode) override;
     bool IsClick(int buttonID, int32_t xPos, int32_t yPos) override;
@@ -145,7 +145,7 @@ class CXI_TABLE : public CINODE
     }
 
   protected:
-    void LoadIni(INIFILE *ini1, const char *name1, INIFILE *ini2, const char *name2) override;
+    void LoadIni(const Storm::Filesystem::Config& node_config, const Storm::Filesystem::Config& def_config) override;
     void UpdateBorders();
     void WriteSquare(XI_ONETEX_VERTEX *pV, int32_t nImgID, uint32_t dwCol, int32_t nX, int32_t nY, int32_t nW, int32_t nH) const;
     void UpdateTableCells();

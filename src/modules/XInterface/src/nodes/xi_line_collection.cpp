@@ -1,5 +1,6 @@
 #include "xi_line_collection.h"
-#include <stdio.h>
+
+using namespace Storm::Filesystem;
 
 CXI_LINECOLLECTION::CXI_LINECOLLECTION()
 {
@@ -25,10 +26,9 @@ void CXI_LINECOLLECTION::Draw(bool bSelected, uint32_t Delta_Time)
     }
 }
 
-bool CXI_LINECOLLECTION::Init(INIFILE *ini1, const char *name1, INIFILE *ini2, const char *name2, VDX9RENDER *rs,
-                              XYRECT &hostRect, XYPOINT &ScreenSize)
-{
-    if (!CINODE::Init(ini1, name1, ini2, name2, rs, hostRect, ScreenSize))
+bool CXI_LINECOLLECTION::Init(const Config& node_config, const Config& def_config,
+    VDX9RENDER *rs, XYRECT &hostRect, XYPOINT &ScreenSize) {
+    if (!CINODE::Init(node_config, def_config, rs, hostRect, ScreenSize))
         return false;
     // screen position for that is host screen position
     memcpy(&m_rect, &m_hostRect, sizeof(m_hostRect));
@@ -36,43 +36,44 @@ bool CXI_LINECOLLECTION::Init(INIFILE *ini1, const char *name1, INIFILE *ini2, c
     return true;
 }
 
-void CXI_LINECOLLECTION::LoadIni(INIFILE *ini1, const char *name1, INIFILE *ini2, const char *name2)
-{
-    char param[256];
-    char param1[256];
-
+void CXI_LINECOLLECTION::LoadIni(const Config& node_config, const Config& def_config) {
     // fill lines structure array
-    const auto bRelativeRect = !GetIniLong(ini1, name1, ini2, name2, "bAbsoluteRectangle", 0);
-    auto nCurLine = 0;
-    if (ini1->ReadString(name1, "line", param, sizeof(param) - 1, ""))
-        do
-        {
-            XYRECT scrRect;
-            uint32_t dwCol = 0;
-            if (GetMidStr(param, param1, sizeof(param1), "(", ")-("))
-                GetDataStr(param1, "ll", &scrRect.left, &scrRect.top);
-            if (GetMidStr(param, param1, sizeof(param1), ")-(", ")"))
-                GetDataStr(param1, "ll", &scrRect.right, &scrRect.bottom);
-            if (GetMidStr(param, param1, sizeof(param1), "col:{", "}"))
-            {
-                dwCol = GetColorFromStr(param1, dwCol);
-            }
-            if (bRelativeRect)
-                GetRelativeRect(scrRect);
-
-            // int32_t n = m_aLines.Add();
-            // m_aLines.Add();
-            // m_aLines[n].dwColor = m_aLines[n+1].dwColor = dwCol;
-            // m_aLines[n].vPos.z = m_aLines[n+1].vPos.z = 1.f;
-            // m_aLines[n].vPos.x = (float)scrRect.left; m_aLines[n+1].vPos.x = (float)scrRect.right;
-            // m_aLines[n].vPos.y = (float)scrRect.top;  m_aLines[n+1].vPos.y = (float)scrRect.bottom;
-            m_aLines.push_back(
-                RS_LINE{CVECTOR{static_cast<float>(scrRect.left), static_cast<float>(scrRect.top), 1.f}, dwCol});
-            m_aLines.push_back(
-                RS_LINE{CVECTOR{static_cast<float>(scrRect.right), static_cast<float>(scrRect.bottom), 1.f}, dwCol});
-
-            nCurLine++;
-        } while (ini1->ReadStringNext(name1, "line", param, sizeof(param) - 1));
+    std::pair<const Config&, const Config&> configs{node_config, def_config};
+    auto bRelativeRect = Config::GetOrGet<std::int64_t>(configs, "bAbsoluteRectangle", 0) == false;
+    auto line_vec = Config::GetOrGet<std::vector<std::vector<std::string>>>(configs, "line", {});
+    for (auto & line : line_vec) {
+        std::stringstream ss;
+        std::ranges::for_each(line,
+            [&ss](auto& each) {
+                ss << each << ',';
+        });
+        std::string str {ss.str()};
+        char param1[256];
+        XYRECT scrRect;
+        uint32_t dwCol = 0;
+        if (GetMidStr(str.c_str(), param1, sizeof(param1), "(", ")-(")) {
+            GetDataStr(param1, "ll", &scrRect.left, &scrRect.top);
+        }
+        if (GetMidStr(str.c_str(), param1, sizeof(param1), ")-(", ")")) {
+            GetDataStr(param1, "ll", &scrRect.right, &scrRect.bottom);
+        }
+        if (GetMidStr(str.c_str(), param1, sizeof(param1), "col:{", "}")) {
+            dwCol = GetColorFromStr(param1, dwCol);
+        }
+        if (bRelativeRect) {
+            GetRelativeRect(scrRect);
+        }
+        // int32_t n = m_aLines.Add();
+        // m_aLines.Add();
+        // m_aLines[n].dwColor = m_aLines[n+1].dwColor = dwCol;
+        // m_aLines[n].vPos.z = m_aLines[n+1].vPos.z = 1.f;
+        // m_aLines[n].vPos.x = (float)scrRect.left; m_aLines[n+1].vPos.x = (float)scrRect.right;
+        // m_aLines[n].vPos.y = (float)scrRect.top;  m_aLines[n+1].vPos.y = (float)scrRect.bottom;
+        m_aLines.push_back(
+            RS_LINE{CVECTOR{static_cast<float>(scrRect.left), static_cast<float>(scrRect.top), 1.f}, dwCol});
+        m_aLines.push_back(
+            RS_LINE{CVECTOR{static_cast<float>(scrRect.right), static_cast<float>(scrRect.bottom), 1.f}, dwCol});
+    }
 }
 
 void CXI_LINECOLLECTION::ReleaseAll()

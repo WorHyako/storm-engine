@@ -1,5 +1,8 @@
 #include "xi_quest_texts.h"
 
+using namespace Storm::Filesystem;
+using namespace Storm::Math;
+
 CXI_QUESTTEXTS::STRING_DESCRIBER::STRING_DESCRIBER(const char *ls)
 {
     const auto len = strlen(ls) + 1;
@@ -214,11 +217,11 @@ void CXI_QUESTTEXTS::Draw(bool bSelected, uint32_t Delta_Time)
     }
 }
 
-bool CXI_QUESTTEXTS::Init(INIFILE *ini1, const char *name1, INIFILE *ini2, const char *name2, VDX9RENDER *rs,
-                          XYRECT &hostRect, XYPOINT &ScreenSize)
-{
-    if (!CINODE::Init(ini1, name1, ini2, name2, rs, hostRect, ScreenSize))
+bool CXI_QUESTTEXTS::Init(const Config& node_config, const Config& def_config,
+    VDX9RENDER *rs, XYRECT &hostRect, XYPOINT &ScreenSize) {
+    if (!CINODE::Init(node_config, def_config, rs, hostRect, ScreenSize)) {
         return false;
+    }
     SetGlowCursor(false);
     return true;
 }
@@ -296,26 +299,29 @@ void CXI_QUESTTEXTS::SaveParametersToIni()
     pIni->WriteString(m_nodeName, "position", pcWriteParam);
 }
 
-void CXI_QUESTTEXTS::LoadIni(INIFILE *ini1, const char *name1, INIFILE *ini2, const char *name2)
-{
-    char param[255];
-
+void CXI_QUESTTEXTS::LoadIni(const Config& node_config, const Config& def_config) {
+    std::pair<const Config&, const Config&> configs{node_config, def_config};
     // get line space
-    m_vertOffset = GetIniLong(ini1, name1, ini2, name2, "lineSpace", 30);
-    if (m_vertOffset == 0)
+    m_vertOffset = Config::GetOrGet<std::int64_t>(configs, "lineSpace", 30);
+    if (m_vertOffset == 0) {
         m_vertOffset = 10;
+    }
 
     // counting the number of lines displayed on the screen
     m_allStrings = (m_rect.bottom - m_rect.top) / m_vertOffset;
 
     // get colors
-    m_dwCompleteColor = GetIniARGB(ini1, name1, ini2, name2, "completeColor", ARGB(255, 128, 128, 128));
-    m_dwNonCompleteColor = GetIniARGB(ini1, name1, ini2, name2, "noncompleteColor", ARGB(255, 255, 255, 255));
+    auto complete_color = Config::GetOrGet<Types::Vector4<std::int64_t>>(configs, "completeColor", {255, 128, 128, 128});
+    m_dwCompleteColor = ARGB(complete_color.x, complete_color.y, complete_color.z, complete_color.w);
+
+    auto noncomplete_color = Config::GetOrGet<Types::Vector4<std::int64_t>>(configs, "noncompleteColor", {255, 255, 255, 255});
+    m_dwNonCompleteColor = ARGB(noncomplete_color.x, noncomplete_color.y, noncomplete_color.z, noncomplete_color.w);
 
     // get font
-    m_idFont = -1;
-    if (ReadIniString(ini1, name1, ini2, name2, "font", param, sizeof(param), ""))
-        m_idFont = m_rs->LoadFont(param);
+    auto font = Config::GetOrGet<std::string>(configs, "font", {});
+    m_idFont = font.empty()
+        ? -1
+        : m_rs->LoadFont(font);
 }
 
 void CXI_QUESTTEXTS::StartQuestShow(ATTRIBUTES *pA, int qn)

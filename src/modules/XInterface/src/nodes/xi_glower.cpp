@@ -2,7 +2,8 @@
 
 #include "math_inlines.h"
 
-#include <stdio.h>
+using namespace Storm::Filesystem;
+using namespace Storm::Math;
 
 CXI_GLOWER::CXI_GLOWER()
 {
@@ -72,11 +73,12 @@ void CXI_GLOWER::Draw(bool bSelected, uint32_t Delta_Time)
     }
 }
 
-bool CXI_GLOWER::Init(INIFILE *ini1, const char *name1, INIFILE *ini2, const char *name2, VDX9RENDER *rs,
-                      XYRECT &hostRect, XYPOINT &ScreenSize)
+bool CXI_GLOWER::Init(const Config& node_config, const Config& def_config,
+    VDX9RENDER *rs, XYRECT &hostRect, XYPOINT &ScreenSize)
 {
-    if (!CINODE::Init(ini1, name1, ini2, name2, rs, hostRect, ScreenSize))
+    if (!CINODE::Init(node_config, def_config, rs, hostRect, ScreenSize)) {
         return false;
+    }
     SetGlowCursor(false);
     return true;
 }
@@ -117,30 +119,25 @@ void CXI_GLOWER::SaveParametersToIni()
     pIni->WriteString(m_nodeName, "position", pcWriteParam);
 }
 
-void CXI_GLOWER::LoadIni(INIFILE *ini1, const char *name1, INIFILE *ini2, const char *name2)
-{
-    int i;
-    char param[255];
-    int32_t x, y;
-
+void CXI_GLOWER::LoadIni(const Config& node_config, const Config& def_config) {
     // get texture
     m_texID = -1;
-    if (ReadIniString(ini1, name1, ini2, name2, "texture", param, sizeof(param), ""))
-        m_texID = m_rs->TextureCreate(param);
+    std::pair<const Config&, const Config&> configs{node_config, def_config};
+    const auto texture = Config::GetOrGet<std::string>(configs, "texture", {});
+    if (!texture.empty()) {
+        m_texID = m_rs->TextureCreate(texture.c_str());
+    }
 
     // calculate glow blinks quantity
-    m_nQuantity = 0;
-    if (ini1->ReadString(name1, "pos", param, sizeof(param) - 1, ""))
-        do
-        {
-            m_nQuantity++;
-        } while (ini1->ReadStringNext(name1, "pos", param, sizeof(param) - 1));
-    if (m_nQuantity > MAX_USED_RECTANGLE)
+    const auto pos_vec = Config::GetOrGet<std::vector<Types::Vector2<std::int64_t>>>(configs, "pos", {});
+    m_nQuantity = std::size(pos_vec);
+
+    if (m_nQuantity > MAX_USED_RECTANGLE) {
         m_nQuantity = MAX_USED_RECTANGLE;
+    }
 
     // set common default value
-    for (i = 0; i < m_nQuantity; i++)
-    {
+    for (int i = 0; i < m_nQuantity; i++) {
         m_glows[i].action = GLOW_ACTION_NONE;
         m_glows[i].rect.dwSubTexture = 0;
         m_glows[i].rect.fAngle = 0;
@@ -148,31 +145,29 @@ void CXI_GLOWER::LoadIni(INIFILE *ini1, const char *name1, INIFILE *ini2, const 
     }
 
     // fill rectangle pos
-    ini1->ReadString(name1, "pos", param, sizeof(param) - 1, "");
-    for (i = 0; i < m_nQuantity; i++)
-    {
-        GetDataStr(param, "ll", &x, &y);
-        m_glows[i].rect.vPos.x = static_cast<float>(x) + m_hostRect.left;
-        m_glows[i].rect.vPos.y = static_cast<float>(y) + m_hostRect.top;
-        ini1->ReadStringNext(name1, "pos", param, sizeof(param) - 1);
+    for (int i = 0; i < m_nQuantity; i++) {
+        m_glows[i].rect.vPos.x = static_cast<float>(pos_vec[i].x + m_hostRect.left);
+        m_glows[i].rect.vPos.y = static_cast<float>(pos_vec[i].y + m_hostRect.top);
     }
 
     // fill rectangles size
-    x = GetIniLong(ini1, name1, ini2, name2, "spriteSize", 8);
-    for (i = 0; i < m_nQuantity; i++)
+    const auto x = Config::GetOrGet<std::int64_t>(configs, "spriteSize", 8);
+    for (int i = 0; i < m_nQuantity; i++) {
         m_glows[i].rect.fSize = static_cast<float>(x);
-
+    }
     // set colors
-    m_dwMinColor = GetIniARGB(ini1, name1, ini2, name2, "minColor", 0);
-    m_dwMaxColor = GetIniARGB(ini1, name1, ini2, name2, "maxColor", 0xFFFFFFFF);
+    const auto min_color = Config::GetOrGet<Types::Vector4<std::int64_t>>(configs, "minColor", {});
+    m_dwMinColor = ARGB(min_color.x, min_color.y, min_color.z, min_color.w);
+    const auto max_color = Config::GetOrGet<Types::Vector4<std::int64_t>>(configs, "maxColor", {255, 255, 255, 255});
+    m_dwMaxColor = ARGB(max_color.x, max_color.y, max_color.z, max_color.w);
 
-    m_minGlowTime = GetIniLong(ini1, name1, ini2, name2, "minGlowTime", 200);
-    m_maxGlowTime = GetIniLong(ini1, name1, ini2, name2, "maxGlowTime", 600);
-    m_minShowTime = GetIniLong(ini1, name1, ini2, name2, "minShowTime", 200);
-    m_maxShowTime = GetIniLong(ini1, name1, ini2, name2, "maxShowTime", 600);
+    m_minGlowTime = Config::GetOrGet<std::int64_t>(configs, "minGlowTime", 200);
+    m_maxGlowTime = Config::GetOrGet<std::int64_t>(configs, "maxGlowTime", 600);
+    m_minShowTime = Config::GetOrGet<std::int64_t>(configs, "minShowTime", 200);
+    m_maxShowTime = Config::GetOrGet<std::int64_t>(configs, "maxShowTime", 600);
 
-    m_nRandomMax = static_cast<int32_t>(GetIniFloat(ini1, name1, ini2, name2, "createProbability", 0.1f) * RAND_MAX);
+    m_nRandomMax = static_cast<std::int32_t>(Config::GetOrGet<double>(configs, "createProbability", 0.1) * RAND_MAX);
 
-    m_fAngleSpeedMin = GetIniFloat(ini1, name1, ini2, name2, "minRotateSpeed", 15.f) * PI / 180000.f;
-    m_fAngleSpeedMax = GetIniFloat(ini1, name1, ini2, name2, "maxRotateSpeed", 180.f) * PI / 180000.f;
+    m_fAngleSpeedMin = Config::GetOrGet<double>(configs, "minRotateSpeed", 15.0) * PI / 180000.f;
+    m_fAngleSpeedMax = Config::GetOrGet<double>(configs, "maxRotateSpeed", 180.0) * PI / 180000.f;
 }

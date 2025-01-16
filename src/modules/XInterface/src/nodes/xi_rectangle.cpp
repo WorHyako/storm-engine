@@ -1,5 +1,8 @@
 #include "xi_rectangle.h"
 
+using namespace Storm::Filesystem;
+using namespace Storm::Math;
+
 CXI_RECTANGLE::CXI_RECTANGLE()
 {
     m_nNodeType = NODETYPE_RECTANGLE;
@@ -35,12 +38,9 @@ void CXI_RECTANGLE::Draw(bool bSelected, uint32_t Delta_Time)
     }
 }
 
-bool CXI_RECTANGLE::Init(INIFILE *ini1, const char *name1, INIFILE *ini2, const char *name2, VDX9RENDER *rs,
-                         XYRECT &hostRect, XYPOINT &ScreenSize)
-{
-    if (!CINODE::Init(ini1, name1, ini2, name2, rs, hostRect, ScreenSize))
-        return false;
-    return true;
+bool CXI_RECTANGLE::Init(const Config& node_config, const Config& def_config,
+    VDX9RENDER *rs, XYRECT &hostRect, XYPOINT &ScreenSize) {
+    return CINODE::Init(node_config, def_config, rs, hostRect, ScreenSize);
 }
 
 void CXI_RECTANGLE::ReleaseAll()
@@ -52,11 +52,12 @@ int CXI_RECTANGLE::CommandExecute(int wActCode)
     return -1;
 }
 
-void CXI_RECTANGLE::LoadIni(INIFILE *ini1, const char *name1, INIFILE *ini2, const char *name2)
-{
+void CXI_RECTANGLE::LoadIni(const Config& node_config, const Config& def_config) {
+    std::pair<const Config&, const Config&> configs{node_config, def_config};
     // fill vertex positions
-    for (auto i = 0; i < 4; i++)
-        m_pVert[i].pos.z = 1.f;
+    for (auto& i : m_pVert) {
+        i.pos.z = 1.f;
+    }
     m_pVert[0].pos.x = static_cast<float>(m_rect.left);
     m_pVert[0].pos.y = static_cast<float>(m_rect.top);
     m_pVert[1].pos.x = static_cast<float>(m_rect.left);
@@ -67,19 +68,24 @@ void CXI_RECTANGLE::LoadIni(INIFILE *ini1, const char *name1, INIFILE *ini2, con
     m_pVert[3].pos.y = static_cast<float>(m_rect.bottom);
 
     // Get rectangle left colors
-    m_dwLeftColor = GetIniARGB(ini1, name1, ini2, name2, "leftColor", 0);
+    auto left_color = Config::GetOrGet<Types::Vector4<std::int64_t>>(configs, "leftColor", {});
+    m_dwLeftColor = ARGB(left_color.x, left_color.y, left_color.z, left_color.w);
 
     // Get rectangle top colors
-    m_dwTopColor = GetIniARGB(ini1, name1, ini2, name2, "topColor", 0);
+    auto top_color = Config::GetOrGet<Types::Vector4<std::int64_t>>(configs, "topColor", {});
+    m_dwTopColor = ARGB(top_color.x, top_color.y, top_color.z, top_color.w);
 
     // Get rectangle right colors
-    m_dwRightColor = GetIniARGB(ini1, name1, ini2, name2, "rightColor", 0);
+    auto right_color = Config::GetOrGet<Types::Vector4<std::int64_t>>(configs, "rightColor", {});
+    m_dwRightColor = ARGB(right_color.x, right_color.y, right_color.z, right_color.w);
 
     // Get rectangle bottom colors
-    m_dwBottomColor = GetIniARGB(ini1, name1, ini2, name2, "bottomColor", 0);
+    auto bottom_color = Config::GetOrGet<Types::Vector4<std::int64_t>>(configs, "bottomColor", {});
+    m_dwBottomColor = ARGB(bottom_color.x, bottom_color.y, bottom_color.z, bottom_color.w);
 
     // Get bounder parameters
-    m_dwBorderColor = GetIniARGB(ini1, name1, ini2, name2, "borderColor", 0);
+    auto border_color = Config::GetOrGet<Types::Vector4<std::int64_t>>(configs, "borderColor", {});
+    m_dwBorderColor = ARGB(border_color.x, border_color.y, border_color.z, border_color.w);
     m_bBorder = ALPHA(m_dwBorderColor) != 0;
 
     UpdateColors();

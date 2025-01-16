@@ -1,10 +1,12 @@
 #include "xi_text_button.h"
 
+using namespace Storm::Filesystem;
+using namespace Storm::Math;
+
 CXI_TEXTBUTTON::CXI_TEXTBUTTON()
 {
     m_rs = nullptr;
 
-    m_sGroupName = nullptr;
     m_idTex = -1;
     m_idShadowTex = -1;
 
@@ -42,8 +44,7 @@ void CXI_TEXTBUTTON::Draw(bool bSelected, uint32_t Delta_Time)
     if (!m_bMakeActionInDeclick && m_nPressedDelay > 0)
         m_nPressedDelay--;
 
-    if (m_bUse)
-    {
+    if (m_bUse) {
         if (bSelected ^ m_bCurrentSelected)
         {
             auto *pVert = static_cast<XI_ONETEX_VERTEX *>(m_rs->LockVertexBuffer(m_idVBuf));
@@ -138,8 +139,7 @@ void CXI_TEXTBUTTON::Draw(bool bSelected, uint32_t Delta_Time)
         if (m_bVideoToBack)
         {
             // show midle video fragment
-            if (bSelected && m_pTex != nullptr)
-            {
+            if (bSelected && m_pTex != nullptr) {
                 m_rs->SetTexture(0, m_pTex->m_pTexture);
                 if (m_nPressedDelay > 0)
                     m_rs->DrawPrimitiveUP(D3DPT_TRIANGLESTRIP, XI_ONETEX_FVF, 2, &m_v[4], sizeof(XI_ONETEX_VERTEX),
@@ -148,8 +148,7 @@ void CXI_TEXTBUTTON::Draw(bool bSelected, uint32_t Delta_Time)
                     m_rs->DrawPrimitiveUP(D3DPT_TRIANGLESTRIP, XI_ONETEX_FVF, 2, m_v, sizeof(XI_ONETEX_VERTEX),
                                           "iVideo");
             }
-            else if (m_dwBackColor != 0)
-            {
+            else if (m_dwBackColor != 0) {
                 m_rs->SetRenderState(D3DRS_TEXTUREFACTOR, m_dwBackColor);
                 if (m_nPressedDelay > 0)
                     m_rs->DrawPrimitiveUP(D3DPT_TRIANGLESTRIP, XI_ONETEX_FVF, 2, &m_v[4], sizeof(XI_ONETEX_VERTEX),
@@ -162,163 +161,169 @@ void CXI_TEXTBUTTON::Draw(bool bSelected, uint32_t Delta_Time)
 
         // show button
         m_rs->TextureSet(0, m_idTex);
-        if (m_nPressedDelay > 0)
+        if (m_nPressedDelay > 0) {
             m_rs->DrawBuffer(m_idVBuf, sizeof(XI_ONETEX_VERTEX), m_idIBuf, 4 * 3 * 2, 4 * 3, 0, m_nIndx, "iTextButton");
-        else
+        } else {
             m_rs->DrawBuffer(m_idVBuf, sizeof(XI_ONETEX_VERTEX), m_idIBuf, 0, 4 * 3, 0, m_nIndx, "iTextButton");
+        }
 
-        if (!m_bVideoToBack)
-        {
+        if (!m_bVideoToBack) {
             // show midle video fragment
-            if (bSelected && m_pTex != nullptr)
-            {
+            if (bSelected && m_pTex != nullptr) {
                 m_rs->SetTexture(0, m_pTex->m_pTexture);
-                if (m_nPressedDelay > 0)
+                if (m_nPressedDelay > 0) {
                     m_rs->DrawPrimitiveUP(D3DPT_TRIANGLESTRIP, XI_ONETEX_FVF, 2, &m_v[4], sizeof(XI_ONETEX_VERTEX),
                                           "iVideo");
-                else
+                } else {
                     m_rs->DrawPrimitiveUP(D3DPT_TRIANGLESTRIP, XI_ONETEX_FVF, 2, m_v, sizeof(XI_ONETEX_VERTEX),
                                           "iVideo");
+                }
             }
         }
 
-        if (m_idString != -1 || m_sString != nullptr)
-            if (m_nPressedDelay > 0)
-            {
+        if (m_idString != -1 || m_sString != nullptr) {
+            if (m_nPressedDelay > 0) {
                 m_rs->ExtPrint(m_nFontNum, m_dwPressedFontColor, 0, PR_ALIGN_CENTER, true, m_fFontScale, m_screenSize.x,
                                m_screenSize.y, (m_rect.left + m_rect.right) / 2 + static_cast<int>(m_fXDeltaPress),
                                m_rect.top + m_dwStrOffset + static_cast<int>(m_fYDeltaPress), "%s",
                                m_idString != -1 ? pStringService->GetString(m_idString) : m_sString);
-            }
-            else
-            {
-                if (m_bSelected)
-                {
-                    if(m_bCurrentSelected)
-                    {    
+            } else {
+                if (m_bSelected) {
+                    if(m_bCurrentSelected) {
                         m_rs->ExtPrint(m_nFontNum, m_dwSelectedFontColor, 0, PR_ALIGN_CENTER, true, m_fFontScale, m_screenSize.x,
                                        m_screenSize.y, (m_rect.left + m_rect.right) / 2, m_rect.top + m_dwStrOffset, "%s",
                                        m_idString != -1 ? pStringService->GetString(m_idString) : m_sString);
-                    }
-                    else
-                    {
+                    } else {
                         m_rs->ExtPrint(m_nFontNum, m_dwFontColor, 0, PR_ALIGN_CENTER, true, m_fFontScale, m_screenSize.x,
                                        m_screenSize.y, (m_rect.left + m_rect.right) / 2, m_rect.top + m_dwStrOffset, "%s",
                                        m_idString != -1 ? pStringService->GetString(m_idString) : m_sString);
-            }
-    }
+                    }
+                }
                 else
                     m_rs->ExtPrint(m_nFontNum, m_dwUnselFontColor, 0, PR_ALIGN_CENTER, true, m_fFontScale,
                                    m_screenSize.x, m_screenSize.y, (m_rect.left + m_rect.right) / 2,
                                    m_rect.top + m_dwStrOffset, "%s",
                                    m_idString != -1 ? pStringService->GetString(m_idString) : m_sString);
             }
+        }
     }
 }
 
-bool CXI_TEXTBUTTON::Init(INIFILE *ini1, const char *name1, INIFILE *ini2, const char *name2, VDX9RENDER *rs,
-                          XYRECT &hostRect, XYPOINT &ScreenSize)
-{
-    if (!CINODE::Init(ini1, name1, ini2, name2, rs, hostRect, ScreenSize))
-        return false;
-    return true;
+bool CXI_TEXTBUTTON::Init(const Config& node_config, const Config& def_config,
+    VDX9RENDER *rs, XYRECT &hostRect, XYPOINT &ScreenSize) {
+    return CINODE::Init(node_config, def_config, rs, hostRect, ScreenSize);
 }
 
-void CXI_TEXTBUTTON::LoadIni(INIFILE *ini1, const char *name1, INIFILE *ini2, const char *name2)
-{
-    char param[255];
-    FXYPOINT fPos;
-
+void CXI_TEXTBUTTON::LoadIni(const Config& node_config, const Config& def_config) {
+    std::pair<const Config&, const Config&> configs{node_config, def_config};
     // video to back
-    m_bVideoToBack = GetIniBool(ini1, name1, ini2, name2, "videoToBack", true);
+    m_bVideoToBack = Config::GetOrGet<std::int64_t>(configs, "videoToBack", 1);
 
     // get back color for button
-    m_dwBackColor = GetIniARGB(ini1, name1, ini2, name2, "backColor", ARGB(255, 255, 255, 255));
+    auto back_color = Config::GetOrGet<Types::Vector4<std::int64_t>>(configs, "backColor", {255, 255, 255, 255});
+    m_dwBackColor = ARGB(back_color.x, back_color.y, back_color.z, back_color.w);
 
     // get face color for not pressed button
-    m_dwFaceColor = GetIniARGB(ini1, name1, ini2, name2, "faceColor", ARGB(255, 255, 255, 255));
+    auto face_color = Config::GetOrGet<Types::Vector4<std::int64_t>>(configs, "faceColor", {255, 255, 255, 255});
+    m_dwFaceColor = ARGB(face_color.x, face_color.y, face_color.z, face_color.w);
 
     // get face color for pressed button
-    m_dwPressedFaceColor = GetIniARGB(ini1, name1, ini2, name2, "faceColorPressed", ARGB(255, 255, 255, 255));
+    auto face_color_pressed = Config::GetOrGet<Types::Vector4<std::int64_t>>(configs, "faceColorPressed", {255, 255, 255, 255});
+    m_dwPressedFaceColor = ARGB(face_color_pressed.x, face_color_pressed.y, face_color_pressed.z, face_color_pressed.w);
 
     // get shadow color
-    m_dwShadowColor = GetIniARGB(ini1, name1, ini2, name2, "shadowColor", ARGB(255, 0, 0, 0));
+    auto shadow_color = Config::GetOrGet<Types::Vector4<std::int64_t>>(configs, "shadowColor", {255, 0, 0, 0});
+    m_dwShadowColor = ARGB(shadow_color.x, shadow_color.y, shadow_color.z, shadow_color.w);
 
     // get font color
-    m_dwFontColor = GetIniARGB(ini1, name1, ini2, name2, "fontColor", ARGB(255, 255, 255, 255));
+    auto font_color = Config::GetOrGet<Types::Vector4<std::int64_t>>(configs, "fontColor", {255, 255, 255, 255});
+    m_dwFontColor = ARGB(font_color.x, font_color.y, font_color.z, font_color.w);
 
     // get font color for pressed button
-    m_dwPressedFontColor = GetIniARGB(ini1, name1, ini2, name2, "fontColorPressed", m_dwFontColor);
+    auto font_color_pressed = Config::GetOrGet<Types::Vector4<std::int64_t>>(configs, "fontColorPressed");
+    m_dwPressedFontColor = font_color_pressed.has_value()
+        ? ARGB(font_color_pressed->x, font_color_pressed->y, font_color_pressed->z, font_color_pressed->w)
+        : m_dwFontColor;
 
     // get font color for selected button
-    m_dwSelectedFontColor = GetIniARGB(ini1, name1, ini2, name2, "fontColorSelected", m_dwFontColor);
+    auto font_color_selected_opt = Config::GetOrGet<Types::Vector4<std::int64_t>>(configs, "fontColorSelected");
+    m_dwSelectedFontColor = font_color_selected_opt.has_value()
+        ? ARGB(font_color_selected_opt->x, font_color_selected_opt->y, font_color_selected_opt->z, font_color_selected_opt->w)
+        : m_dwFontColor;
 
-    m_fFontScale = GetIniFloat(ini1, name1, ini2, name2, "fontScale", 1.f);
+    m_fFontScale = static_cast<float>(Config::GetOrGet<double>(configs, "fontScale", 1.0));
 
     // get deselected font color
-    m_dwUnselFontColor = GetIniARGB(ini1, name1, ini2, name2, "unselectableFontColor", ARGB(255, 128, 128, 128));
+    auto font_color_unselected = Config::GetOrGet<Types::Vector4<std::int64_t>>(configs, "unselectableFontColor", {255, 128, 128, 128});
+    m_dwUnselFontColor = ARGB(font_color_unselected.x, font_color_unselected.y, font_color_unselected.z, font_color_unselected.w);
 
     // get group name and get texture for this
     m_sGroupName = nullptr;
     m_idTex = -1;
-    if (ReadIniString(ini1, name1, ini2, name2, "group", param, sizeof(param), ""))
-    {
-        m_idTex = pPictureService->GetTextureID(param);
-        const auto len = strlen(param) + 1;
-        m_sGroupName = new char[len];
-        if (m_sGroupName == nullptr)
-            throw std::runtime_error("allocate memory error");
-        memcpy(m_sGroupName, param, len);
+    m_sGroupName = Config::GetOrGet<std::string>(configs, "group", {});
+    if (!m_sGroupName.empty()) {
+        m_idTex = pPictureService->GetTextureID(m_sGroupName.c_str());
     }
 
     m_idShadowTex = -1;
-    if (ReadIniString(ini1, name1, ini2, name2, "ShadowTexture", param, sizeof(param), ""))
-        m_idShadowTex = m_rs->TextureCreate(param);
+    auto shadow_texture = Config::GetOrGet<std::string>(configs, "ShadowTexture", {});
+    if (!shadow_texture.empty()) {
+        m_idShadowTex = m_rs->TextureCreate(shadow_texture.c_str());
+    }
 
     FXYRECT frectShadowUV;
-    if (m_idShadowTex >= 0)
-    {
-        frectShadowUV = GetIniFloatRect(ini1, name1, ini2, name2, "ShadowUV", FXYRECT(0.f, 0.f, 1.f, 1.f));
+    if (m_idShadowTex >= 0) {
+        frectShadowUV = Config::GetOrGet<Types::Vector4<double>>(configs, "ShadowUV", {0.f, 0.f, 1.f, 1.f});
     }
 
     // get offset button image in case pressed button
-    fPos = GetIniFloatPoint(ini1, name1, ini2, name2, "pressPictureOffset", FXYPOINT(0.f, 0.f));
+    FXYPOINT fPos;
+    fPos = Config::GetOrGet<Types::Vector2<double>>(configs, "pressPictureOffset", {});
     m_fXDeltaPress = fPos.x;
     m_fYDeltaPress = fPos.y;
 
     // get offset button shadow in case pressed button
-    fPos = GetIniFloatPoint(ini1, name1, ini2, name2, "shadowOffset", FXYPOINT(0.f, 0.f));
+    fPos = Config::GetOrGet<Types::Vector2<double>>(configs, "shadowOffset", {});
     m_fXShadow = fPos.x;
     m_fYShadow = fPos.y;
 
     // get offset button shadow in case not pressed button
-    fPos = GetIniFloatPoint(ini1, name1, ini2, name2, "pressShadowOffset", FXYPOINT(0.f, 0.f));
+    fPos = Config::GetOrGet<Types::Vector2<double>>(configs, "pressShadowOffset", {});
     m_fXShadowPress = fPos.x;
     m_fYShadowPress = fPos.y;
 
     // get press delay
-    m_nMaxDelay = GetIniLong(ini1, name1, ini2, name2, "pressDelay", 20);
+    m_nMaxDelay = Config::GetOrGet<std::int64_t>(configs, "pressDelay", 20);
 
     // get string parameters
-    if (ReadIniString(ini1, name1, ini2, name2, "font", param, sizeof(param), ""))
-        if ((m_nFontNum = m_rs->LoadFont(param)) == -1)
-            core.Trace("can not load font:'%s'", param);
-    m_dwStrOffset = GetIniLong(ini1, name1, ini2, name2, "strOffset", 0);
+    auto font = Config::GetOrGet<std::string>(configs, "font", {});
+    if (!font.empty()) {
+        m_nFontNum = m_rs->LoadFont(font);
+        if (m_nFontNum == -1) {
+            core.Trace("can not load font:'%s'", font.c_str());
+        }
+    }
+    m_dwStrOffset = Config::GetOrGet<std::int64_t>(configs, "strOffset", 0);
 
     m_idString = -1;
-    if (ReadIniString(ini1, name1, ini2, name2, "string", param, sizeof(param), ""))
-        m_idString = pStringService->GetStringNum(param);
+    auto str = Config::GetOrGet<std::string>(configs, "string", {});
+    if (!str.empty()) {
+        m_idString = pStringService->GetStringNum(str.c_str());
+    }
 
     // get video fragment parameters
     m_pTex = nullptr;
-    if (ReadIniString(ini1, name1, ini2, name2, "midVideo", param, sizeof(param), ""))
-        m_pTex = m_rs->GetVideoTexture(param);
+    auto mid_video = Config::GetOrGet<std::string>(configs, "midVideo", {});
+    if (!mid_video.empty()) {
+        m_pTex = m_rs->GetVideoTexture(mid_video.c_str());
+    }
 
     // do vertex and index buffer
     m_nIndx = 3 * 2 * 3;     // 3 rectangle * 2 triangle to rectangle * 3 vertex to triangle
     m_nVert = 4 * 3 * 2 * 2; // 4 vertex * 3 rectangle * (2=face&shadow) * (2=press&notpress)
-    if (m_idShadowTex >= 0)
+    if (m_idShadowTex >= 0) {
         m_nVert += 8;
+    }
     m_idIBuf = m_rs->CreateIndexBuffer(m_nIndx * 2);
     m_idVBuf = m_rs->CreateVertexBuffer(XI_ONETEX_FVF, m_nVert * sizeof(XI_ONETEX_VERTEX), D3DUSAGE_WRITEONLY);
 
@@ -330,8 +335,7 @@ void CXI_TEXTBUTTON::LoadIni(INIFILE *ini1, const char *name1, INIFILE *ini2, co
 
     // fill triangles buffer
     auto i = 0;
-    for (auto tidx = 0; tidx < 3; tidx++)
-    {
+    for (auto tidx = 0; tidx < 3; tidx++) {
         pIndx[i + 0] = tidx * 4;
         pIndx[i + 1] = tidx * 4 + 1;
         pIndx[i + 2] = tidx * 4 + 2;
@@ -353,12 +357,12 @@ void CXI_TEXTBUTTON::LoadIni(INIFILE *ini1, const char *name1, INIFILE *ini2, co
     for (; i < 4 * 3 * 4; i++)
         pVert[i].color = m_dwShadowColor;
 
-    if (m_idShadowTex >= 0)
-    {
-        m_fShadowScale = GetIniFloat(ini1, name1, ini2, name2, "shadowScale", 1.f);
+    if (m_idShadowTex >= 0) {
+        m_fShadowScale = Config::GetOrGet<double>(configs, "shadowScale", 1.0);
 
-        for (; i < m_nVert; i++)
+        for (; i < m_nVert; i++) {
             pVert[i].color = m_dwShadowColor;
+        }
 
         i = m_nVert - 8;
         pVert[i + 4].tu = pVert[i + 0].tu = frectShadowUV.left;
@@ -396,10 +400,14 @@ void CXI_TEXTBUTTON::LoadIni(INIFILE *ini1, const char *name1, INIFILE *ini2, co
     XYRECT natureRect;
     // fill left side of button
     m_idUnSelectLeft = m_idSelectLeft = -1;
-    if (ReadIniString(ini1, name1, ini2, name2, "selectButtonLeft", param, sizeof(param), ""))
-        m_idSelectLeft = pPictureService->GetImageNum(m_sGroupName, param);
-    if (ReadIniString(ini1, name1, ini2, name2, "buttonLeft", param, sizeof(param), ""))
-        m_idUnSelectLeft = pPictureService->GetImageNum(m_sGroupName, param);
+    auto selected_button_left = Config::GetOrGet<std::string>(configs, "selectButtonLeft", {});
+    if (!selected_button_left.empty()) {
+        m_idSelectLeft = pPictureService->GetImageNum(m_sGroupName.c_str(), selected_button_left.c_str());
+    }
+    auto button_left = Config::GetOrGet<std::string>(configs, "buttonLeft", {});
+    if (!button_left.empty()) {
+        m_idUnSelectLeft = pPictureService->GetImageNum(m_sGroupName.c_str(), button_left.c_str());
+    }
     pPictureService->GetTexturePos(m_idUnSelectLeft, texRect);
     pPictureService->GetTexturePos(m_idUnSelectLeft, natureRect);
     auto fLeftMiddle = static_cast<float>(m_rect.left + natureRect.right - natureRect.left);
@@ -430,18 +438,19 @@ void CXI_TEXTBUTTON::LoadIni(INIFILE *ini1, const char *name1, INIFILE *ini2, co
     // fill right side of button
     auto fRightMiddle = m_rect.right - (fLeftMiddle - m_rect.left);
     m_idUnSelectRight = m_idSelectRight = -1;
-    if (ReadIniString(ini1, name1, ini2, name2, "buttonRight", param, sizeof(param), ""))
-        m_idUnSelectRight = pPictureService->GetImageNum(m_sGroupName, param);
-    if (ReadIniString(ini1, name1, ini2, name2, "selectButtonRight", param, sizeof(param), ""))
-        m_idSelectRight = pPictureService->GetImageNum(m_sGroupName, param);
+    auto button_right = Config::GetOrGet<std::string>(configs, "buttonRight", {});
+    if (!button_right.empty()) {
+        m_idUnSelectRight = pPictureService->GetImageNum(m_sGroupName.c_str(), button_right.c_str());
+    }
+    auto selected_button_right = Config::GetOrGet<std::string>(configs, "selectButtonRight", {});
+    if (!selected_button_right.empty()) {
+        m_idSelectRight = pPictureService->GetImageNum(m_sGroupName.c_str(), selected_button_right.c_str());
+    }
 
-    if (m_idUnSelectRight != -1)
-    {
+    if (m_idUnSelectRight != -1) {
         pPictureService->GetTexturePos(m_idUnSelectRight, texRect);
         pPictureService->GetTexturePos(m_idUnSelectRight, natureRect);
-    }
-    else
-    {
+    } else {
         pPictureService->GetTexturePos(TEXTURE_MODIFY_HORZFLIP, m_idUnSelectLeft, texRect);
         pPictureService->GetTexturePos(m_idUnSelectLeft, natureRect);
     }
@@ -471,10 +480,14 @@ void CXI_TEXTBUTTON::LoadIni(INIFILE *ini1, const char *name1, INIFILE *ini2, co
     pVert[34].pos.y = pVert[35].pos.y = m_rect.bottom + m_fYDeltaPress;
     pVert[46].pos.y = pVert[47].pos.y = m_rect.bottom + m_fYDeltaPress + m_fYShadowPress;
     // fill middle of button
-    if (ReadIniString(ini1, name1, ini2, name2, "buttonMiddle", param, sizeof(param), ""))
-        m_idUnSelectMiddle = pPictureService->GetImageNum(m_sGroupName, param);
-    if (ReadIniString(ini1, name1, ini2, name2, "selectButtonMiddle", param, sizeof(param), ""))
-        m_idSelectMiddle = pPictureService->GetImageNum(m_sGroupName, param);
+    auto button_middle = Config::GetOrGet<std::string>(configs, "buttonMiddle", {});
+    if (!button_middle.empty()) {
+        m_idUnSelectMiddle = pPictureService->GetImageNum(m_sGroupName.c_str(), button_middle.c_str());
+    }
+    auto select_button_middle = Config::GetOrGet<std::string>(configs, "selectButtonMiddle", {});
+    if (!select_button_middle.empty()) {
+        m_idSelectMiddle = pPictureService->GetImageNum(m_sGroupName.c_str(), select_button_middle.c_str());
+    }
     pPictureService->GetTexturePos(m_idUnSelectMiddle, texRect);
     m_bCurrentSelected = false;
     pVert[4].tu = pVert[16].tu = pVert[28].tu = pVert[40].tu = texRect.left;
@@ -508,8 +521,7 @@ void CXI_TEXTBUTTON::LoadIni(INIFILE *ini1, const char *name1, INIFILE *ini2, co
     m_rs->UnLockIndexBuffer(m_idIBuf);
 
     // fill video fragment
-    for (i = 0; i < 8; i++)
-    {
+    for (i = 0; i < 8; i++) {
         m_v[i].color = i < 4 ? m_dwFaceColor : m_dwPressedFaceColor;
         m_v[i].pos.z = 1.f;
     }
@@ -522,8 +534,7 @@ void CXI_TEXTBUTTON::LoadIni(INIFILE *ini1, const char *name1, INIFILE *ini2, co
     m_v[3].tu = m_v[7].tu = 1.f;
     m_v[3].tv = m_v[7].tv = 1.f;
 
-    if (m_bVideoToBack)
-    {
+    if (m_bVideoToBack) {
         fLeftMiddle = static_cast<float>(m_rect.left);
         fRightMiddle = static_cast<float>(m_rect.right);
     }
@@ -541,11 +552,9 @@ void CXI_TEXTBUTTON::LoadIni(INIFILE *ini1, const char *name1, INIFILE *ini2, co
     m_v[7].pos.y = (m_v[3].pos.y = static_cast<float>(m_rect.bottom)) + m_fYDeltaPress;
 }
 
-void CXI_TEXTBUTTON::ReleaseAll()
-{
-    PICTURE_TEXTURE_RELEASE(pPictureService, m_sGroupName, m_idTex);
+void CXI_TEXTBUTTON::ReleaseAll() {
+    PICTURE_TEXTURE_RELEASE(pPictureService, m_sGroupName.c_str(), m_idTex);
     TEXTURE_RELEASE(m_rs, m_idShadowTex);
-    STORM_DELETE(m_sGroupName);
     STORM_DELETE(m_sString);
     VERTEX_BUFFER_RELEASE(m_rs, m_idVBuf);
     INDEX_BUFFER_RELEASE(m_rs, m_idIBuf);

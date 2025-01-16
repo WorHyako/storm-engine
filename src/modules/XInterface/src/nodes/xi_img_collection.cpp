@@ -2,6 +2,9 @@
 
 #include "string_compare.hpp"
 
+using namespace Storm::Filesystem;
+using namespace Storm::Math;
+
 CXI_IMGCOLLECTION::CXI_IMGCOLLECTION()
     : m_bRelativeRect(false)
 {
@@ -11,7 +14,6 @@ CXI_IMGCOLLECTION::CXI_IMGCOLLECTION()
     nVert = 0;
     nIndx = 0;
     m_rs = nullptr;
-    sGroupName = nullptr;
     m_nNodeType = NODETYPE_IMAGECOLLECTION;
     m_nCurSection = 0;
     m_xyCommonOffset.x = 0;
@@ -32,10 +34,10 @@ void CXI_IMGCOLLECTION::Draw(bool bSelected, uint32_t Delta_Time)
     }
 }
 
-bool CXI_IMGCOLLECTION::Init(INIFILE *ini1, const char *name1, INIFILE *ini2, const char *name2, VDX9RENDER *rs,
-                             XYRECT &hostRect, XYPOINT &ScreenSize)
+bool CXI_IMGCOLLECTION::Init(const Config& node_config, const Config& def_config,
+    VDX9RENDER *rs, XYRECT &hostRect, XYPOINT &ScreenSize)
 {
-    if (!CINODE::Init(ini1, name1, ini2, name2, rs, hostRect, ScreenSize))
+    if (!CINODE::Init(node_config, def_config, rs, hostRect, ScreenSize))
         return false;
     // screen position for that is host screen position
     memcpy(&m_rect, &m_hostRect, sizeof(m_hostRect));
@@ -45,10 +47,9 @@ bool CXI_IMGCOLLECTION::Init(INIFILE *ini1, const char *name1, INIFILE *ini2, co
 
 void CXI_IMGCOLLECTION::ReleaseAll()
 {
-    PICTURE_TEXTURE_RELEASE(pPictureService, sGroupName, texl);
+    PICTURE_TEXTURE_RELEASE(pPictureService, sGroupName.c_str(), texl);
     VERTEX_BUFFER_RELEASE(m_rs, vBuf);
     INDEX_BUFFER_RELEASE(m_rs, iBuf);
-    STORM_DELETE(sGroupName);
 }
 
 int CXI_IMGCOLLECTION::CommandExecute(int wActCode)
@@ -85,36 +86,30 @@ void CXI_IMGCOLLECTION::AddImage(const char *pcPicName, uint32_t dwColor, XYRECT
     UpdateBuffers();
 }
 
-void CXI_IMGCOLLECTION::LoadIni(INIFILE *ini1, const char *name1, INIFILE *ini2, const char *name2)
-{
-    char param[256];
-    int32_t n;
-
+void CXI_IMGCOLLECTION::LoadIni(const Config& node_config, const Config& def_config) {
     // Get texture name and load that texture
-    sGroupName = nullptr;
+    std::pair<const Config&, const Config&> configs{node_config, def_config};
     texl = -1;
-    if (ReadIniString(ini1, name1, ini2, name2, "groupName", param, sizeof(param), ""))
-    {
-        const auto len = strlen(param) + 1;
-        sGroupName = new char[len];
-        memcpy(sGroupName, param, len);
-        texl = pPictureService->GetTextureID(sGroupName);
+    sGroupName = Config::GetOrGet<std::string>(configs, "groupName", {});
+    if (!sGroupName.empty()) {
+        texl = pPictureService->GetTextureID(sGroupName.c_str());
     }
 
     m_xyCommonOffset.x = 0;
     m_xyCommonOffset.y = 0;
-    m_xyCommonOffset = GetIniLongPoint(ini1, name1, ini2, name2, "offset", m_xyCommonOffset);
+    m_xyCommonOffset = Config::GetOrGet<Types::Vector2<std::int64_t>>(configs, "offset", {m_xyCommonOffset.x, m_xyCommonOffset.y});
 
     // Get images quantity
-    auto imgQuantity = 0;
-    if (ini1->ReadString(name1, "picture", param, sizeof(param) - 1, ""))
-        do
-        {
-            if (!storm::iEquals(param, "editsection:", 12))
+    auto picture_vec = Config::GetOrGet<std::vector<std::vector<std::string>>>(configs, "picture", {});
+    std::size_t imgQuantity{0};
+    std::ranges::for_each(picture_vec,
+        [&imgQuantity](auto& each) {
+            if (each[0].starts_with("editsection")) {
                 imgQuantity++;
-        } while (ini1->ReadStringNext(name1, "picture", param, sizeof(param) - 1));
+            }
+        });
 
-    m_bRelativeRect = !GetIniLong(ini1, name1, ini2, name2, "bAbsoluteRectangle", 0);
+    m_bRelativeRect = Config::GetOrGet<std::int64_t>(configs, "bAbsoluteRectangle", 0) == false;
 
     // Calculate vertex and index quantity
     nVert = imgQuantity * 4;
@@ -134,24 +129,28 @@ void CXI_IMGCOLLECTION::LoadIni(INIFILE *ini1, const char *name1, INIFILE *ini2,
         {
             FXYRECT texRect;
             XYRECT scrRect;
+            std::size_t n{};
             // fill vetex and index buffers of image information
-            ini1->ReadString(name1, "picture", param, sizeof(param) - 1, "");
             for (auto i = 0; i < imgQuantity; i++)
             {
-                if (!storm::iEquals(param, "editsection:", 12))
-                {
+                std::stringstream ss;
+                std::ranges::for_each(picture_vec[i],
+                    [&ss](const std::string& each) {
+                        ss << each << ',';
+                    });
+                std::string picture_str = ss.str();
+                if (!picture_str.starts_with("editsection")) {
                     auto dwColor = ARGB(255, 128, 128, 128);
                     char param2[256];
-                    const char *pStr = param;
-                    n = m_aEditInfo.size();
-                    m_aEditInfo.push_back(PicEditInfo());
+                    const char *pStr = picture_str.data();
+                    n = std::size(m_aEditInfo);
+                    m_aEditInfo.emplace_back();
 
                     pStr = GetSubStr(pStr, param2, sizeof(param2));
-                    pPictureService->GetTexturePos(sGroupName, param2, texRect);
+                    pPictureService->GetTexturePos(sGroupName.c_str(), param2, texRect);
                     m_aEditInfo[n].sName = param2;
 
-                    if (GetMidStr(pStr, param2, sizeof(param2), "col:{", "}"))
-                    {
+                    if (GetMidStr(pStr, param2, sizeof(param2), "col:{", "}")) {
                         int a = ALPHA(dwColor);
                         int r = RED(dwColor);
                         int g = GREEN(dwColor);
@@ -173,38 +172,30 @@ void CXI_IMGCOLLECTION::LoadIni(INIFILE *ini1, const char *name1, INIFILE *ini2,
                     m_aEditInfo[n].bNative = true;
 
                     SetBuffers(pVBuf, pIBuf, i, scrRect, texRect, dwColor);
-                }
-                else
-                {
-                    if (storm::iEquals(&param[12], "end"))
-                    {
-                        n = m_aSections.size() - 1;
+                } else {
+                    if (storm::iEquals(&picture_str[12], "end")) {
+                        n = std::size(m_aSections) - 1;
                         if (n >= 0)
-                            m_aSections[n].nQuantity = m_aEditInfo.size() - m_aSections[n].nStartNum;
-                    }
-                    else
-                    {
-                        n = m_aSections.size() - 1;
-                        if (n >= 0)
-                        {
+                            m_aSections[n].nQuantity = std::size(m_aEditInfo) - m_aSections[n].nStartNum;
+                    } else {
+                        n = std::size(m_aSections) - 1;
+                        if (!m_aSections.empty()) {
                             if (m_aSections[n].nQuantity == 0)
-                                m_aSections[n].nQuantity = m_aEditInfo.size() - m_aSections[n].nStartNum;
+                                m_aSections[n].nQuantity = std::size(m_aEditInfo) - m_aSections[n].nStartNum;
                         }
                         n++;
-                        m_aSections.push_back(PicEditSection());
-                        m_aSections[n].nStartNum = m_aEditInfo.size();
-                        m_aSections[n].sName = &param[12];
+                        m_aSections.emplace_back();
+                        m_aSections[n].nStartNum = std::size(m_aEditInfo);
+                        m_aSections[n].sName = &picture_str[12];
                         m_aSections[n].nQuantity = 0;
                     }
                     i--;
                 }
-                ini1->ReadStringNext(name1, "picture", param, sizeof(param) - 1);
             }
             n = m_aSections.size() - 1;
-            if (n >= 0)
-            {
+            if (n >= 0) {
                 if (m_aSections[n].nQuantity == 0)
-                    m_aSections[n].nQuantity = m_aEditInfo.size() - m_aSections[n].nStartNum;
+                    m_aSections[n].nQuantity = std::size(m_aEditInfo) - m_aSections[n].nStartNum;
             }
         }
 
@@ -270,7 +261,7 @@ void CXI_IMGCOLLECTION::UpdateBuffers()
 
         for (int32_t n = 0; n < m_aEditInfo.size(); n++)
         {
-            pPictureService->GetTexturePos(sGroupName, m_aEditInfo[n].sName.c_str(), texRect);
+            pPictureService->GetTexturePos(sGroupName.c_str(), m_aEditInfo[n].sName.c_str(), texRect);
 
             scrRect.left = m_aEditInfo[n].nLeft;
             scrRect.top = m_aEditInfo[n].nTop;
@@ -350,7 +341,7 @@ void CXI_IMGCOLLECTION::SaveParametersToIni()
 
     if (n < m_aEditInfo.size())
     {
-        pIni->AddString(m_nodeName, "groupName", sGroupName);
+        pIni->AddString(m_nodeName, "groupName", sGroupName.c_str());
 
         // save position
         for (n = 0; n < m_aEditInfo.size(); n++)
@@ -407,16 +398,13 @@ uint32_t CXI_IMGCOLLECTION::MessageProc(int32_t msgcode, MESSAGE &message)
     {
         const std::string &param = message.String();
 
-        if (!sGroupName || !storm::iEquals(sGroupName, param))
+        if (sGroupName.empty() || sGroupName != param)
         {
-            STORM_DELETE(sGroupName);
-            PICTURE_TEXTURE_RELEASE(pPictureService, sGroupName, texl);
+            sGroupName.clear();
+            PICTURE_TEXTURE_RELEASE(pPictureService, sGroupName.c_str(), texl);
 
-            // group name
-            const auto len = param.size() + 1;
-            sGroupName = new char[len];
-            memcpy(sGroupName, param.c_str(), len);
-            texl = pPictureService->GetTextureID(sGroupName);
+            sGroupName = param;
+            texl = pPictureService->GetTextureID(sGroupName.c_str());
         }
     }
     break;

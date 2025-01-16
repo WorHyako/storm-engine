@@ -15,7 +15,7 @@ class CXI_ToolTip
     ~CXI_ToolTip();
 
     void Draw();
-    void SetByFormatString(XYRECT &rectOwner, INIFILE *pDefIni, const char *pFmtStr);
+    void SetByFormatString(XYRECT &rectOwner, const std::string& pDefInipDefIni, const char *pFmtStr);
 
     void MousePos(float fDeltaTime, int32_t nX, int32_t nY);
 

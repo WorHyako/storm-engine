@@ -1,5 +1,8 @@
 #include "xi_lr_changer.h"
 
+using namespace Storm::Filesystem;
+using namespace Storm::Math;
+
 void SetOneTextureCoordinate(XI_ONETEX_VERTEX v[4], const FXYRECT &tr)
 {
     v[0].tu = tr.left;
@@ -44,96 +47,81 @@ CXI_LRCHANGER::~CXI_LRCHANGER()
     ReleaseAll();
 }
 
-void CXI_LRCHANGER::Draw(bool bSelected, uint32_t Delta_Time)
-{
-    if (m_bUse)
-    {
-        if (nPressedDelay > 0)
-            nPressedDelay--;
-
-        // Create rectangle
-        XI_ONETEX_VERTEX vFace[4];
-        XI_ONETEX_VERTEX vShadow[4];
-
-        // calculate face color
-        uint32_t curCol;
-        if (m_bBlindIncrement)
-            m_dwCurBlindState += Delta_Time;
-        else
-            m_dwCurBlindState -= Delta_Time;
-        if (m_dwCurBlindState < 0)
-        {
-            m_dwCurBlindState = 0;
-            m_bBlindIncrement = true;
-        }
-        if (m_dwCurBlindState > m_dwBlindDelay)
-        {
-            m_dwCurBlindState = m_dwBlindDelay;
-            m_bBlindIncrement = false;
-        }
-        if (bSelected)
-            curCol = ColorInterpolate(m_dwDarkSelCol, m_dwLightSelCol,
-                                      static_cast<float>(m_dwCurBlindState) / m_dwBlindDelay);
-        else
-            curCol = m_dwFaceColor;
-
-        for (auto i = 0; i < 4; i++)
-        {
-            vFace[i].color = curCol;
-            vFace[i].pos.z = 1.f;
-            vShadow[i].color = m_dwShadowColor;
-            vShadow[i].pos.z = 1.f;
-        }
-
-        m_rs->TextureSet(0, m_idTex);
-
-        // show left button
-        SetOneTextureCoordinate(vFace, m_tLRect);
-        SetOneTextureCoordinate(vShadow, m_tLRect);
-        if (nPressedDelay > 0 && m_bLeftPress)
-        {
-            SetRectanglePosition(vFace, m_posLRect + m_PressShift);
-            SetRectanglePosition(vShadow, m_posLRect + m_PressShift + m_PressShadowShift);
-        }
-        else
-        {
-            SetRectanglePosition(vFace, m_posLRect);
-            SetRectanglePosition(vShadow, m_posLRect + m_ShadowShift);
-        }
-        m_rs->DrawPrimitiveUP(D3DPT_TRIANGLESTRIP, XI_ONETEX_FVF, 2, vShadow, sizeof(XI_ONETEX_VERTEX), "iShadow");
-        m_rs->DrawPrimitiveUP(D3DPT_TRIANGLESTRIP, XI_ONETEX_FVF, 2, vFace, sizeof(XI_ONETEX_VERTEX), "iIcon");
-        // show right button
-        SetOneTextureCoordinate(vFace, m_tRRect);
-        SetOneTextureCoordinate(vShadow, m_tRRect);
-        if (nPressedDelay > 0 && !m_bLeftPress)
-        {
-            SetRectanglePosition(vFace, m_posRRect + m_PressShift);
-            SetRectanglePosition(vShadow, m_posRRect + m_PressShift + m_PressShadowShift);
-        }
-        else
-        {
-            SetRectanglePosition(vFace, m_posRRect);
-            SetRectanglePosition(vShadow, m_posRRect + m_ShadowShift);
-        }
-        m_rs->DrawPrimitiveUP(D3DPT_TRIANGLESTRIP, XI_ONETEX_FVF, 2, vShadow, sizeof(XI_ONETEX_VERTEX), "iShadow");
-        m_rs->DrawPrimitiveUP(D3DPT_TRIANGLESTRIP, XI_ONETEX_FVF, 2, vFace, sizeof(XI_ONETEX_VERTEX), "iIcon");
+void CXI_LRCHANGER::Draw(bool bSelected, uint32_t Delta_Time) {
+    if (!m_bUse) {
+        return;
     }
+    if (nPressedDelay > 0)
+        nPressedDelay--;
+
+    // Create rectangle
+    XI_ONETEX_VERTEX vFace[4];
+    XI_ONETEX_VERTEX vShadow[4];
+
+    // calculate face color
+    uint32_t curCol;
+    if (m_bBlindIncrement)
+        m_dwCurBlindState += Delta_Time;
+    else
+        m_dwCurBlindState -= Delta_Time;
+    if (m_dwCurBlindState < 0) {
+        m_dwCurBlindState = 0;
+        m_bBlindIncrement = true;
+    }
+    if (m_dwCurBlindState > m_dwBlindDelay) {
+        m_dwCurBlindState = m_dwBlindDelay;
+        m_bBlindIncrement = false;
+    }
+    if (bSelected) {
+        curCol = ColorInterpolate(m_dwDarkSelCol, m_dwLightSelCol,
+                                  static_cast<float>(m_dwCurBlindState) / m_dwBlindDelay);
+    } else {
+        curCol = m_dwFaceColor;
+    }
+    for (auto i = 0; i < 4; i++) {
+        vFace[i].color = curCol;
+        vFace[i].pos.z = 1.f;
+        vShadow[i].color = m_dwShadowColor;
+        vShadow[i].pos.z = 1.f;
+    }
+
+    m_rs->TextureSet(0, m_idTex);
+
+    // show left button
+    SetOneTextureCoordinate(vFace, m_tLRect);
+    SetOneTextureCoordinate(vShadow, m_tLRect);
+    if (nPressedDelay > 0 && m_bLeftPress) {
+        SetRectanglePosition(vFace, m_posLRect + m_PressShift);
+        SetRectanglePosition(vShadow, m_posLRect + m_PressShift + m_PressShadowShift);
+    } else {
+        SetRectanglePosition(vFace, m_posLRect);
+        SetRectanglePosition(vShadow, m_posLRect + m_ShadowShift);
+    }
+    m_rs->DrawPrimitiveUP(D3DPT_TRIANGLESTRIP, XI_ONETEX_FVF, 2, vShadow, sizeof(XI_ONETEX_VERTEX), "iShadow");
+    m_rs->DrawPrimitiveUP(D3DPT_TRIANGLESTRIP, XI_ONETEX_FVF, 2, vFace, sizeof(XI_ONETEX_VERTEX), "iIcon");
+    // show right button
+    SetOneTextureCoordinate(vFace, m_tRRect);
+    SetOneTextureCoordinate(vShadow, m_tRRect);
+    if (nPressedDelay > 0 && !m_bLeftPress) {
+        SetRectanglePosition(vFace, m_posRRect + m_PressShift);
+        SetRectanglePosition(vShadow, m_posRRect + m_PressShift + m_PressShadowShift);
+    } else {
+        SetRectanglePosition(vFace, m_posRRect);
+        SetRectanglePosition(vShadow, m_posRRect + m_ShadowShift);
+    }
+    m_rs->DrawPrimitiveUP(D3DPT_TRIANGLESTRIP, XI_ONETEX_FVF, 2, vShadow, sizeof(XI_ONETEX_VERTEX), "iShadow");
+    m_rs->DrawPrimitiveUP(D3DPT_TRIANGLESTRIP, XI_ONETEX_FVF, 2, vFace, sizeof(XI_ONETEX_VERTEX), "iIcon");
 }
 
-bool CXI_LRCHANGER::Init(INIFILE *ini1, const char *name1, INIFILE *ini2, const char *name2, VDX9RENDER *rs,
-                         XYRECT &hostRect, XYPOINT &ScreenSize)
-{
-    if (!CINODE::Init(ini1, name1, ini2, name2, rs, hostRect, ScreenSize))
-        return false;
-    return true;
+bool CXI_LRCHANGER::Init(const Config& node_config, const Config& def_config,
+    VDX9RENDER *rs, XYRECT &hostRect, XYPOINT &ScreenSize) {
+    return CINODE::Init(node_config, def_config, rs, hostRect, ScreenSize);
 }
 
-void CXI_LRCHANGER::LoadIni(INIFILE *ini1, const char *name1, INIFILE *ini2, const char *name2)
-{
-    char param[255];
-
+void CXI_LRCHANGER::LoadIni(const Config& node_config, const Config& def_config) {
+    std::pair<const Config&, const Config&> configs{node_config, def_config};
     // set buttons position
-    const auto nSpaceWidth = GetIniLong(ini1, name1, ini2, name2, "spaceWidth", 0);
+    const auto nSpaceWidth = Config::GetOrGet<std::int64_t>(configs, "spaceWidth", 0);
     m_posLRect.left = static_cast<float>(m_rect.left);
     m_posLRect.top = static_cast<float>(m_rect.top);
     m_posLRect.right = static_cast<float>(m_rect.left) + (m_rect.right - m_rect.left - nSpaceWidth) / 2.f;
@@ -144,56 +132,58 @@ void CXI_LRCHANGER::LoadIni(INIFILE *ini1, const char *name1, INIFILE *ini2, con
     m_posRRect.bottom = static_cast<float>(m_rect.bottom);
 
     // get face color
-    m_dwFaceColor = GetIniARGB(ini1, name1, ini2, name2, "faceColor", 0xFFFFFFFF);
+    auto face_color = Config::GetOrGet<Types::Vector4<std::int64_t>>(configs, "faceColor", {255, 255, 255, 255});
+    m_dwFaceColor = ARGB(face_color.x, face_color.y, face_color.z, face_color.w);
 
     // get shadow color
-    m_dwShadowColor = GetIniARGB(ini1, name1, ini2, name2, "shadowColor", ARGB(255, 0, 0, 0));
+    auto shadow_color = Config::GetOrGet<Types::Vector4<std::int64_t>>(configs, "shadowColor", {255, 0, 0, 0});
+    m_dwShadowColor = ARGB(shadow_color.x, shadow_color.y, shadow_color.z, shadow_color.w);
 
     // get light select color
-    m_dwLightSelCol = GetIniARGB(ini1, name1, ini2, name2, "lightSelectColor", ARGB(255, 138, 138, 138));
+    auto light_select_color = Config::GetOrGet<Types::Vector4<std::int64_t>>(configs, "lightSelectColor", {255, 138, 138, 138});
+    m_dwLightSelCol = ARGB(light_select_color.x, light_select_color.y, light_select_color.z, light_select_color.w);
 
     // get dark select color
-    m_dwDarkSelCol = GetIniARGB(ini1, name1, ini2, name2, "darkSelectColor", ARGB(255, 108, 108, 108));
+    auto dark_select_color = Config::GetOrGet<Types::Vector4<std::int64_t>>(configs, "darkSelectColor", {255, 108, 108, 108});
+    m_dwDarkSelCol = ARGB(dark_select_color.x, dark_select_color.y, dark_select_color.z, dark_select_color.w);
 
     // get blind delay
-    m_dwBlindDelay = GetIniLong(ini1, name1, ini2, name2, "blindDelay", 0);
+    m_dwBlindDelay = Config::GetOrGet<std::int64_t>(configs, "blindDelay", 0);
 
     // get group name and get texture for this
     m_idTex = -1;
-    m_sGroupName = nullptr;
-    if (ReadIniString(ini1, name1, ini2, name2, "group", param, sizeof(param), ""))
-    {
-        const auto len = strlen(param) + 1;
-        m_sGroupName = new char[len];
-        if (m_sGroupName == nullptr)
-            throw std::runtime_error("allocate memory error");
-        memcpy(m_sGroupName, param, len);
-        m_idTex = pPictureService->GetTextureID(param);
+    m_sGroupName = Config::GetOrGet<std::string>(configs, "group", {});
+    if (!m_sGroupName.empty()) {
+        m_idTex = pPictureService->GetTextureID(m_sGroupName.c_str());
     }
 
     // get buttons picture name
-    if (ReadIniString(ini1, name1, ini2, name2, "lpicture", param, sizeof(param), ""))
-        pPictureService->GetTexturePos(m_sGroupName, param, m_tLRect);
-    if (ReadIniString(ini1, name1, ini2, name2, "rpicture", param, sizeof(param), ""))
-        pPictureService->GetTexturePos(m_sGroupName, param, m_tRRect);
+    const auto l_picture = Config::GetOrGet<std::string>(configs, "lpicture", {});
+    if (!l_picture.empty()) {
+        pPictureService->GetTexturePos(m_sGroupName.c_str(), l_picture.c_str(), m_tLRect);
+    }
+
+    const auto r_picture = Config::GetOrGet<std::string>(configs, "rpicture", {});
+    if (!r_picture.empty()) {
+        pPictureService->GetTexturePos(m_sGroupName.c_str(), r_picture.c_str(), m_tLRect);
+    }
 
     // get offset button image in case pressed button
-    m_PressShift = GetIniFloatPoint(ini1, name1, ini2, name2, "pressPictureOffset", FXYPOINT(0.f, 0.f));
+    m_PressShift = Config::GetOrGet<Types::Vector2<double>>(configs, "pressPictureOffset", {});
 
     // get offset button shadow in case not pressed button
-    m_ShadowShift = GetIniFloatPoint(ini1, name1, ini2, name2, "shadowOffset", FXYPOINT(0.f, 0.f));
+    m_ShadowShift = Config::GetOrGet<Types::Vector2<double>>(configs, "shadowOffset", {});
 
     // get offset button shadow in case pressed button
-    m_PressShadowShift = GetIniFloatPoint(ini1, name1, ini2, name2, "pressShadowOffset", FXYPOINT(0.f, 0.f));
+    m_PressShadowShift = Config::GetOrGet<Types::Vector2<double>>(configs, "pressShadowOffset", {});
 
     // get press delay
-    nMaxDelay = GetIniLong(ini1, name1, ini2, name2, "pressDelay", 20);
+    nMaxDelay = Config::GetOrGet<std::int64_t>(configs, "pressDelay", 20);
 }
 
 void CXI_LRCHANGER::ReleaseAll()
 {
-    PICTURE_TEXTURE_RELEASE(pPictureService, m_sGroupName, m_idTex);
-    STORM_DELETE(m_sGroupName);
+    PICTURE_TEXTURE_RELEASE(pPictureService, m_sGroupName.c_str(), m_idTex);
 }
 
 int CXI_LRCHANGER::CommandExecute(int wActCode)
@@ -222,19 +212,19 @@ int CXI_LRCHANGER::CommandExecute(int wActCode)
     return -1;
 }
 
-bool CXI_LRCHANGER::IsClick(int buttonID, int32_t xPos, int32_t yPos)
-{
-    if (xPos >= m_rect.left && xPos <= m_rect.right && yPos >= m_rect.top && yPos <= m_rect.bottom && m_bClickable &&
-        m_bUse)
-    {
+bool CXI_LRCHANGER::IsClick(int buttonID, int32_t xPos, int32_t yPos) {
+    if (xPos >= m_rect.left
+        && xPos <= m_rect.right
+        && yPos >= m_rect.top
+        && yPos <= m_rect.bottom
+        && m_bClickable
+        && m_bUse) {
         // check left button
-        if (xPos <= m_posLRect.right)
-        {
+        if (xPos <= m_posLRect.right) {
             m_bLeftPress = true;
             return true;
         }
-        if (xPos >= m_posRRect.left)
-        {
+        if (xPos >= m_posRRect.left) {
             m_bLeftPress = false;
             return true;
         }

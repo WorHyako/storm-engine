@@ -3,6 +3,8 @@
 #define MAX_PICE_RESERV 256
 #define MAX_PICE_STRING_SIZE 256
 
+using namespace Storm::Filesystem;
+
 CXI_SCROLLTEXT::CXI_SCROLLTEXT()
     : m_idFont(0)
 {
@@ -47,10 +49,9 @@ void CXI_SCROLLTEXT::Draw(bool bSelected, uint32_t Delta_Time)
     }
 }
 
-bool CXI_SCROLLTEXT::Init(INIFILE *ini1, const char *name1, INIFILE *ini2, const char *name2, VDX9RENDER *rs,
-                          XYRECT &hostRect, XYPOINT &ScreenSize)
-{
-    if (!CINODE::Init(ini1, name1, ini2, name2, rs, hostRect, ScreenSize))
+bool CXI_SCROLLTEXT::Init(const Config& node_config, const Config& def_config,
+    VDX9RENDER *rs, XYRECT &hostRect, XYPOINT &ScreenSize) {
+    if (!CINODE::Init(node_config, def_config, rs, hostRect, ScreenSize))
         return false;
     SetText("proba string ^fnormal continue proba string one, two, three etc. Continue next stringes from full screen "
             "filling");
@@ -156,8 +157,7 @@ void CXI_SCROLLTEXT::SaveParametersToIni()
     pIni->WriteString(m_nodeName, "position", pcWriteParam);
 }
 
-void CXI_SCROLLTEXT::LoadIni(INIFILE *ini1, const char *name1, INIFILE *ini2, const char *name2)
-{
+void CXI_SCROLLTEXT::LoadIni(const Config& node_config, const Config& def_config) {
     m_pScroller = nullptr;
     m_nMaxStringes = 0;
     m_dwFontColor = ARGB(255, 255, 255, 255);

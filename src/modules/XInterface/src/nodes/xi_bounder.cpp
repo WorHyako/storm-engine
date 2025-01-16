@@ -1,16 +1,18 @@
 #include "xi_bounder.h"
-#include <stdio.h>
 
 #include "core.h"
-
 #include "file_service.h"
+
+#include <cstdio>
+
+using namespace Storm::Filesystem;
+using namespace Storm::Math;
 
 CXI_BOUNDER::CXI_BOUNDER()
 {
     m_rs = nullptr;
 
     m_idTex = -1L;
-    m_sGroupName = nullptr;
 
     m_idVBuf = -1L;
     m_idIBuf = -1L;
@@ -38,54 +40,48 @@ void CXI_BOUNDER::Draw(bool bSelected, uint32_t Delta_Time)
     }
 }
 
-bool CXI_BOUNDER::Init(INIFILE *ini1, const char *name1, INIFILE *ini2, const char *name2, VDX9RENDER *rs,
-                       XYRECT &hostRect, XYPOINT &ScreenSize)
-{
-    if (!CINODE::Init(ini1, name1, ini2, name2, rs, hostRect, ScreenSize))
-        return false;
-    return true;
+bool CXI_BOUNDER::Init(const Config& node_config, const Config& def_config,
+    VDX9RENDER *rs, XYRECT &hostRect, XYPOINT &ScreenSize) {
+    return CINODE::Init(node_config, def_config, rs, hostRect, ScreenSize);
 }
 
 void CXI_BOUNDER::ReleaseAll()
 {
     m_bUse = false;
 
-    PICTURE_TEXTURE_RELEASE(pPictureService, m_sGroupName, m_idTex);
-    STORM_DELETE(m_sGroupName);
+    PICTURE_TEXTURE_RELEASE(pPictureService, m_sGroupName.c_str(), m_idTex);
 
     VERTEX_BUFFER_RELEASE(m_rs, m_idVBuf);
     INDEX_BUFFER_RELEASE(m_rs, m_idIBuf);
 }
 
-void CXI_BOUNDER::LoadIni(INIFILE *ini1, const char *name1, INIFILE *ini2, const char *name2)
-{
-    int i;
-    char param[256];
-    char param2[256];
-    const char *tmpstr;
-
-    // get show color
-    m_dwColor = GetIniARGB(ini1, name1, ini2, name2, "color", 0xFFFFFFFF);
+void CXI_BOUNDER::LoadIni(const Config& node_config, const Config& def_config) {
+    std::pair<const Config&, const Config&> configs{node_config, def_config};
+    auto color = Config::GetOrGet<Types::Vector4<std::int64_t>>(configs, "color", {255, 255, 255, 255});
+    m_dwColor = ARGB(color.x, color.y, color.z, color.w);
 
     // Get texture name and load that texture
-    m_sGroupName = nullptr;
-    if (ReadIniString(ini1, name1, ini2, name2, "groupName", param, sizeof(param), ""))
-    {
-        const auto len = strlen(param) + 1;
-        m_sGroupName = new char[len];
-        memcpy(m_sGroupName, param, len);
-        m_idTex = pPictureService->GetTextureID(m_sGroupName);
+    m_sGroupName = Config::GetOrGet<std::string>(configs, "group_name", {});
+    if (!m_sGroupName.empty()) {
+        m_idTex = pPictureService->GetTextureID(m_sGroupName.c_str());
     }
 
     // get pictures name
     m_idAngle = -1;
     m_idHorzLine = -1;
-    if (ReadIniString(ini1, name1, ini2, name2, "pictures", param, sizeof(param), ""))
-    {
-        tmpstr = param;
-        tmpstr = GetSubStr(tmpstr, param2, sizeof(param2) - 1);
-        m_idAngle = pPictureService->GetImageNum(m_sGroupName, param2);
-        m_idHorzLine = pPictureService->GetImageNum(m_sGroupName, tmpstr);
+    auto pictures_vec = Config::GetOrGet<std::vector<std::string>>(configs, "pictures", {});
+    std::stringstream ss;
+    std::ranges::for_each(pictures_vec,
+    [&ss](const auto& str) {
+        ss << str << ',';
+    });
+    std::string pictures{ss.str()};
+    if (!pictures.empty()) {
+        char* param = pictures.data();
+        char param2[256];
+        std::string sub_str = GetSubStr(param, param2, sizeof(param2) - 1);
+        m_idAngle = pPictureService->GetImageNum(m_sGroupName.c_str(), param2);
+        m_idHorzLine = pPictureService->GetImageNum(m_sGroupName.c_str(), sub_str.c_str());
     }
 
     // get picture width & height
@@ -100,13 +96,15 @@ void CXI_BOUNDER::LoadIni(INIFILE *ini1, const char *name1, INIFILE *ini2, const
     auto fBoxHeight = static_cast<float>(m_rect.bottom - m_rect.top) - m_fAngleHeight * 2.f;
 
     m_nHorzLineQuantity = static_cast<int>(fBoxWidth / fLineWidth);
-    if (m_nHorzLineQuantity * fLineWidth < fBoxWidth)
+    if (m_nHorzLineQuantity * fLineWidth < fBoxWidth) {
         m_nHorzLineQuantity++;
+    }
     auto fHorzLineWidth = fBoxWidth / m_nHorzLineQuantity;
 
     m_nVertLineQuantity = static_cast<int>(fBoxHeight / fLineWidth);
-    if (m_nVertLineQuantity * fLineWidth < fBoxHeight)
+    if (m_nVertLineQuantity * fLineWidth < fBoxHeight) {
         m_nVertLineQuantity++;
+    }
     auto fVertLineWidth = fBoxHeight / m_nVertLineQuantity;
 
     // create index and vertex buffers
@@ -118,11 +116,11 @@ void CXI_BOUNDER::LoadIni(INIFILE *ini1, const char *name1, INIFILE *ini2, const
     // Fill buffers
     auto *pVert = static_cast<XI_ONETEX_VERTEX *>(m_rs->LockVertexBuffer(m_idVBuf));
     auto *pIndx = static_cast<uint16_t *>(m_rs->LockIndexBuffer(m_idIBuf));
-    if (pVert == nullptr || pIndx == nullptr)
+    if (pVert == nullptr || pIndx == nullptr) {
         throw std::runtime_error("can not create the index&vertex buffers");
+    }
 
-    for (i = 0; i < m_nVert; i++)
-    {
+    for (int i = 0; i < m_nVert; i++) {
         pVert[i].color = m_dwColor;
         pVert[i].pos.z = 1.f;
     }
@@ -132,8 +130,7 @@ void CXI_BOUNDER::LoadIni(INIFILE *ini1, const char *name1, INIFILE *ini2, const
     // fill angle rectangles
     FXYRECT texRectTmp;
     FXYRECT fRectTmp;
-    for (i = 0; i < 4; i++)
-    {
+    for (int i = 0; i < 4; i++) {
         pIndx[inum++] = vnum;
         pIndx[inum++] = vnum + 1;
         pIndx[inum++] = vnum + 2;
@@ -141,8 +138,7 @@ void CXI_BOUNDER::LoadIni(INIFILE *ini1, const char *name1, INIFILE *ini2, const
         pIndx[inum++] = vnum + 1;
         pIndx[inum++] = vnum + 3;
 
-        switch (i)
-        {
+        switch (i) {
         case 0:
             fRectTmp.left = static_cast<float>(m_rect.left);
             fRectTmp.right = static_cast<float>(m_rect.left) + m_fAngleWidth;
@@ -201,20 +197,16 @@ void CXI_BOUNDER::LoadIni(INIFILE *ini1, const char *name1, INIFILE *ini2, const
     auto fXTop = m_rect.left + m_fAngleWidth;
     auto fYTop = m_rect.bottom - m_fAngleHeight;
     auto lineType = 0; // top horizontal line
-    for (i = 0; i < m_nHorzLineQuantity * 2 + m_nVertLineQuantity * 2; i++)
-    {
-        if (i == m_nHorzLineQuantity)
-        {
+    for (int i = 0; i < m_nHorzLineQuantity * 2 + m_nVertLineQuantity * 2; i++) {
+        if (i == m_nHorzLineQuantity) {
             lineType = 1; // bottom horizontal line
             fXTop = m_rect.left + m_fAngleWidth;
         }
-        if (i == m_nHorzLineQuantity * 2)
-        {
+        if (i == m_nHorzLineQuantity * 2) {
             lineType = 2; // left vertical line
             fYTop = m_rect.bottom - m_fAngleHeight;
         }
-        if (i == m_nHorzLineQuantity * 2 + m_nVertLineQuantity)
-        {
+        if (i == m_nHorzLineQuantity * 2 + m_nVertLineQuantity) {
             lineType = 3; // right vertical line
             fYTop = m_rect.bottom - m_fAngleHeight;
         }
@@ -227,8 +219,7 @@ void CXI_BOUNDER::LoadIni(INIFILE *ini1, const char *name1, INIFILE *ini2, const
         pIndx[inum++] = vnum + 3;
 
         //
-        if (lineType == 0 || lineType == 2)
-        {
+        if (lineType == 0 || lineType == 2) {
             pVert[vnum].tu = tmpRect1.left;
             pVert[vnum].tv = tmpRect1.top;
             pVert[vnum + 1].tu = tmpRect1.right;
@@ -237,9 +228,7 @@ void CXI_BOUNDER::LoadIni(INIFILE *ini1, const char *name1, INIFILE *ini2, const
             pVert[vnum + 2].tv = tmpRect1.bottom;
             pVert[vnum + 3].tu = tmpRect1.right;
             pVert[vnum + 3].tv = tmpRect1.bottom;
-        }
-        else
-        {
+        } else {
             pVert[vnum].tu = tmpRect2.left;
             pVert[vnum].tv = tmpRect2.top;
             pVert[vnum + 1].tu = tmpRect2.right;
@@ -250,8 +239,7 @@ void CXI_BOUNDER::LoadIni(INIFILE *ini1, const char *name1, INIFILE *ini2, const
             pVert[vnum + 3].tv = tmpRect2.bottom;
         }
 
-        switch (lineType)
-        {
+        switch (lineType) {
         case 0:
             fRectTmp.left = fXTop;
             fRectTmp.right = fXTop + fHorzLineWidth;
@@ -278,8 +266,7 @@ void CXI_BOUNDER::LoadIni(INIFILE *ini1, const char *name1, INIFILE *ini2, const
             break;
         }
 
-        if (lineType < 2)
-        {
+        if (lineType < 2) {
             pVert[vnum].pos.x = fRectTmp.left;
             pVert[vnum].pos.y = fRectTmp.top;
             vnum++;
@@ -292,9 +279,7 @@ void CXI_BOUNDER::LoadIni(INIFILE *ini1, const char *name1, INIFILE *ini2, const
             pVert[vnum].pos.x = fRectTmp.right;
             pVert[vnum].pos.y = fRectTmp.bottom;
             vnum++;
-        }
-        else
-        {
+        } else {
             pVert[vnum].pos.x = fRectTmp.left;
             pVert[vnum].pos.y = fRectTmp.bottom;
             vnum++;

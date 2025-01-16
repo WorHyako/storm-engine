@@ -35,6 +35,16 @@ bool Config::SelectSection(std::string section_name) noexcept {
     return _section != nullptr;
 }
 
+bool Config::Empty() const noexcept {
+    return _config.empty();
+}
+
+std::string Config::Name() const noexcept {
+    return Empty()
+               ? std::string()
+               : _config.source().path->c_str();
+}
+
 std::vector<std::string> Config::Sections() noexcept {
     std::vector<std::string> sections{};
     sections.reserve(_config.size());
@@ -61,7 +71,7 @@ std::string Config::ToLowercase(std::string str) const noexcept {
     return str;
 }
 
-std::string Config::PrintInfo(const std::string_view& key, const std::string_view& message) const noexcept {
+std::string Config::PrintInfo(const std::string_view &key, const std::string_view &message) const noexcept {
     std::stringstream ss;
     ss << "Info:";
     ss << "\n\tFile: " << _config.source().path.get()->c_str();

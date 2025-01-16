@@ -8,8 +8,8 @@ class CXI_WINDOW : public CINODE
     CXI_WINDOW();
     ~CXI_WINDOW() override;
 
-    bool Init(INIFILE *ini1, const char *name1, INIFILE *ini2, const char *name2, VDX9RENDER *rs, XYRECT &hostRect,
-              XYPOINT &ScreenSize) override;
+    bool Init(const Storm::Filesystem::Config& node_config, const Storm::Filesystem::Config& def_config,
+        VDX9RENDER *rs, XYRECT &hostRect, XYPOINT &ScreenSize) override;
     void ChangePosition(XYRECT &rNewPos) override;
     void SaveParametersToIni() override;
 
@@ -46,7 +46,7 @@ class CXI_WINDOW : public CINODE
     void MouseThis(float fX, float fY) override{};
 
   protected:
-    void LoadIni(INIFILE *ini1, const char *name1, INIFILE *ini2, const char *name2) override;
+    void LoadIni(const Storm::Filesystem::Config& node_config, const Storm::Filesystem::Config& def_config) override;
 
   protected:
     std::vector<std::string> m_aNodeNameList;

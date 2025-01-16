@@ -7,6 +7,9 @@
 
 #include <cstdio>
 
+using namespace Storm::Filesystem;
+using namespace Storm::Math;
+
 CXI_FORMATEDTEXT::STRING_DESCRIBER::STRING_DESCRIBER(char *ls) : color(0)
 {
     const auto len = strlen(ls) + 1;
@@ -73,8 +76,6 @@ CXI_FORMATEDTEXT::CXI_FORMATEDTEXT()
     m_dwBackColor = 0;
 
     m_nUpRectOffset = 0;
-
-    m_sScrollerName = nullptr;
 
     m_bSelectableCursor = false;
     m_bUseOneStringAdding = false;
@@ -168,10 +169,9 @@ void CXI_FORMATEDTEXT::Draw(bool bSelected, uint32_t Delta_Time)
     }
 }
 
-bool CXI_FORMATEDTEXT::Init(INIFILE *ini1, const char *name1, INIFILE *ini2, const char *name2, VDX9RENDER *rs,
-                            XYRECT &hostRect, XYPOINT &ScreenSize)
-{
-    if (!CINODE::Init(ini1, name1, ini2, name2, rs, hostRect, ScreenSize))
+bool CXI_FORMATEDTEXT::Init(const Config& node_config, const Config& def_config,
+    VDX9RENDER *rs, XYRECT &hostRect, XYPOINT &ScreenSize) {
+    if (!CINODE::Init(node_config, def_config, rs, hostRect, ScreenSize))
         return false;
     // SetGlowCursor(m_bSelectableCursor && m_nStringGroupQuantity>1);
     return true;
@@ -186,7 +186,6 @@ void CXI_FORMATEDTEXT::ReleaseAll()
     TEXTURE_RELEASE(m_rs, m_idUpDisableTexture);
     TEXTURE_RELEASE(m_rs, m_idDownEnableTexture);
     TEXTURE_RELEASE(m_rs, m_idDownDisableTexture);
-    STORM_DELETE(m_sScrollerName);
     ReleaseStringes();
     m_asSyncNodes.clear();
 }
@@ -445,52 +444,44 @@ void CXI_FORMATEDTEXT::RefreshAlignment()
         m_nPrintLeftOffset = m_rect.left + m_leftOffset;
 }
 
-void CXI_FORMATEDTEXT::LoadIni(INIFILE *ini1, const char *name1, INIFILE *ini2, const char *name2)
-{
-    char param[2048];
-
-    m_bUseOneStringAdding = GetIniBool(ini1, name1, ini2, name2, "wrapoff", false);
-    if (ReadIniString(ini1, name1, ini2, name2, "syncnodes", param, sizeof(param), ""))
-    {
-        CXI_UTILS::StringFillStringArray(param, m_asSyncNodes);
+void CXI_FORMATEDTEXT::LoadIni(const Config& node_config, const Config& def_config) {
+    std::pair<const Config&, const Config&> configs{node_config, def_config};
+    m_bUseOneStringAdding = Config::GetOrGet<std::int64_t>(configs, "wrapoff", false);
+    auto sync_nodes = Config::GetOrGet<std::string>(configs, "syncnodes", {});
+    if (!sync_nodes.empty()) {
+        CXI_UTILS::StringFillStringArray(sync_nodes.c_str(), m_asSyncNodes);
     }
 
-    const int nPosMorph = GetIniLong(ini1, name1, ini2, name2, "bAbsoluteRectangle");
+    const int nPosMorph = Config::GetOrGet<std::int64_t>(configs, "bAbsoluteRectangle", 0);
 
-    m_fFontScale = GetIniFloat(ini1, name1, ini2, name2, "fontScale", 1.f);
+    m_fFontScale = Config::GetOrGet<double>(configs, "fontScale", 1.0);
+    m_sScrollerName = Config::GetOrGet<std::string>(configs, "scrollerName", {});
 
-    if (ReadIniString(ini1, name1, ini2, name2, "scrollerName", param, sizeof(param), ""))
-    {
-        const auto len = strlen(param) + 1;
-        m_sScrollerName = new char[len];
-        Assert(m_sScrollerName);
-        memcpy(m_sScrollerName, param, len);
-    }
-
-    ReadIniString(ini1, name1, ini2, name2, "alignment", param, sizeof(param), "left");
-    if (storm::iEquals(param, "center"))
+    auto align = Config::GetOrGet<std::string>(configs, "alignment", "left");
+    if (align == "center") {
         m_nAlignment = PR_ALIGN_CENTER;
-    else if (storm::iEquals(param, "right"))
+    } else if (align == "right")
         m_nAlignment = PR_ALIGN_RIGHT;
     else
         m_nAlignment = PR_ALIGN_LEFT;
 
-    m_leftOffset = GetIniLong(ini1, name1, ini2, name2, "leftoffset");
+    m_leftOffset = Config::GetOrGet<double>(configs, "leftoffset", {});
     RefreshAlignment();
 
-    m_nUpRectOffset = GetIniLong(ini1, name1, ini2, name2, "upOffset");
+    m_nUpRectOffset = Config::GetOrGet<double>(configs, "upOffset", {});
 
     // get videoTexture
-    if (ReadIniString(ini1, name1, ini2, name2, "videoName", param, sizeof(param), ""))
-        m_pVidTex = m_rs->GetVideoTexture(param);
+    auto video_name = Config::GetOrGet<std::string>(configs, "videoName", {});
+    if (!video_name.empty()) {
+        m_pVidTex = m_rs->GetVideoTexture(video_name.c_str());
+    }
 
     // get colors
-    m_dwBackColor = GetIniARGB(ini1, name1, ini2, name2, "backColor", 0);
+    auto back_color = Config::GetOrGet<Types::Vector4<std::int64_t>>(configs, "backColor", {});
+    m_dwBackColor = ARGB(back_color.x, back_color.y, back_color.z, back_color.w);
     m_bBackRectangle = ALPHA(m_dwBackColor) != 0;
-    if (m_bBackRectangle)
-    {
-        m_rBorderOffset.left = m_rBorderOffset.top = m_rBorderOffset.right = m_rBorderOffset.bottom = 0;
-        m_rBorderOffset = GetIniLongRect(ini1, name1, ini2, name2, "backOffset", m_rBorderOffset);
+    if (m_bBackRectangle) {
+        m_rBorderOffset = Config::GetOrGet<Types::Vector4<std::int64_t>>(configs, "backOffset", {});
     }
 
     if (m_pVidTex || m_bBackRectangle)
@@ -504,10 +495,10 @@ void CXI_FORMATEDTEXT::LoadIni(INIFILE *ini1, const char *name1, INIFILE *ini2, 
     m_rectCursorPosition.right = m_rect.right;
 
     XI_ONLYONETEX_VERTEX *pv = nullptr;
-    if (m_idVBuf != -1)
+    if (m_idVBuf != -1) {
         pv = static_cast<XI_ONLYONETEX_VERTEX *>(m_rs->LockVertexBuffer(m_idVBuf));
-    if (pv != nullptr)
-    {
+    }
+    if (pv != nullptr) {
         pv[0].tu = pv[1].tu = 0.f;
         pv[2].tu = pv[3].tu = 1.f;
         pv[0].tv = pv[2].tv = 0.f;
@@ -518,8 +509,7 @@ void CXI_FORMATEDTEXT::LoadIni(INIFILE *ini1, const char *name1, INIFILE *ini2, 
         pv[0].pos.y = pv[2].pos.y = 0;
         pv[1].pos.y = pv[3].pos.y = 0;
 
-        if (m_bBackRectangle)
-        {
+        if (m_bBackRectangle) {
             pv[12].tu = pv[13].tu = 0.f;
             pv[14].tu = pv[15].tu = 1.f;
             pv[12].tv = pv[14].tv = 0.f;
@@ -532,16 +522,21 @@ void CXI_FORMATEDTEXT::LoadIni(INIFILE *ini1, const char *name1, INIFILE *ini2, 
         }
 
         // get up enable rectangle position
-        if (ReadIniString(ini1, name1, ini2, name2, "UpEnableTexture", param, sizeof(param), ""))
-            m_idUpEnableTexture = m_rs->TextureCreate(param);
-        if (ReadIniString(ini1, name1, ini2, name2, "UpDisableTexture", param, sizeof(param), ""))
-            m_idUpDisableTexture = m_rs->TextureCreate(param);
-        if (m_idUpEnableTexture >= 0 || m_idUpDisableTexture >= 0)
-        {
-            m_frUpPos = GetIniLongRect(ini1, name1, ini2, name2, "UpEnablePos", XYRECT(0, 0, 0, 0));
+        auto up_enable_texture = Config::GetOrGet<std::string>(configs, "UpEnableTexture", {});
+        m_idUpEnableTexture = !up_enable_texture.empty()
+            ? m_rs->TextureCreate(up_enable_texture.c_str())
+            : -1;
+
+        auto up_disable_texture = Config::GetOrGet<std::string>(configs, "UpDisableTexture", {});
+        m_idUpDisableTexture = !up_disable_texture.empty()
+            ? m_rs->TextureCreate(up_disable_texture.c_str())
+            : -1;
+
+        if (m_idUpEnableTexture >= 0 || m_idUpDisableTexture >= 0) {
+            m_frUpPos = Config::GetOrGet<Types::Vector4<std::int64_t>>(configs, "UpEnablePos", {});
             GetAbsoluteRect(m_frUpPos, nPosMorph);
-            m_frUpEnableUV = GetIniFloatRect(ini1, name1, ini2, name2, "UpEnableUV", FXYRECT(0.f, 0.f, 1.f, 1.f));
-            m_frUpDisableUV = GetIniFloatRect(ini1, name1, ini2, name2, "UpDisableUV", FXYRECT(0.f, 0.f, 1.f, 1.f));
+            m_frUpEnableUV = Config::GetOrGet<Types::Vector4<double>>(configs, "UpEnableUV", {0.0, 0.0, 1.0, 1.0});
+            m_frUpDisableUV = Config::GetOrGet<Types::Vector4<double>>(configs, "UpDisableUV", {0.0, 0.0, 1.0, 1.0});
             pv[4].tu = pv[5].tu = m_frUpDisableUV.left;
             pv[6].tu = pv[7].tu = m_frUpDisableUV.right;
             pv[4].tv = pv[6].tv = m_frUpDisableUV.top;
@@ -553,16 +548,21 @@ void CXI_FORMATEDTEXT::LoadIni(INIFILE *ini1, const char *name1, INIFILE *ini2, 
             pv[5].pos.y = pv[7].pos.y = static_cast<float>(m_frUpPos.bottom);
         }
 
-        if (ReadIniString(ini1, name1, ini2, name2, "DownEnableTexture", param, sizeof(param), ""))
-            m_idDownEnableTexture = m_rs->TextureCreate(param);
-        if (ReadIniString(ini1, name1, ini2, name2, "DownDisableTexture", param, sizeof(param), ""))
-            m_idDownDisableTexture = m_rs->TextureCreate(param);
-        if (m_idDownEnableTexture >= 0 || m_idDownDisableTexture >= 0)
-        {
-            m_frDownPos = GetIniLongRect(ini1, name1, ini2, name2, "DownEnablePos", XYRECT(0, 0, 0, 0));
+        auto down_enable_texture = Config::GetOrGet<std::string>(configs, "DownEnableTexture", {});
+        m_idDownEnableTexture = !down_enable_texture.empty()
+            ? m_rs->TextureCreate(down_enable_texture.c_str())
+            : -1;
+
+        auto down_disable_texture = Config::GetOrGet<std::string>(configs, "DownDisableTexture", {});
+        m_idDownDisableTexture = !down_disable_texture.empty()
+            ? m_rs->TextureCreate(down_disable_texture.c_str())
+            : -1;
+
+        if (m_idDownEnableTexture >= 0 || m_idDownDisableTexture >= 0) {
+            m_frDownPos = Config::GetOrGet<Types::Vector4<std::int64_t>>(configs, "DownEnablePos", {});
             GetAbsoluteRect(m_frDownPos, nPosMorph);
-            m_frDownEnableUV = GetIniFloatRect(ini1, name1, ini2, name2, "DownEnableUV", FXYRECT(0.f, 0.f, 1.f, 1.f));
-            m_frDownDisableUV = GetIniFloatRect(ini1, name1, ini2, name2, "DownDisableUV", FXYRECT(0.f, 0.f, 1.f, 1.f));
+            m_frDownEnableUV = Config::GetOrGet<Types::Vector4<double>>(configs, "DownEnableUV", {0.0, 0.0, 1.0, 1.0});
+            m_frDownDisableUV = Config::GetOrGet<Types::Vector4<double>>(configs, "DownDisableUV", {0.0, 0.0, 1.0, 1.0});
             pv[8].tu = pv[9].tu = m_frDownDisableUV.left;
             pv[10].tu = pv[11].tu = m_frDownDisableUV.right;
             pv[8].tv = pv[10].tv = m_frDownDisableUV.top;
@@ -578,35 +578,41 @@ void CXI_FORMATEDTEXT::LoadIni(INIFILE *ini1, const char *name1, INIFILE *ini2, 
     }
 
     // get line space
-    m_vertOffset = GetIniLong(ini1, name1, ini2, name2, "lineSpace", 30);
-    if (m_vertOffset == 0)
+    m_vertOffset = Config::GetOrGet<std::int64_t>(configs, "lineSpace", 30);
+    if (m_vertOffset == 0) {
         m_vertOffset = 10;
+    }
 
     // counting the number of lines displayed on the screen
-    m_allStrings = static_cast<int32_t>(static_cast<float>(m_rect.bottom - m_rect.top) / m_vertOffset);
+    m_allStrings = static_cast<std::int32_t>(static_cast<float>(m_rect.bottom - m_rect.top) / m_vertOffset);
 
     // get golors
-    m_dwColor = GetIniARGB(ini1, name1, ini2, name2, "color", ARGB(255, 128, 128, 128));
+    auto color = Config::GetOrGet<Types::Vector4<std::int64_t>>(configs, "color", {255, 128, 128, 128});
+    m_dwColor = ARGB(color.x, color.y, color.z, color.w);
 
     // get font
-    if (ReadIniString(ini1, name1, ini2, name2, "font", param, sizeof(param), ""))
-        m_idFont = m_rs->LoadFont(param);
+    auto font = Config::GetOrGet<std::string>(configs, "font", {});
+    if (!font.empty()) {
+        m_idFont = m_rs->LoadFont(font.c_str());
+    }
 
-    // get strings
-    if (ini1 && ini1->ReadString(name1, "string", param, sizeof(param) - 1, ""))
-        do
-        {
-            if (param[0] == '#')
-                AddFormatedText(&param[1]);
-            else
-            {
-                char param2[2048];
-                AddFormatedText(pStringService->GetString(param, param2, sizeof(param2)));
-            }
-        } while (ini1->ReadStringNext(name1, "string", param, sizeof(param) - 1));
-
+    auto str_vec = Config::GetOrGet<std::vector<std::string>>(configs, "string", {});
+    for (const auto& str : str_vec ) {
+        std::stringstream ss;
+        std::ranges::for_each(str,
+            [&ss](auto& each) {
+                ss << each << ',';
+        });
+        const std::string line{ss.str()};
+        if (line.starts_with('#')) {
+            AddFormatedText(line.substr(1, std::size(line) - 1).c_str());
+        } else {
+            char buffer[2048];
+            AddFormatedText(pStringService->GetString(line.c_str(), buffer, sizeof(buffer)));
+        }
+    }
     //
-    VAlignment(GetIniLong(ini1, name1, ini2, name2, "valignment", 0));
+    VAlignment(Config::GetOrGet<std::int64_t>(configs, "valignment", 0));
 }
 
 void CXI_FORMATEDTEXT::ReleaseString(STRING_DESCRIBER *pCur)
@@ -1616,10 +1622,11 @@ void CXI_FORMATEDTEXT::SetCurLine(STRING_DESCRIBER *pNewCurLine)
 
 void CXI_FORMATEDTEXT::ScrollerUpdate()
 {
-    if (!m_sScrollerName)
+    if (m_sScrollerName.empty()) {
         return;
+    }
     CINODE *pNode =
-        static_cast<XINTERFACE *>(core.GetEntityPointer(g_idInterface))->FindNode(m_sScrollerName, nullptr);
+        static_cast<XINTERFACE *>(core.GetEntityPointer(g_idInterface))->FindNode(m_sScrollerName.c_str(), nullptr);
     if (!pNode)
         return;
 

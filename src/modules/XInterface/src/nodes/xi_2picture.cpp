@@ -4,6 +4,9 @@
 
 #include "file_service.h"
 
+using namespace Storm::Filesystem;
+using namespace Storm::Math;
+
 void SetRectanglePos(XI_ONETEX_VERTEX v[4], const FXYPOINT &center, const FXYPOINT &size)
 {
     v[0].pos.x = v[1].pos.x = center.x - size.x / 2;
@@ -51,19 +54,14 @@ void CXI_TWOPICTURE::Draw(bool bSelected, uint32_t Delta_Time)
     }
 }
 
-bool CXI_TWOPICTURE::Init(INIFILE *ini1, const char *name1, INIFILE *ini2, const char *name2, VDX9RENDER *rs,
-                          XYRECT &hostRect, XYPOINT &ScreenSize)
-{
-    if (!CINODE::Init(ini1, name1, ini2, name2, rs, hostRect, ScreenSize))
-        return false;
-    return true;
+bool CXI_TWOPICTURE::Init(const Config& node_config, const Config& def_config,
+    VDX9RENDER *rs, XYRECT &hostRect, XYPOINT &ScreenSize) {
+    return CINODE::Init(node_config, def_config, rs, hostRect, ScreenSize);
 }
 
-void CXI_TWOPICTURE::LoadIni(INIFILE *ini1, const char *name1, INIFILE *ini2, const char *name2)
-{
-    char param[255];
-
-    const int pictSpace = GetIniLong(ini1, name1, ini2, name2, "pictureSpace", 10);
+void CXI_TWOPICTURE::LoadIni(const Config& node_config, const Config& def_config) {
+    std::pair<const Config&, const Config&> configs{node_config, def_config};
+    const int pictSpace = Config::GetOrGet<std::int64_t>(configs, "pictureSpace", 10);
     m_picSize.x = (m_rect.right - m_rect.left - pictSpace) / 2.f;
     m_picSize.y = static_cast<float>(m_rect.bottom - m_rect.top);
     m_leftPicCenter.x = m_rect.left + m_picSize.x / 2;
@@ -71,43 +69,48 @@ void CXI_TWOPICTURE::LoadIni(INIFILE *ini1, const char *name1, INIFILE *ini2, co
     m_rightPicCenter.x = m_rect.right - m_picSize.x / 2;
     m_rightPicCenter.y = (m_rect.bottom + m_rect.top) / 2.f;
 
-    m_bMouseInsideIndifferent = (0 != GetIniLong(ini1, name1, ini2, name2, "MouseInsideIndifferent", 1));
+    m_bMouseInsideIndifferent = (0 != Config::GetOrGet<std::int64_t>(configs, "MouseInsideIndifferent", 1));
 
     // coordinate offsets
-    m_ShadowOffset = GetIniFloatPoint(ini1, name1, ini2, name2, "offsetShadow", FXYPOINT(4.0, 4.0));
-    m_PressShadowOffset = GetIniFloatPoint(ini1, name1, ini2, name2, "offsetPressShad", FXYPOINT(4.0, 4.0));
-    m_PressOffset = GetIniFloatPoint(ini1, name1, ini2, name2, "offsetPress", FXYPOINT(4.0, 4.0));
+    m_ShadowOffset = Config::GetOrGet<Types::Vector2<double>>(configs, "offsetShadow", {4.0, 4.0});
+    m_PressShadowOffset = Config::GetOrGet<Types::Vector2<double>>(configs, "offsetPressShad", {4.0, 4.0});
+    m_PressOffset = Config::GetOrGet<Types::Vector2<double>>(configs, "offsetPress", {4.0, 4.0});
 
     // textures
-    if (ReadIniString(ini1, name1, ini2, name2, "oneTexName", param, sizeof(param), ""))
-        m_idOneTex = m_rs->TextureCreate(param);
-    else
-        m_idOneTex = -1;
+    auto one_texture_name = Config::GetOrGet<std::string>(configs, "oneTexName", {});
+    m_idOneTex = !one_texture_name.empty()
+        ? m_rs->TextureCreate(one_texture_name.c_str())
+        : -1;
 
-    if (ReadIniString(ini1, name1, ini2, name2, "twoTexName", param, sizeof(param), ""))
-        m_idTwoTex = m_rs->TextureCreate(param);
-    else
-        m_idTwoTex = -1;
+    auto two_texture_name = Config::GetOrGet<std::string>(configs, "twoTexName", {});
+    m_idTwoTex = !two_texture_name.empty()
+        ? m_rs->TextureCreate(two_texture_name.c_str())
+        : -1;
 
     // get used colors
-    m_dwSelectColor = GetIniARGB(ini1, name1, ini2, name2, "argbSelectCol", ARGB(255, 128, 128, 128));
-    m_dwDarkColor = GetIniARGB(ini1, name1, ini2, name2, "argbDisableCol", ARGB(255, 48, 48, 48));
-    m_dwShadowColor = GetIniARGB(ini1, name1, ini2, name2, "argbShadowCol", ARGB(255, 48, 48, 48));
+    auto select_color = Config::GetOrGet<Types::Vector4<std::int64_t>>(configs, "argbSelectCol", {255, 128, 128, 128});
+    m_dwSelectColor = ARGB(select_color.x, select_color.y, select_color.z, select_color.w);
+
+    auto disable_color = Config::GetOrGet<Types::Vector4<std::int64_t>>(configs, "argbDisableCol", {255, 48, 48, 48});
+    m_dwDarkColor = ARGB(disable_color.x, disable_color.y, disable_color.z, disable_color.w);
+
+    auto shadow_color = Config::GetOrGet<Types::Vector4<std::int64_t>>(configs, "argbShadowCol", {255, 48, 48, 48});
+    m_dwShadowColor = ARGB(shadow_color.x, shadow_color.y, shadow_color.z, shadow_color.w);
 
     // texture coordinates
-    const auto texRect = GetIniFloatRect(ini1, name1, ini2, name2, "texPos", FXYRECT(0.f, 0.f, 1.f, 1.f));
+    FXYRECT tex_rect;
+    tex_rect = Config::GetOrGet<Types::Vector4<double>>(configs, "texPos", {0.0, 0.0, 1.0, 1.0});
 
     // Create rectangle
-    m_vOne[0].tu = m_vTwo[0].tu = texRect.left;
-    m_vOne[0].tv = m_vTwo[0].tv = texRect.top;
-    m_vOne[1].tu = m_vTwo[1].tu = texRect.left;
-    m_vOne[1].tv = m_vTwo[1].tv = texRect.bottom;
-    m_vOne[2].tu = m_vTwo[2].tu = texRect.right;
-    m_vOne[2].tv = m_vTwo[2].tv = texRect.top;
-    m_vOne[3].tu = m_vTwo[3].tu = texRect.right;
-    m_vOne[3].tv = m_vTwo[3].tv = texRect.bottom;
-    for (auto i = 0; i < 4; i++)
-    {
+    m_vOne[0].tu = m_vTwo[0].tu = tex_rect.left;
+    m_vOne[0].tv = m_vTwo[0].tv = tex_rect.top;
+    m_vOne[1].tu = m_vTwo[1].tu = tex_rect.left;
+    m_vOne[1].tv = m_vTwo[1].tv = tex_rect.bottom;
+    m_vOne[2].tu = m_vTwo[2].tu = tex_rect.right;
+    m_vOne[2].tv = m_vTwo[2].tv = tex_rect.top;
+    m_vOne[3].tu = m_vTwo[3].tu = tex_rect.right;
+    m_vOne[3].tv = m_vTwo[3].tv = tex_rect.bottom;
+    for (auto i = 0; i < 4; i++) {
         m_vOne[i].pos.z = m_vTwo[i].pos.z = m_vSOne[i].pos.z = m_vSTwo[i].pos.z = 1.f;
         m_vSOne[i].color = m_vSTwo[i].color = m_dwShadowColor;
     }

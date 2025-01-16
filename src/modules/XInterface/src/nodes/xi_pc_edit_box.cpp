@@ -10,6 +10,9 @@
 #define WIDTH_SCALE_USED 0.9f
 #define HEIGHT_SCALE_USED 0.9f
 
+using namespace Storm::Filesystem;
+using namespace Storm::Math;
+
 CXI_PCEDITBOX::CXI_PCEDITBOX()
     : m_nStringAlign(0), m_nMaxSize(0), m_nMaxWidth(0)
 {
@@ -85,10 +88,9 @@ void CXI_PCEDITBOX::Draw(bool bSelected, uint32_t Delta_Time)
         core.Event("editexit", "s", m_nodeName);
 }
 
-bool CXI_PCEDITBOX::Init(INIFILE *ini1, const char *name1, INIFILE *ini2, const char *name2, VDX9RENDER *rs,
-                         XYRECT &hostRect, XYPOINT &ScreenSize)
-{
-    if (!CINODE::Init(ini1, name1, ini2, name2, rs, hostRect, ScreenSize))
+bool CXI_PCEDITBOX::Init(const Config& node_config, const Config& def_config,
+    VDX9RENDER *rs, XYRECT &hostRect, XYPOINT &ScreenSize) {
+    if (!CINODE::Init(node_config, def_config, rs, hostRect, ScreenSize))
         return false;
     SetGlowCursor(false);
     return true;
@@ -167,107 +169,92 @@ void CXI_PCEDITBOX::SaveParametersToIni()
     pIni->WriteString(m_nodeName, "position", pcWriteParam);
 }
 
-void CXI_PCEDITBOX::LoadIni(INIFILE *ini1, const char *name1, INIFILE *ini2, const char *name2)
-{
-    char param[2048];
+void CXI_PCEDITBOX::LoadIni(const Config& node_config, const Config& def_config) {
+    std::pair<const Config&, const Config&> configs{node_config, def_config};
 
     // get font number
-    if (ReadIniString(ini1, name1, ini2, name2, "strFont", param, sizeof(param), ""))
-        if ((m_nFontID = m_rs->LoadFont(param)) == -1)
-            core.Trace("can`t load font:'%s'", param);
-
+    auto font = Config::GetOrGet<std::string>(configs, "strFont", {});
+    if (!font.empty()) {
+        m_nFontID = m_rs->LoadFont(font.c_str());
+        if (m_nFontID == -1)
+            core.Trace("can`t load font:'%s'", font);
+    }
     // Get font scale
-    m_fFontScale = GetIniFloat(ini1, name1, ini2, name2, "fontScale", 1.f);
+    m_fFontScale = Config::GetOrGet<double>(configs, "fontScale", 1.0);
 
-    m_bDisguiseString = GetIniBool(ini1, name1, ini2, name2, "disguisestring", false);
+    m_bDisguiseString = Config::GetOrGet<std::int64_t>(configs, "disguisestring", 0);
 
     // Get font color
-    m_dwFontColor = GetIniARGB(ini1, name1, ini2, name2, "argbFontColor", 0);
+    auto font_color = Config::GetOrGet<Types::Vector4<std::int64_t>>(configs, "argbFontColor", {});
+    m_dwFontColor = ARGB(font_color.x, font_color.y, font_color.z, font_color.w);
 
     // Get max string size for edit string
-    m_nMaxSize = GetIniLong(ini1, name1, ini2, name2, "stringLength", -1);
-    m_nMaxWidth = GetIniLong(ini1, name1, ini2, name2, "stringWidth", -1);
+    m_nMaxSize = Config::GetOrGet<std::int64_t>(configs, "stringLength", -1);
+    m_nMaxWidth = Config::GetOrGet<std::int64_t>(configs, "stringWidth", -1);
 
-    m_pntFontOffset = GetIniLongPoint(ini1, name1, ini2, name2, "stringoffset", m_pntFontOffset);
+    m_pntFontOffset = Config::GetOrGet<Types::Vector2<std::int64_t>>(configs, "stringoffset", {m_pntFontOffset.x, m_pntFontOffset.y});
     m_nStringAlign = PR_ALIGN_LEFT;
-    if (ReadIniString(ini1, name1, ini2, name2, "stringalign", param, sizeof(param), "center"))
-    {
-        if (storm::iEquals(param, "center"))
-            m_nStringAlign = PR_ALIGN_CENTER;
-        else if (storm::iEquals(param, "right"))
-            m_nStringAlign = PR_ALIGN_RIGHT;
-    }
+    auto string_align = Config::GetOrGet<std::string>(configs, "stringalign", "center");
+    if (string_align == "center")
+        m_nStringAlign = PR_ALIGN_CENTER;
+    else if (string_align == "right")
+        m_nStringAlign = PR_ALIGN_RIGHT;
+
     // m_pntFontOffset.x += m_rect.left;
     // m_pntFontOffset.y += m_rect.top;
 
     // read images
-    if (ReadIniString(ini1, name1, ini2, name2, "leftImage", param, sizeof(param), ""))
-    {
+    auto left_image = Config::GetOrGet<std::string>(configs, "leftImage", {});
+    if (!left_image.empty()) {
         m_pLeftImage = new CXI_IMAGE;
         if (m_pLeftImage)
-            m_pLeftImage->LoadAccordingToString(param);
+            m_pLeftImage->LoadAccordingToString(left_image.c_str());
     }
-    if (ReadIniString(ini1, name1, ini2, name2, "RightImage", param, sizeof(param), ""))
-    {
+    auto right_image = Config::GetOrGet<std::string>(configs, "RightImage", {});
+    if (!right_image.empty()) {
         m_pRightImage = new CXI_IMAGE;
         if (m_pRightImage)
-            m_pRightImage->LoadAccordingToString(param);
+            m_pRightImage->LoadAccordingToString(right_image.c_str());
     }
-    if (ReadIniString(ini1, name1, ini2, name2, "MiddleImage", param, sizeof(param), ""))
-    {
+    auto middle_image = Config::GetOrGet<std::string>(configs, "MiddleImage", {});
+    if (!middle_image.empty()) {
         m_pMiddleImage = new CXI_IMAGE;
         if (m_pMiddleImage)
-            m_pMiddleImage->LoadAccordingToString(param);
+            m_pMiddleImage->LoadAccordingToString(middle_image.c_str());
     }
 
-    if (ReadIniString(ini1, name1, ini2, name2, "excludechars", param, sizeof(param), ""))
-        m_sExcludeChars = param;
-    else
-        m_sExcludeChars = "";
+    m_sExcludeChars = Config::GetOrGet<std::string>(configs, "excludechars", {});
 
     // update position
     auto nMiddleLeft = m_rect.left;
     auto nMiddleRight = m_rect.right;
     const auto nHeight = m_rect.bottom - m_rect.top;
-    if (m_pLeftImage)
-    {
-        if (m_pLeftImage->IsImagePresent())
-        {
+    if (m_pLeftImage) {
+        if (m_pLeftImage->IsImagePresent()) {
             m_pLeftImage->SetSize(m_pLeftImage->GetWidth(), nHeight);
             m_pLeftImage->SetPosition(m_rect.left, m_rect.top, IPType_LeftTop);
             nMiddleLeft += m_pLeftImage->GetWidth();
-        }
-        else
-        {
+        } else {
             STORM_DELETE(m_pLeftImage);
         }
     }
-    if (m_pRightImage)
-    {
-        if (m_pRightImage->IsImagePresent())
-        {
+    if (m_pRightImage) {
+        if (m_pRightImage->IsImagePresent()) {
             m_pRightImage->SetSize(m_pRightImage->GetWidth(), nHeight);
             m_pRightImage->SetPosition(m_rect.right, m_rect.top, IPType_RightTop);
             nMiddleRight -= m_pRightImage->GetWidth();
-        }
-        else
-        {
+        } else {
             STORM_DELETE(m_pRightImage);
         }
     }
-    if (nMiddleLeft >= nMiddleRight)
-    {
+    if (nMiddleLeft >= nMiddleRight) {
         STORM_DELETE(m_pMiddleImage);
     }
-    if (m_pMiddleImage)
-    {
-        if (m_pMiddleImage->IsImagePresent())
-        {
+    if (m_pMiddleImage) {
+        if (m_pMiddleImage->IsImagePresent()) {
             m_pMiddleImage->SetSize(nMiddleRight - nMiddleLeft, nHeight);
             m_pMiddleImage->SetPosition(nMiddleLeft, m_rect.top, IPType_LeftTop);
-        }
-        else
-        {
+        } else {
             STORM_DELETE(m_pMiddleImage);
         }
     }

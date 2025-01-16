@@ -1,5 +1,9 @@
 #include "xi_scrolled_pic.h"
+
 #include <stdio.h>
+
+using namespace Storm::Filesystem;
+using namespace Storm::Math;
 
 CXI_SCROLLEDPICTURE::CXI_SCROLLEDPICTURE()
 {
@@ -15,61 +19,49 @@ void CXI_SCROLLEDPICTURE::Draw(bool bSelected, uint32_t Delta_Time)
 {
     CXI_PICTURE::Draw(bSelected, Delta_Time);
 
-    for (int32_t n = 0; n < m_aImg.size(); n++)
-    {
-        if (m_aImg[n].bShow)
-        {
+    for (std::int32_t n = 0; n < m_aImg.size(); n++) {
+        if (m_aImg[n].bShow) {
             m_aImg[n].pImg->Draw();
         }
     }
 }
 
-bool CXI_SCROLLEDPICTURE::Init(INIFILE *ini1, const char *name1, INIFILE *ini2, const char *name2, VDX9RENDER *rs,
-                               XYRECT &hostRect, XYPOINT &ScreenSize)
-{
-    const auto bSuccess = CXI_PICTURE::Init(ini1, name1, ini2, name2, rs, hostRect, ScreenSize);
-    return bSuccess;
+bool CXI_SCROLLEDPICTURE::Init(const Config& node_config, const Config& def_config,
+    VDX9RENDER *rs, XYRECT &hostRect, XYPOINT &ScreenSize) {
+    return CXI_PICTURE::Init(node_config, def_config, rs, hostRect, ScreenSize);
 }
 
-void CXI_SCROLLEDPICTURE::LoadIni(INIFILE *ini1, const char *name1, INIFILE *ini2, const char *name2)
-{
-    CXI_PICTURE::LoadIni(ini1, name1, ini2, name2);
+void CXI_SCROLLEDPICTURE::LoadIni(const Config& node_config, const Config& def_config) {
+    CXI_PICTURE::LoadIni(node_config, def_config);
 
+    std::pair<const Config&, const Config&> configs{node_config, def_config};
     m_fpBaseSize.x = m_fpBaseSize.y = 1000.f;
-    m_fpBaseSize = GetIniFloatPoint(ini1, name1, ini2, name2, "basesize", m_fpBaseSize);
+    m_fpBaseSize = Config::GetOrGet<Types::Vector2<double>>(configs, "basesize", {m_fpBaseSize.x, m_fpBaseSize.y});
     if (m_fpBaseSize.x <= 0.f)
         m_fpBaseSize.x = 1.f;
     if (m_fpBaseSize.y <= 0.f)
         m_fpBaseSize.y = 1.f;
 
-    int32_t n;
-    char keyName[128];
     m_aScale.clear();
-    for (n = 1; n < 20; n++)
-    {
-        sprintf_s(keyName, "scale%d", n);
+    const std::string key{"scale"};
+    for (int n = 1; n < 20; n++) {
         FXYPOINT fpTemp;
-        fpTemp.x = fpTemp.y = 2.f;
-        fpTemp = GetIniFloatPoint(ini1, name1, ini2, name2, keyName, fpTemp);
+        fpTemp = Config::GetOrGet<Types::Vector2<double>>(configs, key + std::to_string(n), {2.0, 2.0});
         if (fpTemp.x > 1.f || fpTemp.y > 1.f)
             break; // not read or error
         m_aScale.push_back(fpTemp);
     }
 
-    m_nScaleNum = GetIniLong(ini1, name1, ini2, name2, "startscale", 0) - 1;
+    m_nScaleNum = Config::GetOrGet<std::int64_t>(configs,  "startscale", 0) - 1;
 
     auto *pAttribute = core.Entity_GetAttributeClass(g_idInterface, m_nodeName);
-    if (pAttribute)
-    {
+    if (pAttribute) {
         auto *pAttr = pAttribute->GetAttributeClass("imagelist");
-        if (pAttr)
-        {
+        if (pAttr) {
             const int32_t q = pAttr->GetAttributesNum();
-            for (n = 0; n < q; n++)
-            {
+            for (int n = 0; n < q; n++) {
                 auto *pA = pAttr->GetAttributeClass(n);
-                if (pA)
-                {
+                if (pA) {
                     // int32_t i = m_aImg.Add();
                     m_aImg.push_back(BuildinImage{});
                     const int32_t i = m_aImg.size() - 1;
@@ -82,15 +74,12 @@ void CXI_SCROLLEDPICTURE::LoadIni(INIFILE *ini1, const char *name1, INIFILE *ini
                     m_aImg[i].pImg = new CXI_IMAGE;
                     Assert(m_aImg[i].pImg);
                     const char *pcGroupName = pA->GetAttribute("group");
-                    if (pcGroupName)
-                    {
+                    if (pcGroupName) {
                         m_aImg[i].pImg->LoadFromBase(pcGroupName, pA->GetAttribute("pic"), true);
                         if (m_aImg[i].fpSize.x > 0.f && m_aImg[i].fpSize.y > 0.f)
                             m_aImg[i].pImg->SetSize(static_cast<int32_t>(m_aImg[i].fpSize.x),
                                                     static_cast<int32_t>(m_aImg[i].fpSize.y));
-                    }
-                    else
-                    {
+                    } else {
                         m_aImg[i].pImg->LoadFromFile(pA->GetAttribute("file"));
                     }
                     m_aImg[i].fpSize.x = static_cast<float>(m_aImg[i].pImg->GetWidth());

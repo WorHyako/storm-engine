@@ -282,12 +282,10 @@ void CoreImpl::ProcessEngineIniFile() {
 
     const auto controls_opt = config.Get<std::string>("controls");
     if (controls_opt.has_value()) {
-        core_internal.Controls = static_cast<CONTROLS *>(MakeClass(controls_opt.value().c_str()));
+        core_internal.Controls = static_cast<CONTROLS *>(MakeClass(controls_opt->c_str()));
         if (core_internal.Controls == nullptr)
             core_internal.Controls = static_cast<CONTROLS *>(MakeClass("controls"));
-    }
-    else
-    {
+    } else {
         delete Controls;
         Controls = nullptr;
 

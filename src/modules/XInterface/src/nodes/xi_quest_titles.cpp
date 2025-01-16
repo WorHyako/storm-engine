@@ -1,5 +1,8 @@
 #include "xi_quest_titles.h"
 
+using namespace Storm::Filesystem;
+using namespace Storm::Math;
+
 void SubRightWord(char *buf, int fontNum, int width, VDX9RENDER *rs)
 {
     if (buf == nullptr)
@@ -69,7 +72,6 @@ CXI_QUESTTITLE::CXI_QUESTTITLE()
     m_selectOffset = 8;
     m_fontOffset = 4;
     m_bSelected = true;
-    m_iconGroupName = nullptr;
 
     m_nCommonQuantity = 0;
 }
@@ -146,10 +148,9 @@ void CXI_QUESTTITLE::Draw(bool bSelected, uint32_t Delta_Time)
     }
 }
 
-bool CXI_QUESTTITLE::Init(INIFILE *ini1, const char *name1, INIFILE *ini2, const char *name2, VDX9RENDER *rs,
-                          XYRECT &hostRect, XYPOINT &ScreenSize)
-{
-    if (!CINODE::Init(ini1, name1, ini2, name2, rs, hostRect, ScreenSize))
+bool CXI_QUESTTITLE::Init(const Config& node_config, const Config& def_config,
+    VDX9RENDER *rs, XYRECT &hostRect, XYPOINT &ScreenSize) {
+    if (!CINODE::Init(node_config, def_config, rs, hostRect, ScreenSize))
         return false;
     SetGlowCursor(false);
     return true;
@@ -163,7 +164,6 @@ void CXI_QUESTTITLE::ReleaseAll()
             for (auto j = 0; j < m_strList[i].lineQuantity; j++)
                 STORM_DELETE(m_strList[i].name[j]);
     STORM_DELETE(m_strList);
-    STORM_DELETE(m_iconGroupName);
     m_stringQuantity = 0;
 }
 
@@ -244,66 +244,51 @@ void CXI_QUESTTITLE::SaveParametersToIni()
     pIni->WriteString(m_nodeName, "position", pcWriteParam);
 }
 
-void CXI_QUESTTITLE::LoadIni(INIFILE *ini1, const char *name1, INIFILE *ini2, const char *name2)
-{
-    char param[255];
-
+void CXI_QUESTTITLE::LoadIni(const Config& node_config, const Config& def_config) {
+    std::pair<const Config&, const Config&> configs{node_config, def_config};
     //
-    m_selectOffset = GetIniLong(ini1, name1, ini2, name2, "selectOffset", 8);
+    m_selectOffset = Config::GetOrGet<std::int64_t>(configs, "selectOffset", 8);
 
     // get line space
-    m_vertOffset = GetIniLong(ini1, name1, ini2, name2, "lineSpace", 30);
+    m_vertOffset = Config::GetOrGet<std::int64_t>(configs, "lineSpace", 30);
     if (m_vertOffset == 0)
         m_vertOffset = 10;
 
     // counting the number of lines displayed on the screen
     m_allStrings = (m_rect.bottom - m_rect.top) / m_vertOffset;
 
-    // get golors
-    m_dwCompleteColor = GetIniARGB(ini1, name1, ini2, name2, "completeColor", ARGB(255, 128, 128, 128));
-    m_dwNonCompleteColor = GetIniARGB(ini1, name1, ini2, name2, "noncompleteColor", ARGB(255, 255, 255, 255));
-    m_dwSelectRectangleColor = GetIniARGB(ini1, name1, ini2, name2, "selectColor", ARGB(255, 255, 255, 255));
+    auto complete_color = Config::GetOrGet<Types::Vector4<std::int64_t>>(configs, "completeColor", {255, 128, 128, 128});
+    m_dwCompleteColor = ARGB(complete_color.x, complete_color.y, complete_color.z, complete_color.w);
+    auto noncomplete_color = Config::GetOrGet<Types::Vector4<std::int64_t>>(configs, "noncompleteColor", {255, 255, 255, 255});
+    m_dwNonCompleteColor = ARGB(noncomplete_color.x, noncomplete_color.y, noncomplete_color.z, noncomplete_color.w);
+    auto select_color = Config::GetOrGet<Types::Vector4<std::int64_t>>(configs, "selectColor", {255, 255, 255, 255});
+    m_dwSelectRectangleColor = ARGB(select_color.x, select_color.y, select_color.z, select_color.w);
 
-    // get font
-    m_idFont = -1;
-    if (ReadIniString(ini1, name1, ini2, name2, "font", param, sizeof(param), ""))
-        m_idFont = m_rs->LoadFont(param);
-    m_fontOffset = GetIniLong(ini1, name1, ini2, name2, "fontOffset", 4);
+    auto font = Config::GetOrGet<std::string>(configs, "font", {});
+    m_idFont = !font.empty()
+        ? m_rs->LoadFont(font.c_str())
+        : -1;
+    m_fontOffset = Config::GetOrGet<std::int64_t>(configs, "fontOffset", 4);
 
     // get image info
-    m_iconWidth = GetIniLong(ini1, name1, ini2, name2, "iconWidth", 32);
-    m_iconHeight = GetIniLong(ini1, name1, ini2, name2, "iconHeight", 32);
+    m_iconWidth = Config::GetOrGet<std::int64_t>(configs, "iconWidth", 32);
+    m_iconHeight = Config::GetOrGet<std::int64_t>(configs, "iconHeight", 32);
     m_iconVOffset = m_vertOffset / 2 - m_iconHeight / 2;
-    if (ReadIniString(ini1, name1, ini2, name2, "iconGroup", param, sizeof(param), ""))
-    {
-        const auto len = strlen(param) + 1;
-        m_iconGroupName = new char[len];
-        if (m_iconGroupName == nullptr)
-        {
-            throw std::runtime_error("allocate memory error");
-        }
-        memcpy(m_iconGroupName, param, len);
-    }
-    else
-        m_iconGroupName = nullptr;
-    m_texId = ptrOwner->PictureService()->GetTextureID(m_iconGroupName);
+    m_iconGroupName = Config::GetOrGet<std::string>(configs, "iconGroup", {});
+    m_texId = ptrOwner->PictureService()->GetTextureID(m_iconGroupName.c_str());
 
-    if (ReadIniString(ini1, name1, ini2, name2, "completeIcon", param, sizeof(param), ""))
-    {
-        ptrOwner->PictureService()->GetTexturePos(m_iconGroupName, param, m_texComplete);
-    }
-    else
-    {
+    auto complete_icon = Config::GetOrGet<std::string>(configs, "completeIcon", {});
+    if (!complete_icon.empty()) {
+        ptrOwner->PictureService()->GetTexturePos(m_iconGroupName.c_str(), complete_icon.c_str(), m_texComplete);
+    } else {
         m_texComplete.left = m_texComplete.top = 0.f;
         m_texComplete.right = m_texComplete.bottom = 1.f;
     }
 
-    if (ReadIniString(ini1, name1, ini2, name2, "noncompleteIcon", param, sizeof(param), ""))
-    {
-        ptrOwner->PictureService()->GetTexturePos(m_iconGroupName, param, m_texNonComplete);
-    }
-    else
-    {
+    auto noncomplete_icon = Config::GetOrGet<std::string>(configs, "noncompleteIcon", {});
+    if (!noncomplete_icon.empty()) {
+        ptrOwner->PictureService()->GetTexturePos(m_iconGroupName.c_str(), noncomplete_icon.c_str(), m_texNonComplete);
+    } else {
         m_texNonComplete.left = m_texNonComplete.top = 0.f;
         m_texNonComplete.right = m_texNonComplete.bottom = 1.f;
     }

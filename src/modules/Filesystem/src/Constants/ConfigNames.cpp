@@ -78,7 +78,7 @@ std::filesystem::path ConfigNames::lights() noexcept {
 }
 
 std::filesystem::path ConfigNames::defaultnode() noexcept {
-    return Paths::ini() / (std::string(defaultnode_config_name) + std::string(config_file_ext));
+    return Paths::interfaces() / (std::string(defaultnode_config_name) + std::string(config_file_ext));
 }
 
 std::filesystem::path ConfigNames::mast() noexcept {

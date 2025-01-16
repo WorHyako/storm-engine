@@ -2,6 +2,9 @@
 #include "../base_video.h"
 #include "entity.h"
 
+using namespace Storm::Filesystem;
+using namespace Storm::Math;
+
 CXI_VIDEORECT::CXI_VIDEORECT()
     : m_dwColor(0), m_eiVideo(0)
 {
@@ -53,24 +56,25 @@ void CXI_VIDEORECT::Draw(bool bSelected, uint32_t Delta_Time)
     }
 }
 
-bool CXI_VIDEORECT::Init(INIFILE *ini1, const char *name1, INIFILE *ini2, const char *name2, VDX9RENDER *rs,
-                         XYRECT &hostRect, XYPOINT &ScreenSize)
-{
-    if (!CINODE::Init(ini1, name1, ini2, name2, rs, hostRect, ScreenSize))
+bool CXI_VIDEORECT::Init(const Config& node_config, const Config& def_config,
+    VDX9RENDER *rs, XYRECT &hostRect, XYPOINT &ScreenSize) {
+    if (!CINODE::Init(node_config, def_config, rs, hostRect, ScreenSize))
         return false;
     SetGlowCursor(false);
     return true;
 }
 
-void CXI_VIDEORECT::LoadIni(INIFILE *ini1, const char *name1, INIFILE *ini2, const char *name2)
-{
-    char param[255];
+void CXI_VIDEORECT::LoadIni(const Config& node_config, const Config& def_config) {
+    std::pair<const Config&, const Config&> configs{node_config, def_config};
+    m_dwFlags = Config::GetOrGet<std::int64_t>(configs, "flags", 0);
+    m_rectTex = Config::GetOrGet<Types::Vector4<double>>(configs, "textureRect", {0.0, 0.0, 1.0, 1.0});
+    auto color = Config::GetOrGet<Types::Vector4<std::int64_t>>(configs, "color", {255, 128, 128, 128});
+    m_dwColor = ARGB(color.x, color.y, color.z, color.w);
 
-    m_dwFlags = GetIniLong(ini1, name1, ini2, name2, "flags", 0);
-    m_rectTex = GetIniFloatRect(ini1, name1, ini2, name2, "textureRect", FXYRECT(0.f, 0.f, 1.f, 1.f));
-    m_dwColor = GetIniARGB(ini1, name1, ini2, name2, "color", ARGB(255, 128, 128, 128));
-    if (ReadIniString(ini1, name1, ini2, name2, "videoFile", param, sizeof(param), ""))
-        StartVideoPlay(param);
+    const auto video_file = Config::GetOrGet<std::string>(configs, "videoFile", {});
+    if (!video_file.empty()) {
+        StartVideoPlay(video_file.c_str());
+    }
 }
 
 void CXI_VIDEORECT::ReleaseAll()

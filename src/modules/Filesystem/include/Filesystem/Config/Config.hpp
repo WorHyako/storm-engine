@@ -7,18 +7,57 @@
 #include <toml++/toml.hpp>
 
 namespace Storm::Filesystem {
-
+    /**
+     * \brief
+     *
+     * \author  WorHyako
+     */
     class Config final {
     public:
+        /**
+         * \brief
+         *
+         * \param   file_path   Config file's name.
+         *
+         * \return  Config or empty config.
+         */
         [[nodiscard]]
         static Config Load(const std::filesystem::path &file_path) noexcept;
 
+        /**
+         * \brief   Select section in toml config for future accessors and mutators.
+         *
+         * \param   section_name    Section name.
+         *
+         * \return  <code>true</code> - Section was found and selected.
+         *          \n
+         *          <code>false</code> - Section was not found.
+         */
         [[nodiscard]]
         bool SelectSection(std::string section_name) noexcept;
+
+        template<typename ValueType>
+        [[nodiscard]]
+        static ValueType GetOrGet(std::pair<const Config &, const Config &> configs,
+                                  const std::string &key, ValueType default_value) noexcept;
+
+        template<typename ValueType>
+        [[nodiscard]]
+        static std::optional<ValueType> GetOrGet(std::pair<const Config &, const Config &> configs,
+                                                 const std::string &key) noexcept;
 
     private:
         using SetResultIterator = std::pair<toml::table_iterator, bool>;
 
+        /**
+         * \brief   Makes lowercase representation of in-string with no modification origin one.
+         *
+         * \param   str String to modify.
+         *              \n
+         *              Case independent.
+         *
+         * \return  Lowercase string representation.
+         */
         [[nodiscard]]
         std::string ToLowercase(std::string str) const noexcept;
 
@@ -26,7 +65,7 @@ namespace Storm::Filesystem {
         std::string PrintInfo(const std::string_view &key, const std::string_view &message) const noexcept;
 
         /**
-         * @brief   Ctor.
+         * \brief   Ctor.
          */
         Config() noexcept;
 
@@ -34,13 +73,44 @@ namespace Storm::Filesystem {
 
         toml::parse_result _config;
 
+        /**
+         * \brief   Name of current section.
+         */
         std::string _section_name;
 
+        /**
+         * \brief   Pointer to selected section.
+         */
         toml::table *_section;
 
 #pragma region Accessors/Mutators
 
     public:
+        /**
+         * \brief   Checks config for empty data.
+         *
+         * \return  <code>true</code> - Config contains parsed data.
+         *          \n
+         *          <code>false</code> - Config is empty. Parsing error.
+         */
+        [[nodiscard]]
+        bool Empty() const noexcept;
+
+        /**
+         * \brief   Accessor for config file's name.
+         *
+         * \return  Config file's name.
+         *          \n
+         *          Empty string if config is empty.
+         */
+        [[nodiscard]]
+        std::string Name() const noexcept;
+
+        /**
+         * \brief   Accessor for all config's sections.
+         *
+         * \return  Section's name list.
+         */
         [[nodiscard]]
         std::vector<std::string> Sections() noexcept;
 
@@ -104,14 +174,47 @@ namespace Storm::Filesystem {
         [[nodiscard]]
         std::optional<Math::Types::Vector4<ElementType> > Vector4Value(toml::node *node) const;
 
+        /**
+         * \brief   Searches value by <code>key</code> in current section.
+         *
+         * \param   key     Option key.
+         *
+         * \return  Pointer to config's node by <code>key</code>.
+         *          \n
+         *          <code>nullptr</code> - key wasn't found.
+         */
         [[nodiscard]]
         toml::node *Node(const std::string &key) const noexcept;
 
-        [[nodiscard]]
-        toml::table *section(const std::string &section_name);
-
 #pragma endregion Accessors/Mutators
     };
+
+    template<typename ValueType>
+    ValueType Config::GetOrGet(std::pair<const Config &, const Config &> configs,
+                               const std::string &key, ValueType default_value) noexcept {
+        if (configs.first.Empty() && configs.second.Empty()) {
+            return default_value;
+        }
+
+        auto first_value = configs.first.Get<ValueType>(key);
+        if (first_value.has_value()) {
+            return first_value.value();
+        }
+        return configs.second.Get<ValueType>(key, default_value);
+    }
+
+    template<typename ValueType>
+    std::optional<ValueType> Config::GetOrGet(std::pair<const Config &, const Config &> configs,
+                                              const std::string &key) noexcept {
+        if (configs.first.Empty() && configs.second.Empty()) {
+            return {};
+        }
+
+        auto first_value = configs.first.Get<ValueType>(key);
+        return first_value.has_value()
+                   ? first_value
+                   : configs.second.Get<ValueType>(key);
+    }
 
 #pragma region Accessors/Mutators
 
