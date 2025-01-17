@@ -435,7 +435,19 @@ bool RENDER::Init() {
 
     progressFramesCountY = config.Get<std::int64_t>("VerticalFramesCount", 8);
     progressFramesCountY = std::clamp(progressFramesCountY, 1, 64);
+
     CreateSphere();
+    {
+        RHI::BufferDesc desc = {};
+        desc.setSize(sphereNumTrgs * 6 * sizeof(SphereVertex))
+            .setIsTransferDst(true)
+            .setIsVertexBuffer(true)
+            .setMemoryProperties(RHI::MemoryPropertiesBits::DEVICE_LOCAL_BIT);
+        sphereVertexBuffer = device->createBuffer(desc);
+
+        commandList->writeBuffer(sphereVertexBuffer.get(), desc.size, sphereVertex);
+    }
+
     auto* pScriptRender = static_cast<VDATA*>(core.GetScriptVariable("Render"));
     ATTRIBUTES* pARender = pScriptRender->GetAClass();
 
@@ -623,7 +635,7 @@ bool RENDER::Clear(int32_t type)
 }
 
 //################################################################################
-void RENDER::CreateRenderQuad(float fWidth, float fHeight, float fSrcWidth, float fSrcHeight, float fMulU,
+RHI::BufferHandle RENDER::CreateRenderQuad(float fWidth, float fHeight, float fSrcWidth, float fSrcHeight, float fMulU,
     float fMulV)
 {
     const float StartX = -0.5f;
@@ -673,50 +685,61 @@ void RENDER::CreateRenderQuad(float fWidth, float fHeight, float fSrcWidth, floa
         PostProcessQuad[i].u3 = u + (fTexelU * fBlurSize);
         PostProcessQuad[i].v3 = v + (fTexelV * fBlurSize);
     }
+
+    RHI::BufferDesc desc = {};
+    desc.setSize(4 * sizeof(QuadVertex))
+        .setIsTransferDst(true)
+        .setIsVertexBuffer(true)
+        .setMemoryProperties(RHI::MemoryPropertiesBits::DEVICE_LOCAL_BIT);
+    RHI::BufferHandle buffer = device->createBuffer(desc);
+    commandList->writeBuffer(buffer.get(), desc.size, PostProcessQuad);
+
+    return buffer;
 }
 
 void RENDER::BlurGlowTexture()
 {
     // Render everything to a small texture
-    CreateRenderQuad(fSmallWidth * 2.0f, fSmallHeight * 2.0f, 1024.0f, 1024.0f);
+    RHI::BufferHandle postProcessVertexBuffer = CreateRenderQuad(fSmallWidth * 2.0f, fSmallHeight * 2.0f, 1024.0f, 1024.0f);
+
     SetTexture(0, pPostProcessTexture);
     SetTexture(1, pPostProcessTexture);
     SetTexture(2, pPostProcessTexture);
     SetTexture(3, pPostProcessTexture);
     SetRenderTarget(pSmallPostProcessTexture2, nullptr);
-    DrawPrimitiveUP(RHI::PrimitiveType::TriangleStrip, POST_PROCESS_FVF, 2, PostProcessQuad, sizeof(QuadVertex), "PostProcessBlur");
+    DrawPrimitive(RHI::PrimitiveType::TriangleStrip, POST_PROCESS_FVF, 4, 1, 0, postProcessVertexBuffer, sizeof(QuadVertex), "PostProcessBlur");
 
     // pre-blur iBlurPasses times
     for (int i = 0; i < iBlurPasses; i++)
     {
-        CreateRenderQuad(fSmallWidth, fSmallHeight, fSmallWidth * 2.0f, fSmallHeight * 2.0f);
+        RHI::BufferHandle postProcessBlurVertexBuffer1 = CreateRenderQuad(fSmallWidth, fSmallHeight, fSmallWidth * 2.0f, fSmallHeight * 2.0f);
 
         SetTexture(0, pSmallPostProcessTexture2);
         SetTexture(1, pSmallPostProcessTexture2);
         SetTexture(2, pSmallPostProcessTexture2);
         SetTexture(3, pSmallPostProcessTexture2);
         SetRenderTarget(pSmallPostProcessTexture, nullptr);
-        DrawPrimitiveUP(RHI::PrimitiveType::TriangleStrip, POST_PROCESS_FVF, 2, PostProcessQuad, sizeof(QuadVertex),
+        DrawPrimitive(RHI::PrimitiveType::TriangleStrip, POST_PROCESS_FVF, 4, 1, 0, postProcessBlurVertexBuffer1, sizeof(QuadVertex),
             "PostProcessBlur");
 
-        CreateRenderQuad(fSmallWidth * 2.0f, fSmallHeight * 2.0f, fSmallWidth, fSmallHeight);
+        RHI::BufferHandle postProcessBlurVertexBuffer2 = CreateRenderQuad(fSmallWidth * 2.0f, fSmallHeight * 2.0f, fSmallWidth, fSmallHeight);
 
         SetTexture(0, pSmallPostProcessTexture);
         SetTexture(1, pSmallPostProcessTexture);
         SetTexture(2, pSmallPostProcessTexture);
         SetTexture(3, pSmallPostProcessTexture);
         SetRenderTarget(pSmallPostProcessTexture2, nullptr);
-        DrawPrimitiveUP(RHI::PrimitiveType::TriangleStrip, POST_PROCESS_FVF, 2, PostProcessQuad, sizeof(QuadVertex),
+        DrawPrimitive(RHI::PrimitiveType::TriangleStrip, POST_PROCESS_FVF, 4, 1, 0, postProcessBlurVertexBuffer2, sizeof(QuadVertex),
             "PostProcessBlur");
     }
 
-    CreateRenderQuad(fSmallWidth, fSmallHeight, fSmallWidth * 2.0f, fSmallHeight * 2.0f);
+    RHI::BufferHandle postProcessBlurVertexBuffer = CreateRenderQuad(fSmallWidth, fSmallHeight, fSmallWidth * 2.0f, fSmallHeight * 2.0f);
     SetTexture(0, pSmallPostProcessTexture2);
     SetTexture(1, pSmallPostProcessTexture2);
     SetTexture(2, pSmallPostProcessTexture2);
     SetTexture(3, pSmallPostProcessTexture2);
     SetRenderTarget(pSmallPostProcessTexture, nullptr);
-    DrawPrimitiveUP(RHI::PrimitiveType::TriangleStrip, POST_PROCESS_FVF, 2, PostProcessQuad, sizeof(QuadVertex), "PostProcessBlur");
+    DrawPrimitive(RHI::PrimitiveType::TriangleStrip, POST_PROCESS_FVF, 4, 1, 0, postProcessBlurVertexBuffer, sizeof(QuadVertex), "PostProcessBlur");
 }
 
 void RENDER::CopyGlowToScreen()
@@ -738,6 +761,14 @@ void RENDER::CopyGlowToScreen()
     PostProcessQuad[3].v0 = 0.0f;
     PostProcessQuad[3].u0 = 1.0f;
 
+    RHI::BufferDesc desc = {};
+    desc.setSize(4 * sizeof(QuadVertex))
+        .setIsTransferDst(true)
+        .setIsVertexBuffer(true)
+        .setMemoryProperties(RHI::MemoryPropertiesBits::DEVICE_LOCAL_BIT);
+    RHI::BufferHandle postProcessQuadBuffer = device->createBuffer(desc);
+    commandList->writeBuffer(postProcessQuadBuffer.get(), desc.size, PostProcessQuad);
+
     SetRenderTarget(pOriginalScreenSurface, pOriginalDepthTexture);
 
     if (GlowIntensity < 0)
@@ -755,7 +786,7 @@ void RENDER::CopyGlowToScreen()
     SetTexture(2, pSmallPostProcessTexture);
     SetTexture(3, pSmallPostProcessTexture);
 
-    DrawPrimitiveUP(RHI::PrimitiveType::TriangleStrip, POST_PROCESS_FVF, 2, PostProcessQuad, sizeof(QuadVertex), "PostProcessGlow");
+    DrawPrimitive(RHI::PrimitiveType::TriangleStrip, POST_PROCESS_FVF, 4, 1, 0, postProcessQuadBuffer, sizeof(QuadVertex), "PostProcessGlow");
 }
 
 void RENDER::CopyPostProcessToScreen()
@@ -776,6 +807,14 @@ void RENDER::CopyPostProcessToScreen()
     PostProcessQuad[3].v0 = 0.0f;
     PostProcessQuad[3].u0 = 1.0f;
 
+    RHI::BufferDesc desc = {};
+    desc.setSize(4 * sizeof(QuadVertex))
+        .setIsTransferDst(true)
+        .setIsVertexBuffer(true)
+        .setMemoryProperties(RHI::MemoryPropertiesBits::DEVICE_LOCAL_BIT);
+    RHI::BufferHandle postProcessQuadBuffer = device->createBuffer(desc);
+    commandList->writeBuffer(postProcessQuadBuffer.get(), desc.size, PostProcessQuad);
+
     SetRenderTarget(pOriginalScreenSurface, pOriginalDepthTexture);
 
     // Draw the original screen
@@ -792,7 +831,7 @@ void RENDER::CopyPostProcessToScreen()
     }
     else
     {
-        DrawPrimitiveUP(RHI::PrimitiveType::TriangleStrip, POST_PROCESS_FVF, 2, PostProcessQuad, sizeof(QuadVertex), "PostProcess");
+        DrawPrimitive(RHI::PrimitiveType::TriangleStrip, POST_PROCESS_FVF, 4, 1, 0, postProcessQuadBuffer, sizeof(QuadVertex), "PostProcess");
     }
 }
 
@@ -844,6 +883,11 @@ void RENDER::MakePostProcess()
 }
 
 //################################################################################
+bool RENDER::BeginScene()
+{
+    return true;
+}
+
 bool RENDER::EndScene()
 {
     if (bShowFps)
@@ -1191,7 +1235,7 @@ bool RENDER::TextureLoad(int32_t t)
             Textures[t].dwSize += head.mip_size;
             // Getting the mip surface
             bool isError = false;
-            IDirect3DSurface9* surface = nullptr;
+            RHI::TextureHandle surface = nullptr;
             if (CHECKERR(tex->GetSurfaceLevel(m, &surface)) == true || !surface)
             {
                 isError = true;
@@ -1200,11 +1244,6 @@ bool RENDER::TextureLoad(int32_t t)
             {
                 // read the mip
                 isError = !LoadTextureSurface(fileS, surface, head.mip_size, head.width, head.height, isSwizzled);
-            }
-            // Freeing the surface
-            if (surface)
-            {
-                surface->Release();
             }
             // If there was an error, then interrupt the download
             if (isError)
@@ -1403,7 +1442,7 @@ uint32_t RENDER::LoadCubmapSide(std::fstream& fileS, RHI::TextureHandle tex, Cub
         texsize += mipSize;
         // Getting the mip surface
         bool isError = false;
-        IDirect3DSurface9* surface = nullptr;
+        RHI::TextureHandle surface = nullptr;
         if (CHECKERR(tex->GetCubeMapSurface(face, m, &surface)) == true || !surface)
         {
             isError = true;
@@ -1412,11 +1451,6 @@ uint32_t RENDER::LoadCubmapSide(std::fstream& fileS, RHI::TextureHandle tex, Cub
         {
             // read the mip
             isError = !LoadTextureSurface(fileS, surface, mipSize, size, size, isSwizzled);
-        }
-        // Freeing the surface
-        if (surface)
-        {
-            surface->Release();
         }
         // If there was an error, then interrupt the download
         if (isError)
@@ -2033,25 +2067,23 @@ void RENDER::RenderAnimation(int32_t ib, void* src, int32_t numVrts, int32_t min
             aniVBuffer = device->createBuffer(vertexBufferDesc);
             numAniVerteces = numVrts;
         }
-        // Copy verteces
+        // Copy vertices
         uint8_t* ptr;
-        RDTSC_B(_rdtsc);
         if (CHECKERR(aniVBuffer->Lock(0, size, (void**)&ptr, 0)) == true)
             return;
         dwNumLV++;
-        RDTSC_E(_rdtsc);
         memcpy(ptr, src, size);
         CHECKERR(aniVBuffer->Unlock());
     }
     // Render
-
-    if (CHECKERR(d3d9->SetIndices(IndexBuffers[ib].buff)) == true)
-        return;
-
-    if (CHECKERR(d3d9->SetStreamSource(0, aniVBuffer, 0, sizeof(FVF_VERTEX))) == true)
-        return;
-
-    CHECKERR(d3d9->DrawIndexedPrimitive(RHI::PrimitiveType::TriangleList, minv, 0, numv, startidx, numtrg));
+    DrawIndexedPrimitive(
+        RHI::PrimitiveType::TriangleList,
+        aniVBuffer,
+        vertexFormat,
+        IndexBuffers[ib].buff,
+        RHI::Format::R16_UINT,
+        numv, 1,
+        startidx, minv);
 
     dwNumDrawPrimitive++;
 }
@@ -2215,12 +2247,14 @@ void RENDER::RestoreRender()
     for (int32_t s = 0; s < num_stages; s++)
     {
         // texture operation
-        SetTextureStageState(s, D3DTSS_COLORARG1, D3DTA_CURRENT);
-        SetTextureStageState(s, D3DTSS_COLORARG2, D3DTA_TEXTURE);
-        SetTextureStageState(s, D3DTSS_COLOROP, D3DTOP_DISABLE);
+        // TODO: remake texture operations in shader
+        //SetTextureStageState(s, D3DTSS_COLORARG1, D3DTA_CURRENT);
+        //SetTextureStageState(s, D3DTSS_COLORARG2, D3DTA_TEXTURE);
+        //SetTextureStageState(s, D3DTSS_COLOROP, D3DTOP_DISABLE);
 
         // texture coord
-        SetTextureStageState(s, D3DTSS_TEXCOORDINDEX, s);
+        // TODO: remake texture operations in shader
+        //SetTextureStageState(s, D3DTSS_TEXCOORDINDEX, s);
 
         // texture filtering
         defaultSamplerDesc.magFilter = RHI::SamplerFilter::LINEAR;
@@ -2228,8 +2262,9 @@ void RENDER::RestoreRender()
         defaultSamplerDesc.mipFilter = RHI::SamplerFilter::LINEAR;
     }
     // set base texture and diffuse+specular lighting
-    SetTextureStageState(0, D3DTSS_COLORARG1, D3DTA_DIFFUSE);
-    SetTextureStageState(0, D3DTSS_COLOROP, D3DTOP_ADDSIGNED);
+    // TODO: remake texture operations in shader
+    //SetTextureStageState(0, D3DTSS_COLORARG1, D3DTA_DIFFUSE);
+    //SetTextureStageState(0, D3DTSS_COLOROP, D3DTOP_ADDSIGNED);
     Light light{};
     light.Type = LightType::LIGHT_POINT;
     light.Range = 100.0f;
@@ -2728,16 +2763,17 @@ void RENDER::SetCommonStates()
     defaultSamplerDesc.maxAnisotropy = 3.0f;
 
     // unchanged texture stage states - both for base and detal texture
-    SetTextureStageState(0, D3DTSS_COLORARG1, D3DTA_DIFFUSE);
-    SetTextureStageState(0, D3DTSS_COLORARG2, D3DTA_TEXTURE);
-    SetTextureStageState(1, D3DTSS_COLORARG1, D3DTA_CURRENT);
-    SetTextureStageState(1, D3DTSS_COLORARG2, D3DTA_TEXTURE);
-    SetTextureStageState(2, D3DTSS_COLORARG1, D3DTA_CURRENT);
-    SetTextureStageState(2, D3DTSS_COLORARG2, D3DTA_DIFFUSE);
+    // TODO: remake texture operations in shader
+    //SetTextureStageState(0, D3DTSS_COLORARG1, D3DTA_DIFFUSE);
+    //SetTextureStageState(0, D3DTSS_COLORARG2, D3DTA_TEXTURE);
+    //SetTextureStageState(1, D3DTSS_COLORARG1, D3DTA_CURRENT);
+    //SetTextureStageState(1, D3DTSS_COLORARG2, D3DTA_TEXTURE);
+    //SetTextureStageState(2, D3DTSS_COLORARG1, D3DTA_CURRENT);
+    //SetTextureStageState(2, D3DTSS_COLORARG2, D3DTA_DIFFUSE);
 
-    SetTextureStageState(0, D3DTSS_ALPHAARG1, D3DTA_DIFFUSE);
-    SetTextureStageState(0, D3DTSS_ALPHAARG2, D3DTA_TEXTURE);
-    SetTextureStageState(0, D3DTSS_ALPHAOP, D3DTOP_MODULATE);
+    //SetTextureStageState(0, D3DTSS_ALPHAARG1, D3DTA_DIFFUSE);
+    //SetTextureStageState(0, D3DTSS_ALPHAARG2, D3DTA_TEXTURE);
+    //SetTextureStageState(0, D3DTSS_ALPHAOP, D3DTOP_MODULATE);
 
     // general
     renderState.CCWCullMode = true;
@@ -2771,25 +2807,26 @@ void RENDER::SetViewport(const RHI::Viewport& pViewport)
     viewport = pViewport;
 }
 
-uint32_t RENDER::GetSamplerState(uint32_t Sampler, D3DSAMPLERSTATETYPE Type, uint32_t* pValue)
-{
-    return CHECKERR(d3d9->GetSamplerState(Sampler, Type, (DWORD*)pValue));
-}
-
-uint32_t RENDER::SetSamplerState(uint32_t Sampler, D3DSAMPLERSTATETYPE Type, uint32_t Value)
-{
-    return CHECKERR(d3d9->SetSamplerState(Sampler, Type, Value));
-}
-
-uint32_t RENDER::SetTextureStageState(uint32_t Stage, uint32_t Type, uint32_t Value)
-{
-    return CHECKERR(d3d9->SetTextureStageState(Stage, static_cast<D3DTEXTURESTAGESTATETYPE>(Type), Value));
-}
-
-uint32_t RENDER::GetTextureStageState(uint32_t Stage, uint32_t Type, uint32_t* pValue)
-{
-    return CHECKERR(d3d9->GetTextureStageState(Stage, static_cast<D3DTEXTURESTAGESTATETYPE>(Type), (DWORD*)pValue));
-}
+// TODO: make RHI analog
+//uint32_t RENDER::GetSamplerState(uint32_t Sampler, D3DSAMPLERSTATETYPE Type, uint32_t* pValue)
+//{
+//    return CHECKERR(d3d9->GetSamplerState(Sampler, Type, (DWORD*)pValue));
+//}
+//
+//uint32_t RENDER::SetSamplerState(uint32_t Sampler, D3DSAMPLERSTATETYPE Type, uint32_t Value)
+//{
+//    return CHECKERR(d3d9->SetSamplerState(Sampler, Type, Value));
+//}
+//
+//uint32_t RENDER::SetTextureStageState(uint32_t Stage, uint32_t Type, uint32_t Value)
+//{
+//    return CHECKERR(d3d9->SetTextureStageState(Stage, static_cast<D3DTEXTURESTAGESTATETYPE>(Type), Value));
+//}
+//
+//uint32_t RENDER::GetTextureStageState(uint32_t Stage, uint32_t Type, uint32_t* pValue)
+//{
+//    return CHECKERR(d3d9->GetTextureStageState(Stage, static_cast<D3DTEXTURESTAGESTATETYPE>(Type), (DWORD*)pValue));
+//}
 
 void RENDER::GetCamera(CVECTOR& pos, CVECTOR& ang, float& perspective)
 {
@@ -2848,13 +2885,7 @@ void RENDER::MakeScreenShot()
         return;
     }
 
-    if (CHECKERR(D3DXLoadSurfaceFromSurface(surface, NULL, NULL, renderTarget, NULL, NULL, D3DX_DEFAULT, 0)))
-    {
-        surface->Release();
-        renderTarget->Release();
-        core.Trace("Failed to make screenshot");
-        return;
-    }
+    commandList->copyTexture(BackBuffer.get(), destTexture.get());
 
     const auto screenshot_base_filename = fmt::format("{:%Y-%m-%d_%H-%M-%S}", fmt::localtime(std::time(nullptr)));
     auto screenshot_path = Storm::Filesystem::Constants::Paths::screenshots() / screenshot_base_filename;
@@ -3086,7 +3117,7 @@ void RENDER::DrawSprites(RS_SPRITE* pRSS, uint32_t dwSpritesNum, const char* cBl
         return;
 
     auto* pIndices = new uint16_t[dwSpritesNum * 6];
-    const uint32_t indicesArraySize = dwSpritesNum * 6 * 2;
+    const uint32_t indicesArraySize = dwSpritesNum * 6 * sizeof(uint16_t);
 
     for (i = 0; i < dwSpritesNum; i++)
     {
@@ -3108,13 +3139,13 @@ void RENDER::DrawSprites(RS_SPRITE* pRSS, uint32_t dwSpritesNum, const char* cBl
     commandList->writeBuffer(indexBuffer.get(), indicesArraySize, pIndices);
 
     RHI::BufferDesc vertexBufferDesc = {};
-    vertexBufferDesc.setSize()
+    vertexBufferDesc.setSize(dwSpritesNum * sizeof(RS_SPRITE) * 4)
         .setIsTransferDst(true)
         .setIsVertexBuffer(true);
 
     RHI::BufferHandle vertexBuffer = device->createBuffer(vertexBufferDesc);
 
-    commandList->writeBuffer(vertexBuffer.get(), )
+    commandList->writeBuffer(vertexBuffer.get(), vertexBufferDesc.size, pRSS);
 
     vertexFormat = VertexFVFBits::XYZ | VertexFVFBits::Color | VertexFVFBits::UV1;
 
@@ -3124,8 +3155,7 @@ void RENDER::DrawSprites(RS_SPRITE* pRSS, uint32_t dwSpritesNum, const char* cBl
     if (bDraw)
         do
         {
-            DrawIndexedPrimitive(RHI::PrimitiveType::TriangleList, 0, dwSpritesNum * 4, dwSpritesNum * 2, pIndices, RHI::Format::R16_UINT,
-                pRSS, sizeof(RS_SPRITE));
+            DrawIndexedPrimitive(RHI::PrimitiveType::TriangleList, vertexBuffer, vertexFormat, indexBuffer, RHI::Format::R16_UINT, dwSpritesNum * 4, 1, 0, 0);
         } while (cBlockName && TechniqueExecuteNext());
     delete[] pIndices;
 }
@@ -3137,6 +3167,15 @@ void RENDER::DrawLines(RS_LINE* pRSL, uint32_t dwLinesNum, const char* cBlockNam
 
     VertexFVFBits vertexFVF = VertexFVFBits::XYZ | VertexFVFBits::Color;
 
+    RHI::BufferDesc vertexBufferDesc = {};
+    vertexBufferDesc.setSize(dwLinesNum * sizeof(RS_LINE) * 2)
+        .setIsTransferDst(true)
+        .setIsVertexBuffer(true);
+
+    RHI::BufferHandle vertexBuffer = device->createBuffer(vertexBufferDesc);
+
+    commandList->writeBuffer(vertexBuffer.get(), vertexBufferDesc.size, pRSL);
+
     bool bDraw = true;
 
     if (cBlockName && cBlockName[0])
@@ -3144,7 +3183,7 @@ void RENDER::DrawLines(RS_LINE* pRSL, uint32_t dwLinesNum, const char* cBlockNam
     if (bDraw)
         do
         {
-            DrawPrimitive(RHI::PrimitiveType::LineList, vertexFVF, dwLinesNum, pRSL, sizeof(RS_LINE));
+            DrawPrimitive(RHI::PrimitiveType::LineList, vertexFVF, dwLinesNum * 2, 1, 0, vertexBuffer, sizeof(RS_LINE));
         } while (cBlockName && TechniqueExecuteNext());
 }
 
@@ -3155,6 +3194,13 @@ void RENDER::DrawLines2D(RS_LINE2D* pRSL2D, size_t dwLinesNum, const char* cBloc
 
     VertexFVFBits vertexFVF = VertexFVFBits::XYZ | VertexFVFBits::Color;
 
+    RHI::BufferDesc vertexBufferDesc = {};
+    vertexBufferDesc.setSize(dwLinesNum * sizeof(RS_LINE2D) * 2)
+        .setIsTransferDst(true)
+        .setIsVertexBuffer(true);
+
+    RHI::BufferHandle vertexBuffer = device->createBuffer(vertexBufferDesc);
+
     bool bDraw = true;
 
     if (cBlockName && cBlockName[0])
@@ -3162,7 +3208,7 @@ void RENDER::DrawLines2D(RS_LINE2D* pRSL2D, size_t dwLinesNum, const char* cBloc
     if (bDraw)
         do
         {
-            DrawPrimitive(RHI::PrimitiveType::LineList, vertexFVF, dwLinesNum, pRSL2D, sizeof(RS_LINE2D));
+            DrawPrimitive(RHI::PrimitiveType::LineList, vertexFVF, dwLinesNum * 2, 1, 0, vertexBuffer, sizeof(RS_LINE2D));
         } while (cBlockName && TechniqueExecuteNext());
 }
 
@@ -3205,8 +3251,8 @@ int32_t RENDER::GetDepthStencilSurface(RHI::TextureHandle pZStencilSurface)
     return 0;
 }
 
-HRESULT RENDER::GetCubeMapSurface(IDirect3DCubeTexture9* ppCubeTexture, D3DCUBEMAP_FACES FaceType, UINT Level,
-    IDirect3DSurface9** ppCubeMapSurface)
+int32_t RENDER::GetCubeMapSurface(RHI::TextureHandle pCubeTexture, CubemapFaces FaceType, uint32_t Level,
+    RHI::TextureHandle pCubeMapSurface)
 {
     return ppCubeTexture->GetCubeMapSurface(FaceType, Level, ppCubeMapSurface);
 }
@@ -3333,18 +3379,16 @@ HRESULT RENDER::GetSurfaceLevel(IDirect3DTexture9* ppTexture, UINT Level, IDirec
     return CHECKERR(ppTexture->GetSurfaceLevel(Level, ppSurfaceLevel));
 }
 
-HRESULT RENDER::UpdateSurface(IDirect3DSurface9* pSourceSurface, const RECT* pSourceRectsArray, UINT cRects,
-    IDirect3DSurface9* pDestinationSurface, const POINT* pDestPointsArray)
+int32_t RENDER::UpdateSurface(RHI::TextureHandle pSourceSurface, RHI::TextureHandle pDestinationSurface)
 {
-    return CHECKERR(D3DXLoadSurfaceFromSurface(pDestinationSurface, nullptr, nullptr, pSourceSurface, nullptr,
-        nullptr, D3DX_DEFAULT, 0));
-    //return CHECKERR(d3d9->UpdateSurface(pSourceSurface, pSourceRectsArray, pDestinationSurface, pDestPointsArray));
+    commandList->copyTexture(pSourceSurface.get(), pDestinationSurface.get());
+    return 0;
 }
 
-HRESULT RENDER::StretchRect(IDirect3DSurface9* pSourceSurface, const RECT* pSourceRect,
-    IDirect3DSurface9* pDestSurface, const RECT* pDestRect, D3DTEXTUREFILTERTYPE Filter)
+int32_t RENDER::StretchRect(RHI::TextureHandle pSourceSurface, RHI::TextureHandle pDestinationSurface)
 {
-    return CHECKERR(d3d9->StretchRect(pSourceSurface, pSourceRect, pDestSurface, pDestRect, Filter));
+    commandList->resolveTexture(pSourceSurface.get(), pDestinationSurface.get());
+    return 0;
 }
 
 int32_t RENDER::GetRenderTargetData(RHI::TextureHandle pRenderTarget, RHI::TextureHandle pDestSurface)
@@ -3956,8 +4000,8 @@ void RENDER::DrawSphere(const CVECTOR& vPos, float fRadius, uint32_t dwColor)
 
     textureFactorColor = dwColor;
     SetTransform(TSType::TS_WORLD, m);
-    DrawPrimitiveUP(RHI::PrimitiveType::TriangleList, VertexFVFBits::XYZ | VertexFVFBits::Color, sphereNumTrgs, sphereVertex,
-        sizeof(SphereVertex), "DXSphere");
+    DrawPrimitive(RHI::PrimitiveType::TriangleList, VertexFVFBits::XYZ | VertexFVFBits::Color, sphereNumTrgs * 6, 1, 0,
+        sphereVertexBuffer, sizeof(SphereVertex), "DXSphere");
 }
 
 
@@ -3970,9 +4014,9 @@ void RENDER::DrawEllipsoid(const CVECTOR& vPos, float a, float b, float c, float
 
     CMatrix mWorldRes = scale * rot * trans;
     SetTransform(TSType::TS_WORLD, mWorldRes);
-    SetRenderState(D3DRS_TEXTUREFACTOR, dwColor);
-    DrawPrimitiveUP(RHI::PrimitiveType::TriangleList, VertexFVFBits::XYZ | VertexFVFBits::Color, sphereNumTrgs, sphereVertex,
-        sizeof(SphereVertex), "DXEllipsoid");
+    textureFactorColor = dwColor;
+    DrawPrimitive(RHI::PrimitiveType::TriangleList, VertexFVFBits::XYZ | VertexFVFBits::Color, sphereNumTrgs * 6, 1, 0,
+        sphereVertexBuffer, sizeof(SphereVertex), "DXEllipsoid");
 }
 
 void RENDER::SetLoadTextureEnable(bool bEnable)
@@ -3983,9 +4027,15 @@ void RENDER::SetLoadTextureEnable(bool bEnable)
 RHI::TextureHandle RENDER::CreateVolumeTexture(uint32_t Width, uint32_t Height, uint32_t Depth, uint32_t Levels,
     uint32_t Usage, RHI::Format Format, RHI::MemoryPropertiesBits Pool)
 {
-    IDirect3DVolumeTexture9* pVolumeTexture = nullptr;
-    CHECKERR(d3d9->CreateVolumeTexture(Width, Height, Depth, Levels, Usage, Format, Pool, &pVolumeTexture, NULL));
-    return pVolumeTexture;
+    RHI::TextureDesc desc = {};
+    desc.setWidth(Width)
+        .setHeight(Height)
+        .setDepth(Depth)
+        .setMipLevels(Levels)
+        .setIsTransferDst(true)
+        .setFormat(Format)
+        .setMemoryProperties(Pool);
+    return device->createImage(desc);
 }
 
 bool RENDER::PushRenderTarget()
@@ -4017,15 +4067,13 @@ bool RENDER::PopRenderTarget()
     return true;
 }
 
-bool RENDER::SetRenderTarget(/*IDirect3DCubeTexture9**/ RHI::TextureHandle pRenderTarget, uint32_t FaceType, uint32_t dwLevel,
+bool RENDER::SetRenderTarget(RHI::TextureHandle pCubeRenderTarget, uint32_t faceType, uint32_t mipLevel,
     RHI::TextureHandle pZStencil)
 {
-    currentRenderTarget.pRenderTarget = pRenderTarget; // cubemap face
+    currentRenderTarget.pRenderTarget = pCubeRenderTarget;
     currentRenderTarget.pDepthSurface = pZStencil;
+    currentRenderTarget.CubeFace = faceType;
     return true;
-    /*IDirect3DSurface9* pSurface;
-    return !CHECKERR(pRenderTarget->GetCubeMapSurface(static_cast<D3DCUBEMAP_FACES>(FaceType), dwLevel, &pSurface)) &&
-        !CHECKERR(SetRenderTarget(pSurface, pZStencil)) && Release(pSurface) == D3D_OK;*/
 }
 
 void RENDER::SetView(const CMatrix& mView)

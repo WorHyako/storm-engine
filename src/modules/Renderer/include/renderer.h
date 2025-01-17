@@ -5,6 +5,8 @@
 #include <matrix.h>
 #include <RHICommon.hpp>
 
+#include "rhi_video_texture.h"
+
 #include <stack>
 #include <vector>
 
@@ -282,6 +284,7 @@ public:
 
     // Render: Render Target/Begin/End/Clear
     bool Clear(int32_t type) override; // D3DCLEAR_STENCIL | D3DCLEAR_TARGET | D3DCLEAR_ZBUFFER
+    bool BeginScene();
     bool EndScene() override;
 
     // Render: Materials/Lights Section
@@ -373,10 +376,10 @@ public:
     void ReleaseIndexBuffer(int32_t id) override;
 
     // Render: Render/Texture States Section
-    uint32_t GetSamplerState(uint32_t Sampler, D3DSAMPLERSTATETYPE Type, uint32_t* pValue);
+    /*uint32_t GetSamplerState(uint32_t Sampler, D3DSAMPLERSTATETYPE Type, uint32_t* pValue);
     uint32_t SetSamplerState(uint32_t Sampler, D3DSAMPLERSTATETYPE Type, uint32_t Value);
     uint32_t SetTextureStageState(uint32_t Stage, uint32_t Type, uint32_t Value);
-    uint32_t GetTextureStageState(uint32_t Stage, uint32_t Type, uint32_t* pValue);
+    uint32_t GetTextureStageState(uint32_t Stage, uint32_t Type, uint32_t* pValue);*/
 
     // aspect ratio section
     float GetHeightDeformator() const
@@ -406,8 +409,8 @@ public:
 
     // D3D Textures/Surfaces Section
     int32_t GetDepthStencilSurface(RHI::TextureHandle pZStencilSurface) override;
-    HRESULT GetCubeMapSurface(IDirect3DCubeTexture9* ppCubeTexture, D3DCUBEMAP_FACES FaceType, UINT Level,
-        IDirect3DSurface9** ppCubeMapSurface) override;
+    int32_t GetCubeMapSurface(RHI::TextureHandle pCubeTexture, CubemapFaces FaceType, uint32_t Level,
+        RHI::TextureHandle pCubeMapSurface) override;
     int32_t CreateTexture(uint32_t Width, uint32_t Height, uint32_t Levels, uint32_t Usage, RHI::Format Format, RHI::MemoryPropertiesBits Pool,
         RHI::TextureHandle pTexture) override;
     int32_t CreateCubeTexture(uint32_t EdgeLength, uint32_t Levels, uint32_t Usage, RHI::Format Format, RHI::MemoryPropertiesBits Pool,
@@ -420,10 +423,8 @@ public:
     HRESULT GetLevelDesc(IDirect3DTexture9* ppTexture, UINT Level, D3DSURFACE_DESC* pDesc) override;
     HRESULT GetLevelDesc(IDirect3DCubeTexture9* ppCubeTexture, UINT Level, D3DSURFACE_DESC* pDesc) override;
     HRESULT GetSurfaceLevel(IDirect3DTexture9* ppTexture, UINT Level, IDirect3DSurface9** ppSurfaceLevel) override;
-    HRESULT UpdateSurface(IDirect3DSurface9* pSourceSurface, const RECT* pSourceRectsArray, UINT cRects,
-        IDirect3DSurface9* pDestinationSurface, const POINT* pDestPointsArray) override;
-    HRESULT StretchRect(IDirect3DSurface9* pSourceSurface, const RECT* pSourceRect, IDirect3DSurface9* pDestSurface,
-        const RECT* pDestRect, D3DTEXTUREFILTERTYPE Filter) override;
+    int32_t UpdateSurface(RHI::TextureHandle pSourceSurface, RHI::TextureHandle pDestinationSurface) override;
+    int32_t StretchRect(RHI::TextureHandle pSourceSurface, RHI::TextureHandle pDestinationSurface) override;
     int32_t GetRenderTargetData(RHI::TextureHandle pRenderTarget, RHI::TextureHandle pDestSurface) override;
 
     // Pixel/Vertex Shaders Section
@@ -528,7 +529,7 @@ public:
 
     bool PushRenderTarget() override;
     bool PopRenderTarget() override;
-    bool SetRenderTarget(RHI::TextureHandle pCubeTex, uint32_t dwFaceType, uint32_t dwLevel,
+    bool SetRenderTarget(RHI::TextureHandle pCubeRenderTarget, uint32_t faceType, uint32_t mipLevel,
         RHI::TextureHandle pNewZStencil) override;
     void SetView(const CMatrix& mView);
     void SetWorld(const CMatrix& mView);
@@ -565,6 +566,7 @@ private:
         RHI::TextureHandle pRenderTarget;
         RHI::TextureHandle pDepthSurface;
         RHI::Viewport ViewPort;
+        uint32_t CubeFace = 0u;
     };
 
     std::shared_ptr<RHI::IDevice> device;
@@ -637,7 +639,7 @@ private:
 
     RHI::Viewport OriginalViewPort;
 
-    void CreateRenderQuad(float fWidth, float fHeight, float fSrcWidth, float fSrcHeight, float fMulU = 1.0f,
+    RHI::BufferHandle CreateRenderQuad(float fWidth, float fHeight, float fSrcWidth, float fSrcHeight, float fMulU = 1.0f,
         float fMulV = 1.0f);
 
     void ClearPostProcessTexture(RHI::TextureHandle tex);
@@ -700,6 +702,8 @@ private:
     std::string screenshotExt;
 
     bool TextureLoad(int32_t texid);
+
+    RHI::BufferHandle sphereVertexBuffer;
 
     RHI::GraphicsAPI m_GraphicsAPI = RHI::GraphicsAPI::VULKAN;
     RHI::IRHIModule* m_RhiModule;
