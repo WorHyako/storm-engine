@@ -626,7 +626,7 @@ bool RENDER::ReleaseDevice()
 }
 
 //################################################################################
-bool RENDER::Clear(int32_t type)
+bool RENDER::Clear(ClearBits type)
 {
     if (CHECKERR(d3d9->Clear(0L, NULL, type, dwBackColor, 1.0f, 0L)) == true)
         return false;
@@ -934,14 +934,12 @@ bool RENDER::EndScene()
     // Try to drop video conveyor
     if (bDropVideoConveyor && pDropConveyorVBuffer)
     {
-        CVECTOR* pV;
-        pDropConveyorVBuffer->Lock(0, 0, (void**)&pV, 0);
+        CVECTOR pV[3];
         for (int32_t i = 0; i < 2; i++)
             pV[i] = CVECTOR(1e6f, 1e6f, 1e6f);
-        pDropConveyorVBuffer->Unlock();
-        d3d9->SetStreamSource(0, pDropConveyorVBuffer, 0, sizeof(CVECTOR));
+        commandList->writeBuffer(pDropConveyorVBuffer.get(), sizeof(pV), &pV[0]);
         vertexFormat = VertexFVFBits::XYZ;
-        DrawPrimitive(RHI::PrimitiveType::LineList, 0, 1);
+        DrawPrimitive(RHI::PrimitiveType::LineList, vertexFormat, 2, 1, 0, pDropConveyorVBuffer, sizeof(CVECTOR));
     }
 
     if (EndScene())
@@ -1476,20 +1474,7 @@ bool RENDER::TextureSet(uint32_t textureIndex, uint32_t textureBindingIndex, RHI
         return false;
     }
 
-    RHI::TextureAttachment textureAttachment = {};
-    textureAttachment
-        .setDescriptorInfo(RHI::DescriptorInfo{ RHI::DescriptorType::COMBINED_IMAGE_SAMPLER, RHI::ShaderStageFlagBits::FRAGMENT_BIT })
-        .setTexture(Textures[textureIndex].tex.get())
-        .setSampler(sampler.get());
-
-    if(dsInfos.textures.size() <= textureBindingIndex)
-    {
-        dsInfos.textures[textureBindingIndex] = textureAttachment;
-    }
-    else
-    {
-        dsInfos.textures.push_back(textureAttachment);
-    }
+    SetTexture(Textures[textureIndex].tex, sampler, textureBindingIndex, dsInfos);
 
     return true;
 }
@@ -2068,12 +2053,8 @@ void RENDER::RenderAnimation(int32_t ib, void* src, int32_t numVrts, int32_t min
             numAniVerteces = numVrts;
         }
         // Copy vertices
-        uint8_t* ptr;
-        if (CHECKERR(aniVBuffer->Lock(0, size, (void**)&ptr, 0)) == true)
-            return;
+        commandList->writeBuffer(aniVBuffer.get(), size, src);
         dwNumLV++;
-        memcpy(ptr, src, size);
-        CHECKERR(aniVBuffer->Unlock());
     }
     // Render
     DrawIndexedPrimitive(
@@ -2167,8 +2148,8 @@ void RENDER::LostRender()
 
     InvokeEntitiesLostRender();
 
-    Release(pOriginalScreenSurface);
-    Release(pOriginalDepthTexture);
+    pOriginalScreenSurface = nullptr;
+    pOriginalDepthTexture = nullptr;
     rectsVBuffer = nullptr;
     for (int32_t b = 0; b < MAX_BUFFERS; b++)
     {
@@ -2375,7 +2356,7 @@ void RENDER::RunStart()
         SetScreenAsRenderTarget();
     }
 
-    Clear(D3DCLEAR_TARGET | D3DCLEAR_ZBUFFER | ((stencil_format == RHI::Format::D24S8) ? D3DCLEAR_STENCIL : 0));
+    Clear(ClearBits::Color | ClearBits::Depth | ((stencil_format == RHI::Format::D24S8) ? ClearBits::Stencil : 0));
 
     dwNumDrawPrimitive = 0;
     dwNumLV = 0;
@@ -2885,7 +2866,7 @@ void RENDER::MakeScreenShot()
         return;
     }
 
-    commandList->copyTexture(BackBuffer.get(), destTexture.get());
+    commandList->copyTexture(BackBuffer.get(), RHI::TextureSubresourse{}, destTexture.get(), RHI::TextureSubresourse{});
 
     const auto screenshot_base_filename = fmt::format("{:%Y-%m-%d_%H-%M-%S}", fmt::localtime(std::time(nullptr)));
     auto screenshot_path = Storm::Filesystem::Constants::Paths::screenshots() / screenshot_base_filename;
@@ -3336,19 +3317,32 @@ ID3DXEffect* RENDER::GetEffectPointer(const char* techniqueName)
 }
 #endif
 
-HRESULT RENDER::SetTexture(uint32_t Stage, IDirect3DBaseTexture9* pTexture)
+int32_t RENDER::SetTexture(RHI::TextureHandle pTexture, RHI::SamplerHandle sampler, uint32_t textureBindingIndex, RHI::DescriptorSetInfo& dsInfos)
 {
-    return CHECKERR(d3d9->SetTexture(Stage, pTexture));
+    RHI::TextureAttachment textureAttachment = {};
+    textureAttachment
+        .setDescriptorInfo(RHI::DescriptorInfo{ RHI::DescriptorType::COMBINED_IMAGE_SAMPLER, RHI::ShaderStageFlagBits::FRAGMENT_BIT })
+        .setTexture(pTexture.get())
+        .setSampler(sampler.get());
+
+    if (dsInfos.textures.size() <= textureBindingIndex)
+    {
+        dsInfos.textures[textureBindingIndex] = textureAttachment;
+    }
+    else
+    {
+        dsInfos.textures.push_back(textureAttachment);
+    }
 }
 
-HRESULT RENDER::GetLevelDesc(IDirect3DTexture9* ppTexture, UINT Level, D3DSURFACE_DESC* pDesc)
+int32_t RENDER::GetLevelDesc(RHI::TextureHandle pTexture, uint32_t Level, D3DSURFACE_DESC* pDesc)
 {
-    return CHECKERR(ppTexture->GetLevelDesc(Level, pDesc));
+    return CHECKERR(pTexture->GetLevelDesc(Level, pDesc));
 }
 
-HRESULT RENDER::GetLevelDesc(IDirect3DCubeTexture9* ppCubeTexture, UINT Level, D3DSURFACE_DESC* pDesc)
+int32_t RENDER::GetLevelDesc(RHI::TextureHandle pCubeTexture, uint32_t Level, D3DSURFACE_DESC* pDesc)
 {
-    return CHECKERR(ppCubeTexture->GetLevelDesc(Level, pDesc));
+    return CHECKERR(pCubeTexture->GetLevelDesc(Level, pDesc));
 }
 
 // TODO: use RHI updateTextureImage() instead rect lock/unlock or create analog for it 
@@ -3374,20 +3368,20 @@ HRESULT RENDER::GetLevelDesc(IDirect3DCubeTexture9* ppCubeTexture, UINT Level, D
 //    return CHECKERR(pTexture->UnlockRect(Level));
 //}
 
-HRESULT RENDER::GetSurfaceLevel(IDirect3DTexture9* ppTexture, UINT Level, IDirect3DSurface9** ppSurfaceLevel)
+int32_t RENDER::GetSurfaceLevel(RHI::TextureHandle pTexture, uint32_t Level, IDirect3DSurface9** ppSurfaceLevel)
 {
-    return CHECKERR(ppTexture->GetSurfaceLevel(Level, ppSurfaceLevel));
+    return CHECKERR(pTexture->GetSurfaceLevel(Level, ppSurfaceLevel));
 }
 
 int32_t RENDER::UpdateSurface(RHI::TextureHandle pSourceSurface, RHI::TextureHandle pDestinationSurface)
 {
-    commandList->copyTexture(pSourceSurface.get(), pDestinationSurface.get());
+    commandList->copyTexture(pSourceSurface.get(), RHI::TextureSubresourse{}, pDestinationSurface.get(), RHI::TextureSubresourse{});
     return 0;
 }
 
 int32_t RENDER::StretchRect(RHI::TextureHandle pSourceSurface, RHI::TextureHandle pDestinationSurface)
 {
-    commandList->resolveTexture(pSourceSurface.get(), pDestinationSurface.get());
+    commandList->resolveTexture(pSourceSurface.get(), RHI::TextureSubresourse{}, pDestinationSurface.get(), RHI::TextureSubresourse{});
     return 0;
 }
 
@@ -3402,11 +3396,11 @@ int32_t RENDER::GetRenderTargetData(RHI::TextureHandle pRenderTarget, RHI::Textu
     {
         const RHI::TextureDesc& DestDesc = pDestSurface->getDesc();
 
-        commandList->resolveTexture(pRenderTarget.get(), pDestSurface.get());
+        commandList->resolveTexture(pRenderTarget.get(), RHI::TextureSubresourse{}, pDestSurface.get(), RHI::TextureSubresourse{});
     }
     else
     {
-        commandList->copyTexture(pRenderTarget.get(), pDestSurface.get());
+        commandList->copyTexture(pRenderTarget.get(), RHI::TextureSubresourse{}, pDestSurface.get(), RHI::TextureSubresourse{});
     }
 
     commandList->transitionImageLayout(pRenderTarget.get(), RHI::ImageLayout::TRANSFER_SRC_OPTIMAL, RHI::ImageLayout::COLOR_ATTACHMENT_OPTIMAL);
