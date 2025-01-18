@@ -6,6 +6,8 @@
 #include <RHICommon.hpp>
 
 #include "rhi_video_texture.h"
+#include "script_libriary.h"
+#include "utf8.h"
 
 #include <stack>
 #include <vector>
@@ -236,6 +238,15 @@ enum class VertexFVFBits : uint8_t
 
 ENUM_CLASS_FLAG_OPERATORS(VertexFVFBits)
 
+enum class ClearBits : uint8_t
+{
+    Color = 0x00000001,
+    Depth = 0x00000002,
+    Stencil = 0x00000004,
+};
+
+ENUM_CLASS_FLAG_OPERATORS(ClearBits)
+
 struct ShadingState
 {
     bool enableLighting = false;
@@ -251,12 +262,12 @@ extern uint32_t dwSoundBuffersCount;
 extern uint32_t dwSoundBytes;
 extern uint32_t dwSoundBytesCached;
 
-class DX9RENDER_SCRIPT_LIBRIARY : public SCRIPT_LIBRIARY
+class RENDER_SCRIPT_LIBRIARY : public SCRIPT_LIBRIARY
 {
 public:
-    DX9RENDER_SCRIPT_LIBRIARY() {};
+    RENDER_SCRIPT_LIBRIARY() {};
 
-    ~DX9RENDER_SCRIPT_LIBRIARY() override {};
+    ~RENDER_SCRIPT_LIBRIARY() override {};
     bool Init() override;
 };
 
@@ -283,7 +294,7 @@ public:
     };
 
     // Render: Render Target/Begin/End/Clear
-    bool Clear(int32_t type) override; // D3DCLEAR_STENCIL | D3DCLEAR_TARGET | D3DCLEAR_ZBUFFER
+    bool Clear(ClearBits type) override; // D3DCLEAR_STENCIL | D3DCLEAR_TARGET | D3DCLEAR_ZBUFFER
     bool BeginScene();
     bool EndScene() override;
 
@@ -312,14 +323,14 @@ public:
 
     bool SetCurrentMatrix(D3DMATRIX* mtx) override;
 
-    // DX9Render: Textures Section
+    // Render: Textures Section
     int32_t TextureCreate(const char* fname) override;
     int32_t TextureCreate(uint32_t width, uint32_t height, uint32_t levels, uint32_t usage, RHI::Format format, RHI::MemoryPropertiesBits pool) override;
     bool TextureSet(uint32_t textureIndex, uint32_t textureBindingIndex, RHI::SamplerHandle sampler, RHI::DescriptorSetInfo& dsInfos);
     bool TextureRelease(int32_t texid) override;
     bool TextureIncReference(int32_t texid) override;
 
-    // DX9Render: Fonts Section
+    // Render: Fonts Section
     int32_t Print(int32_t x, int32_t y, const char* format, ...) override;
     int32_t Print(int32_t nFontNum, uint32_t color, int32_t x, int32_t y, const char* format, ...) override;
     int32_t ExtPrint(int32_t nFontNum, uint32_t foreColor, uint32_t backColor, int wAlignment, bool bShadow, float fScale,
@@ -419,10 +430,10 @@ public:
         RHI::TextureHandle pSurface) override;
     uint32_t CreateDepthStencilSurface(uint32_t Width, uint32_t Height, RHI::Format Format, uint32_t msaaSamples,
         RHI::TextureHandle pSurface) override;
-    HRESULT SetTexture(uint32_t Stage, IDirect3DBaseTexture9* pTexture) override;
-    HRESULT GetLevelDesc(IDirect3DTexture9* ppTexture, UINT Level, D3DSURFACE_DESC* pDesc) override;
-    HRESULT GetLevelDesc(IDirect3DCubeTexture9* ppCubeTexture, UINT Level, D3DSURFACE_DESC* pDesc) override;
-    HRESULT GetSurfaceLevel(IDirect3DTexture9* ppTexture, UINT Level, IDirect3DSurface9** ppSurfaceLevel) override;
+    int32_t SetTexture(RHI::TextureHandle pTexture, RHI::SamplerHandle sampler, uint32_t textureBindingIndex, RHI::DescriptorSetInfo& dsInfos) override;
+    int32_t GetLevelDesc(RHI::TextureHandle pTexture, uint32_t Level, D3DSURFACE_DESC* pDesc) override;
+    int32_t GetLevelDesc(RHI::TextureHandle pCubeTexture, uint32_t Level, D3DSURFACE_DESC* pDesc) override;
+    int32_t GetSurfaceLevel(RHI::TextureHandle pTexture, uint32_t Level, IDirect3DSurface9** ppSurfaceLevel) override;
     int32_t UpdateSurface(RHI::TextureHandle pSourceSurface, RHI::TextureHandle pDestinationSurface) override;
     int32_t StretchRect(RHI::TextureHandle pSourceSurface, RHI::TextureHandle pDestinationSurface) override;
     int32_t GetRenderTargetData(RHI::TextureHandle pRenderTarget, RHI::TextureHandle pDestSurface) override;
