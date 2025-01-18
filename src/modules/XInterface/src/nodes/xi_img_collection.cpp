@@ -104,106 +104,123 @@ void CXI_IMGCOLLECTION::LoadIni(const Config& node_config, const Config& def_con
     std::size_t imgQuantity{0};
     std::ranges::for_each(picture_vec,
         [&imgQuantity](auto& each) {
+            if (each[0].starts_with(",")) {
+                each[0] = each[0].substr(1, std::size(each[0]) - 1);
+            }
             if (each[0].starts_with("editsection")) {
                 imgQuantity++;
             }
         });
 
-    m_bRelativeRect = Config::GetOrGet<std::int64_t>(configs, "bAbsoluteRectangle", 0) == false;
+    m_bRelativeRect = Config::GetOrGet<std::int64_t>(configs, "bAbsoluteRectangle", 0) == 0;
 
     // Calculate vertex and index quantity
     nVert = imgQuantity * 4;
     nIndx = imgQuantity * 6;
     // Create vertex and index buffers
-    if (nVert && nIndx)
-    {
-        vBuf = m_rs->CreateVertexBuffer(XI_ONETEX_FVF, nVert * sizeof(XI_ONETEX_VERTEX), D3DUSAGE_WRITEONLY);
-        iBuf = m_rs->CreateIndexBuffer(nIndx * 2);
-        nIndx /= 3;
+    if (nVert == 0 && nIndx == 0) {
+        return;
+    }
+    vBuf = m_rs->CreateVertexBuffer(XI_ONETEX_FVF, nVert * sizeof(XI_ONETEX_VERTEX), D3DUSAGE_WRITEONLY);
+    iBuf = m_rs->CreateIndexBuffer(nIndx * 2);
+    nIndx /= 3;
 
-        // Lock vertex and index buffers and get pointers to this
-        auto *pVBuf = static_cast<XI_ONETEX_VERTEX *>(m_rs->LockVertexBuffer(vBuf));
-        auto *const pIBuf = static_cast<uint16_t *>(m_rs->LockIndexBuffer(iBuf));
+    // Lock vertex and index buffers and get pointers to this
+    auto *pVBuf = static_cast<XI_ONETEX_VERTEX *>(m_rs->LockVertexBuffer(vBuf));
+    auto *const pIBuf = static_cast<uint16_t *>(m_rs->LockIndexBuffer(iBuf));
 
-        if (pVBuf != nullptr && pIBuf != nullptr)
-        {
-            FXYRECT texRect;
-            XYRECT scrRect;
-            std::size_t n{};
-            // fill vetex and index buffers of image information
-            for (auto i = 0; i < imgQuantity; i++)
-            {
-                std::stringstream ss;
-                std::ranges::for_each(picture_vec[i],
-                    [&ss](const std::string& each) {
-                        ss << each << ',';
-                    });
-                std::string picture_str = ss.str();
-                if (!picture_str.starts_with("editsection")) {
-                    auto dwColor = ARGB(255, 128, 128, 128);
-                    char param2[256];
-                    const char *pStr = picture_str.data();
-                    n = std::size(m_aEditInfo);
-                    m_aEditInfo.emplace_back();
+    if (pVBuf != nullptr && pIBuf != nullptr) {
+        std::size_t n{};
+        int buffer_count{0};
+        // fill vetex and index buffers of image information
+        for (const auto& picture : picture_vec) {
+            std::stringstream ss;
+            std::ranges::for_each(picture,
+                [&ss](const std::string& each) {
+                    ss << each << ',';
+                });
+            std::string picture_str{ss.str()};
+            picture_str.erase(std::size(picture_str) - 1);
+            if (!picture_str.starts_with("editsection")) {
+                n = std::size(m_aEditInfo);
+                m_aEditInfo.emplace_back();
 
-                    pStr = GetSubStr(pStr, param2, sizeof(param2));
-                    pPictureService->GetTexturePos(sGroupName.c_str(), param2, texRect);
-                    m_aEditInfo[n].sName = param2;
+                FXYRECT texRect;
+                char param2[256];
+                pPictureService->GetTexturePos(sGroupName.c_str(), param2, texRect);
+                m_aEditInfo[n].sName = param2;
 
-                    if (GetMidStr(pStr, param2, sizeof(param2), "col:{", "}")) {
-                        int a = ALPHA(dwColor);
-                        int r = RED(dwColor);
-                        int g = GREEN(dwColor);
-                        int b = BLUE(dwColor);
-                        GetDataStr(param2, "llll", &a, &r, &g, &b);
-                        dwColor = ARGB(a, r, g, b);
+                auto idx_begin = picture_str.find("col:{");
+                auto idx_end = picture_str.find('}', idx_begin);
+
+                m_aEditInfo[n].dwColor = ARGB(255, 128, 128, 128);
+                if (idx_begin != std::string::npos && idx_end != std::string::npos) {
+                    idx_begin += 5;
+                    int a{}, r{}, g{}, b{};
+                    auto res = sscanf_s(picture_str.substr(idx_begin, idx_end - idx_begin).data(), "%d,%d,%d,%d", &a, &r, &g, &b);
+                    if (res == 4) {
+                        m_aEditInfo[n].dwColor = ARGB(a, r, g, b);
                     }
-                    m_aEditInfo[n].dwColor = dwColor;
+                }
 
-                    scrRect.left = scrRect.top = scrRect.right = scrRect.bottom = 0;
-                    if (GetMidStr(pStr, param2, sizeof(param2), "pos:{", "}"))
-                        GetDataStr(param2, "llll", &scrRect.left, &scrRect.top, &scrRect.right, &scrRect.bottom);
-                    m_aEditInfo[n].nLeft = scrRect.left;
-                    m_aEditInfo[n].nTop = scrRect.top;
-                    m_aEditInfo[n].nRight = scrRect.right;
-                    m_aEditInfo[n].nBottom = scrRect.bottom;
-                    if (m_bRelativeRect)
-                        GetRelativeRect(scrRect);
-                    m_aEditInfo[n].bNative = true;
+                idx_begin = picture_str.find("pos:{");
+                idx_end = picture_str.find('}', idx_begin);
+                XYRECT scrRect;
+                scrRect.left = scrRect.top = scrRect.right = scrRect.bottom = 0;
+                if (idx_begin != std::string::npos && idx_end != std::string::npos) {
+                    int x1{}, y1{}, x2{}, y2{};
+                    idx_begin += 5;
+                    auto res = sscanf_s(picture_str.substr(idx_begin, idx_end - idx_begin).data(), "%d,%d,%d,%d", &x1, &y1, &x2, &y2);
+                    if (res == 4) {
+                        scrRect.left = x1;
+                        scrRect.top = y1;
+                        scrRect.right = x2;
+                        scrRect.bottom = y2;
+                    }
+                }
+                m_aEditInfo[n].nLeft = scrRect.left;
+                m_aEditInfo[n].nTop = scrRect.top;
+                m_aEditInfo[n].nRight = scrRect.right;
+                m_aEditInfo[n].nBottom = scrRect.bottom;
 
-                    SetBuffers(pVBuf, pIBuf, i, scrRect, texRect, dwColor);
+                if (m_bRelativeRect) {
+                    GetRelativeRect(scrRect);
+                }
+                m_aEditInfo[n].bNative = true;
+
+                SetBuffers(pVBuf, pIBuf, buffer_count, scrRect, texRect, m_aEditInfo[n].dwColor);
+                buffer_count++;
+            } else {
+                if (storm::iEquals(&picture_str[12], "end")) {
+                    n = std::size(m_aSections) - 1;
+                    if (n > 0)
+                        m_aSections[n].nQuantity = std::size(m_aEditInfo) - m_aSections[n].nStartNum;
                 } else {
-                    if (storm::iEquals(&picture_str[12], "end")) {
-                        n = std::size(m_aSections) - 1;
-                        if (n >= 0)
+                    n = std::size(m_aSections) - 1;
+                    if (!m_aSections.empty()) {
+                        if (m_aSections[n].nQuantity == 0)
                             m_aSections[n].nQuantity = std::size(m_aEditInfo) - m_aSections[n].nStartNum;
-                    } else {
-                        n = std::size(m_aSections) - 1;
-                        if (!m_aSections.empty()) {
-                            if (m_aSections[n].nQuantity == 0)
-                                m_aSections[n].nQuantity = std::size(m_aEditInfo) - m_aSections[n].nStartNum;
-                        }
-                        n++;
-                        m_aSections.emplace_back();
-                        m_aSections[n].nStartNum = std::size(m_aEditInfo);
-                        m_aSections[n].sName = &picture_str[12];
-                        m_aSections[n].nQuantity = 0;
                     }
-                    i--;
+                    n++;
+                    m_aSections.emplace_back();
+                    m_aSections[n].nStartNum = std::size(m_aEditInfo);
+                    m_aSections[n].sName = &picture_str[12];
+                    m_aSections[n].nQuantity = 0;
                 }
             }
-            n = m_aSections.size() - 1;
-            if (n >= 0) {
-                if (m_aSections[n].nQuantity == 0)
-                    m_aSections[n].nQuantity = std::size(m_aEditInfo) - m_aSections[n].nStartNum;
+        }
+        n = std::size(m_aSections) - 1;
+        if (n > 0) {
+            if (m_aSections[n].nQuantity == 0) {
+                m_aSections[n].nQuantity = std::size(m_aEditInfo) - m_aSections[n].nStartNum;
             }
         }
-
-        if (pVBuf != nullptr)
-            m_rs->UnLockVertexBuffer(vBuf);
-        if (pIBuf != nullptr)
-            m_rs->UnLockIndexBuffer(iBuf);
     }
+
+    if (pVBuf != nullptr)
+        m_rs->UnLockVertexBuffer(vBuf);
+    if (pIBuf != nullptr)
+        m_rs->UnLockIndexBuffer(iBuf);
 }
 
 void CXI_IMGCOLLECTION::SetBuffers(XI_ONETEX_VERTEX *pVBuf, uint16_t *pIBuf, int rectNum, XYRECT &scrRect,

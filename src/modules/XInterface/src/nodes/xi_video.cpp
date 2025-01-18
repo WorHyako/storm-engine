@@ -67,13 +67,13 @@ void CXI_VIDEO::LoadIni(const Config& node_config, const Config& def_config) {
         m_rs->ReleaseVideoTexture(pTex);
     }
     std::pair<const Config&, const Config&> configs{node_config, def_config};
-    auto g_texture = Config::GetOrGet<std::string>(configs, "sTexture", "");
+    auto g_texture = Config::GetOrGet<std::string>(configs, "sTexture", {});
     if (!g_texture.empty()) {
         pTex = m_rs->GetVideoTexture(g_texture.c_str());
     }
     m_rectTex = Config::GetOrGet<Types::Vector4<double>>(configs, "textureRect", {0.0, 0.0, 1.0, 1.0});
 
-    auto color = Config::GetOrGet<Types::Vector4<std::int64_t>>(configs, "color", {255, 255, 255, 255});
+    auto color = Config::GetOrGet<Types::Vector4<std::int64_t>>(configs, "color", {255});
     m_dwColor = ARGB(color.x, color.y, color.z, color.w);
 }
 

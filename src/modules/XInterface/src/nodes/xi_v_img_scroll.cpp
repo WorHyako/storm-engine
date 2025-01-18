@@ -20,7 +20,6 @@ CXI_VIMAGESCROLL::CXI_VIMAGESCROLL()
     m_Image = nullptr;
     m_pScroll = nullptr;
     m_bDoMove = false;
-    m_sBorderGroupName = nullptr;
 
     m_nStringQuantity = 0;
     m_pStrParam = nullptr;
@@ -29,7 +28,6 @@ CXI_VIMAGESCROLL::CXI_VIMAGESCROLL()
     m_nNodeType = NODETYPE_VIMGSCROLL;
 
     m_nGroupQuantity = 0;
-    m_sGroupName = nullptr;
     m_nGroupTex = nullptr;
     m_nShowOrder = 100;
     m_nNotUsedQuantity = 0;
@@ -354,7 +352,7 @@ void CXI_VIMAGESCROLL::LoadIni(const Config& node_config, const Config& def_conf
     // set parameters for blend & minimize far images
     m_fScale = Config::GetOrGet<double>(configs, "fBoundScale", 1.0);
     m_nVDelta = Config::GetOrGet<std::int64_t>(configs, "wDelta", 0);
-    auto blend_color = Config::GetOrGet<Types::Vector4<std::int64_t>>(configs, "blendColor", {255, 255, 255, 255});
+    auto blend_color = Config::GetOrGet<Types::Vector4<std::int64_t>>(configs, "blendColor", {255});
     m_dwBlendColor = ARGB(blend_color.x, blend_color.y, blend_color.z, blend_color.w);
 
     m_nMaxBlindCounter = Config::GetOrGet<std::int64_t>(configs, "blindDelay", 2000);
@@ -418,7 +416,7 @@ void CXI_VIMAGESCROLL::LoadIni(const Config& node_config, const Config& def_conf
             core.Trace("Warning! unknown align: %s", align.c_str());
         m_pStrParam[i].m_nStrY = Config::GetOrGet<std::int64_t>(configs, "dwYOffset" + std::to_string(i + 1), 0);
 
-        auto dw_fore_color = Config::GetOrGet<Types::Vector4<std::int64_t>>(configs, "dwForeColor" + std::to_string(i + 1), {255, 255, 255, 255});
+        auto dw_fore_color = Config::GetOrGet<Types::Vector4<std::int64_t>>(configs, "dwForeColor" + std::to_string(i + 1), {255});
         m_pStrParam[i].m_dwForeColor = ARGB(dw_fore_color.x, dw_fore_color.y, dw_fore_color.z, dw_fore_color.w);
 
         auto dw_back_color = Config::GetOrGet<Types::Vector4<std::int64_t>>(configs, "dwBackColor" + std::to_string(i + 1), {});
@@ -590,22 +588,15 @@ void CXI_VIMAGESCROLL::LoadIni(const Config& node_config, const Config& def_conf
     }
 
     // get border picture
+    m_bShowBorder = false;
+    m_texBorder = -1;
     m_nShowOrder = Config::GetOrGet<std::int64_t>(configs, "borderShowOrder", 100); // boredrShowUp
-    auto border = Config::GetOrGet<std::string>(configs, "border", {});
-    if (!border.empty()) {
-        char param1[256];
-        const char* tmpstr = GetSubStr(border.c_str(), param1, sizeof(param1));
-        const auto len = strlen(param1) + 1;
-        if ((m_sBorderGroupName = new char[len]) == nullptr)
-            throw std::runtime_error("allocate memory error");
-        memcpy(m_sBorderGroupName, param1, len);
-        m_texBorder = pPictureService->GetTextureID(m_sBorderGroupName);
-        m_nBorderPicture = pPictureService->GetImageNum(m_sBorderGroupName, tmpstr);
+    auto border_vec = Config::GetOrGet<std::vector<std::string>>(configs, "border", {});
+    if (std::size(border_vec) > 1) {
+        m_sBorderGroupName = border_vec[1];
+        m_texBorder = pPictureService->GetTextureID(m_sBorderGroupName.c_str());
+        m_nBorderPicture = pPictureService->GetImageNum(m_sBorderGroupName.c_str(), border_vec[1].c_str());
         m_bShowBorder = m_texBorder != -1;
-    } else {
-        m_bShowBorder = false;
-        m_texBorder = -1;
-        m_sBorderGroupName = nullptr;
     }
 
     // set images parameters
@@ -852,8 +843,8 @@ void CXI_VIMAGESCROLL::ReleaseAll()
     STORM_DELETE(m_sGroupName);
     STORM_DELETE(m_nGroupTex);
 
-    PICTURE_TEXTURE_RELEASE(pPictureService, m_sBorderGroupName, m_texBorder);
-    STORM_DELETE(m_sBorderGroupName);
+    PICTURE_TEXTURE_RELEASE(pPictureService, m_sBorderGroupName.c_str(), m_texBorder);
+    m_sBorderGroupName.clear();
 
     // release all strings parameters
     for (i = 0; i < m_nStringQuantity; i++)

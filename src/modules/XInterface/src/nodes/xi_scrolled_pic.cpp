@@ -35,21 +35,19 @@ void CXI_SCROLLEDPICTURE::LoadIni(const Config& node_config, const Config& def_c
     CXI_PICTURE::LoadIni(node_config, def_config);
 
     std::pair<const Config&, const Config&> configs{node_config, def_config};
-    m_fpBaseSize.x = m_fpBaseSize.y = 1000.f;
-    m_fpBaseSize = Config::GetOrGet<Types::Vector2<double>>(configs, "basesize", {m_fpBaseSize.x, m_fpBaseSize.y});
+    m_fpBaseSize = Config::GetOrGet<Types::Vector2<std::uint64_t>>(configs, "basesize", {1000, 1000}).to<float>();;
     if (m_fpBaseSize.x <= 0.f)
         m_fpBaseSize.x = 1.f;
     if (m_fpBaseSize.y <= 0.f)
         m_fpBaseSize.y = 1.f;
 
     m_aScale.clear();
-    const std::string key{"scale"};
     for (int n = 1; n < 20; n++) {
         FXYPOINT fpTemp;
-        fpTemp = Config::GetOrGet<Types::Vector2<double>>(configs, key + std::to_string(n), {2.0, 2.0});
+        fpTemp = Config::GetOrGet<Types::Vector2<double>>(configs, "scale" + std::to_string(n), {2.0, 2.0});
         if (fpTemp.x > 1.f || fpTemp.y > 1.f)
             break; // not read or error
-        m_aScale.push_back(fpTemp);
+        m_aScale.emplace_back(fpTemp);
     }
 
     m_nScaleNum = Config::GetOrGet<std::int64_t>(configs,  "startscale", 0) - 1;

@@ -201,7 +201,7 @@ int32_t AnimationServiceImp::LoadAnimation(const char *animationName)
         bool is_loop = false;
         if (ani_loop == "false") {
             is_loop = false;
-        }else if (ani_loop == "true") {
+        } else if (ani_loop == "true") {
             is_loop = true;
         }
         aci->SetLoop(is_loop);

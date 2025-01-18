@@ -31,7 +31,6 @@ bool Config::SelectSection(std::string section_name) noexcept {
                                   ? nullptr
                                   : section_node->as_table();
     _section = section_repr;
-    std::printf("\nError: \n%s", PrintInfo("-", "Selecting session").c_str());
     return _section != nullptr;
 }
 

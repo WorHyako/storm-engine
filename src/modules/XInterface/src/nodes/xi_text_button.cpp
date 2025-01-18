@@ -220,15 +220,15 @@ void CXI_TEXTBUTTON::LoadIni(const Config& node_config, const Config& def_config
     m_bVideoToBack = Config::GetOrGet<std::int64_t>(configs, "videoToBack", 1);
 
     // get back color for button
-    auto back_color = Config::GetOrGet<Types::Vector4<std::int64_t>>(configs, "backColor", {255, 255, 255, 255});
+    auto back_color = Config::GetOrGet<Types::Vector4<std::int64_t>>(configs, "backColor", {255});
     m_dwBackColor = ARGB(back_color.x, back_color.y, back_color.z, back_color.w);
 
     // get face color for not pressed button
-    auto face_color = Config::GetOrGet<Types::Vector4<std::int64_t>>(configs, "faceColor", {255, 255, 255, 255});
+    auto face_color = Config::GetOrGet<Types::Vector4<std::int64_t>>(configs, "faceColor", {255});
     m_dwFaceColor = ARGB(face_color.x, face_color.y, face_color.z, face_color.w);
 
     // get face color for pressed button
-    auto face_color_pressed = Config::GetOrGet<Types::Vector4<std::int64_t>>(configs, "faceColorPressed", {255, 255, 255, 255});
+    auto face_color_pressed = Config::GetOrGet<Types::Vector4<std::int64_t>>(configs, "faceColorPressed", {255});
     m_dwPressedFaceColor = ARGB(face_color_pressed.x, face_color_pressed.y, face_color_pressed.z, face_color_pressed.w);
 
     // get shadow color
@@ -236,7 +236,7 @@ void CXI_TEXTBUTTON::LoadIni(const Config& node_config, const Config& def_config
     m_dwShadowColor = ARGB(shadow_color.x, shadow_color.y, shadow_color.z, shadow_color.w);
 
     // get font color
-    auto font_color = Config::GetOrGet<Types::Vector4<std::int64_t>>(configs, "fontColor", {255, 255, 255, 255});
+    auto font_color = Config::GetOrGet<Types::Vector4<std::int64_t>>(configs, "fontColor", {255});
     m_dwFontColor = ARGB(font_color.x, font_color.y, font_color.z, font_color.w);
 
     // get font color for pressed button
@@ -258,37 +258,34 @@ void CXI_TEXTBUTTON::LoadIni(const Config& node_config, const Config& def_config
     m_dwUnselFontColor = ARGB(font_color_unselected.x, font_color_unselected.y, font_color_unselected.z, font_color_unselected.w);
 
     // get group name and get texture for this
-    m_sGroupName = nullptr;
-    m_idTex = -1;
     m_sGroupName = Config::GetOrGet<std::string>(configs, "group", {});
-    if (!m_sGroupName.empty()) {
-        m_idTex = pPictureService->GetTextureID(m_sGroupName.c_str());
-    }
+    m_idTex = m_sGroupName.empty()
+        ? -1
+        : pPictureService->GetTextureID(m_sGroupName.c_str());
 
-    m_idShadowTex = -1;
     auto shadow_texture = Config::GetOrGet<std::string>(configs, "ShadowTexture", {});
-    if (!shadow_texture.empty()) {
-        m_idShadowTex = m_rs->TextureCreate(shadow_texture.c_str());
-    }
+    m_idShadowTex = shadow_texture.empty()
+        ? -1
+        : m_idShadowTex = m_rs->TextureCreate(shadow_texture.c_str());
 
     FXYRECT frectShadowUV;
     if (m_idShadowTex >= 0) {
-        frectShadowUV = Config::GetOrGet<Types::Vector4<double>>(configs, "ShadowUV", {0.f, 0.f, 1.f, 1.f});
+        frectShadowUV = Config::GetOrGet<Types::Vector4<double>>(configs, "ShadowUV", {0.0, 0.0, 1.0, 1.0});
     }
 
     // get offset button image in case pressed button
     FXYPOINT fPos;
-    fPos = Config::GetOrGet<Types::Vector2<double>>(configs, "pressPictureOffset", {});
+    fPos = Config::GetOrGet<Types::Vector2<std::int64_t>>(configs, "pressPictureOffset", {}).to<float>();
     m_fXDeltaPress = fPos.x;
     m_fYDeltaPress = fPos.y;
 
     // get offset button shadow in case pressed button
-    fPos = Config::GetOrGet<Types::Vector2<double>>(configs, "shadowOffset", {});
+    fPos = Config::GetOrGet<Types::Vector2<std::int64_t>>(configs, "shadowOffset", {}).to<float>();
     m_fXShadow = fPos.x;
     m_fYShadow = fPos.y;
 
     // get offset button shadow in case not pressed button
-    fPos = Config::GetOrGet<Types::Vector2<double>>(configs, "pressShadowOffset", {});
+    fPos = Config::GetOrGet<Types::Vector2<std::int64_t>>(configs, "pressShadowOffset", {}).to<float>();
     m_fXShadowPress = fPos.x;
     m_fYShadowPress = fPos.y;
 
@@ -305,18 +302,16 @@ void CXI_TEXTBUTTON::LoadIni(const Config& node_config, const Config& def_config
     }
     m_dwStrOffset = Config::GetOrGet<std::int64_t>(configs, "strOffset", 0);
 
-    m_idString = -1;
     auto str = Config::GetOrGet<std::string>(configs, "string", {});
-    if (!str.empty()) {
-        m_idString = pStringService->GetStringNum(str.c_str());
-    }
+    m_idString = str.empty()
+        ? -1
+        : pStringService->GetStringNum(str.c_str());
 
     // get video fragment parameters
-    m_pTex = nullptr;
     auto mid_video = Config::GetOrGet<std::string>(configs, "midVideo", {});
-    if (!mid_video.empty()) {
-        m_pTex = m_rs->GetVideoTexture(mid_video.c_str());
-    }
+    m_pTex = mid_video.empty()
+        ? nullptr
+        : m_rs->GetVideoTexture(mid_video.c_str());
 
     // do vertex and index buffer
     m_nIndx = 3 * 2 * 3;     // 3 rectangle * 2 triangle to rectangle * 3 vertex to triangle

@@ -314,7 +314,7 @@ void CXI_QUESTTEXTS::LoadIni(const Config& node_config, const Config& def_config
     auto complete_color = Config::GetOrGet<Types::Vector4<std::int64_t>>(configs, "completeColor", {255, 128, 128, 128});
     m_dwCompleteColor = ARGB(complete_color.x, complete_color.y, complete_color.z, complete_color.w);
 
-    auto noncomplete_color = Config::GetOrGet<Types::Vector4<std::int64_t>>(configs, "noncompleteColor", {255, 255, 255, 255});
+    auto noncomplete_color = Config::GetOrGet<Types::Vector4<std::int64_t>>(configs, "noncompleteColor", {255});
     m_dwNonCompleteColor = ARGB(noncomplete_color.x, noncomplete_color.y, noncomplete_color.z, noncomplete_color.w);
 
     // get font

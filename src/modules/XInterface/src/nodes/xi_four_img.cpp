@@ -18,7 +18,6 @@ CXI_FOURIMAGE::CXI_FOURIMAGE()
     vBuf = -1;
     m_nTexturesQuantity = 0;
     m_nTextureId = nullptr;
-    m_sGroupName = nullptr;
 }
 
 CXI_FOURIMAGE::~CXI_FOURIMAGE()
@@ -219,18 +218,15 @@ bool CXI_FOURIMAGE::Init(const Config& node_config, const Config& def_config, VD
 }
 
 void CXI_FOURIMAGE::LoadIni(const Config& node_config, const Config& def_config) {
-    int i;
-    char* param;
-    char param1[256];
-
     std::pair<const Config&, const Config&> configs{node_config, def_config};
     // get base color
     auto common_color = Config::GetOrGet<Types::Vector4<std::int64_t>>(configs, "commonColor", {255, 128, 128, 128});
     m_dwBaseColor = ARGB(common_color.x, common_color.y, common_color.z, common_color.w);
 
     // get color for light select image
-    auto light_select_color = Config::GetOrGet<Types::Vector4<std::int64_t>>(configs, "lightSelectCol", {255, 255, 255, 255});
+    auto light_select_color = Config::GetOrGet<Types::Vector4<std::int64_t>>(configs, "lightSelectCol", {255});
     m_dwLightSelectColor = ARGB(light_select_color.x, light_select_color.y, light_select_color.z, light_select_color.w);
+    m_dwCurSelectColor = m_dwLightSelectColor;
 
     // get color for dark select image
     auto dark_select_color = Config::GetOrGet<Types::Vector4<std::int64_t>>(configs, "darkSelectCol", {255, 150, 150, 150});
@@ -240,14 +236,14 @@ void CXI_FOURIMAGE::LoadIni(const Config& node_config, const Config& def_config)
     m_bColorType = true; // select item used select color
     m_nBlindCounter = 0; // currend blind counter
     m_nMaxBlindCounter = Config::GetOrGet<std::int64_t>(configs, "wBlindDelay", -1);
-    if (m_nMaxBlindCounter > 0) {
-        m_bDoBlind = true;
-    } else {
-        m_bDoBlind = false;
-    }
-    m_dwCurSelectColor = m_dwLightSelectColor;
+    m_bDoBlind = m_nMaxBlindCounter > 0;
 
     // get one string parameters
+    m_foreColOneStr = ARGB(255, 255, 255, 255);
+    m_backColOneStr = ARGB(0, 0, 0, 0);
+    m_nOneStrOffset = 0;
+    m_xOneOffset = 0;
+    m_oneStrFont = -1;
     const auto one_string = Config::GetOrGet<std::vector<std::vector<std::string>>>(configs, "oneString", {});
     if ((bUseOneString = !one_string.empty())) {
         std::stringstream ss;
@@ -257,36 +253,63 @@ void CXI_FOURIMAGE::LoadIni(const Config& node_config, const Config& def_config)
             }
         }
         std::string one_string_str{ss.str()};
-        param = one_string_str.data();
-        m_oneStrFont = -1;
-        if (GetMidStr(param, param1, sizeof(param1), "font:", ",")) {
-            if ((m_oneStrFont = m_rs->LoadFont(param1)) == -1) {
-                core.Trace("can not load font:'%s'", param1);
+        std::size_t res{0};
+
+        std::size_t idx_begin = one_string_str.find("font:");
+        std::size_t idx_end = one_string_str.find('}', idx_begin);
+        if (idx_begin != std::string::npos && idx_end != std::string::npos) {
+            idx_begin += 5;
+            std::string font{};
+            res = sscanf_s(one_string_str.substr(idx_begin, idx_end - idx_begin).c_str(), "%[^0]s", font.data(), 20);
+            if (res == 1) {
+                m_oneStrFont = m_rs->LoadFont(font);
+            }
+        }
+        if (m_oneStrFont == -1) {
+            core.Trace("can not load font:");
+        }
+
+        idx_begin = one_string_str.find("off:(");
+        idx_end = one_string_str.find(')', idx_begin);
+        if (idx_begin != std::string::npos && idx_end != std::string::npos) {
+            idx_begin += 5;
+            int x{0}, y{0};
+            res = sscanf_s(one_string_str.substr(idx_begin, idx_end - idx_begin).c_str(), "%d,%d", &x, &y);
+            if (res == 2) {
+                m_xOneOffset = x;
+                m_nOneStrOffset = y;
             }
         }
 
-        m_xOneOffset = m_nOneStrOffset = 0;
-        if (GetMidStr(param, param1, sizeof(param1), "off:(", ")")) {
-            GetDataStr(param1, "ll", &m_xOneOffset, &m_nOneStrOffset);
+        idx_begin = one_string_str.find("fc:{");
+        idx_end = one_string_str.find('}', idx_begin);
+        if (idx_begin != std::string::npos && idx_end != std::string::npos) {
+            idx_begin += 4;
+            int a{0}, r{0}, g{0}, b{0};
+            res = sscanf_s(one_string_str.substr(idx_begin, idx_end - idx_begin).c_str(), "%d,%d,%d,%d", &a, &r, &g, &b);
+            if (res == 4) {
+                m_foreColOneStr = ARGB(a, r, g, b);
+            }
         }
 
-        m_foreColOneStr = ARGB(255, 255, 255, 255);
-        if (GetMidStr(param, param1, sizeof(param1), "fc:{", "}")) {
-            m_foreColOneStr = GetColorFromStr(param1, m_foreColOneStr);
+        idx_begin = one_string_str.find("bc:{");
+        idx_end = one_string_str.find('}', idx_begin);
+        if (idx_begin != std::string::npos && idx_end != std::string::npos) {
+            idx_begin += 4;
+            int a{0}, r{0}, g{0}, b{0};
+            res = sscanf_s(one_string_str.substr(idx_begin, idx_end - idx_begin).c_str(), "%d,%d,%d,%d", &a, &r, &g, &b);
+            if (res == 4) {
+                m_backColOneStr = ARGB(a, r, g, b);
+            }
         }
-
-        m_backColOneStr = ARGB(0, 0, 0, 0);
-        if (GetMidStr(param, param1, sizeof(param1), "bc:{", "}")) {
-            m_backColOneStr = GetColorFromStr(param1, m_backColOneStr);
-        }
-    } else {
-        m_nOneStrOffset = 0;
-        m_foreColOneStr = ARGB(255, 255, 255, 255);
-        m_backColOneStr = ARGB(0, 0, 0, 0);
-        m_xOneOffset = 0;
     }
 
     // get two string parameters
+    m_foreColTwoStr = ARGB(255, 255, 255, 255);
+    m_backColTwoStr = ARGB(0, 0, 0, 0);
+    m_nTwoStrOffset = 0;
+    m_xTwoOffset = 0;
+    m_twoStrFont = -1;
     const auto two_string = Config::GetOrGet<std::vector<std::vector<std::string>>>(configs, "twoString", {});
     if ((bUseTwoString = !two_string.empty())) {
         std::stringstream ss;
@@ -296,48 +319,71 @@ void CXI_FOURIMAGE::LoadIni(const Config& node_config, const Config& def_config)
             }
         }
         std::string two_string_str{ss.str()};
-        param = two_string_str.data();
-        m_twoStrFont = -1;
-        if (GetMidStr(param, param1, sizeof(param1), "font:", ",")) {
-            if ((m_twoStrFont = m_rs->LoadFont(param1)) == -1) {
-                core.Trace("can not load font:'%s'", param1);
+        std::size_t res{0};
+
+        std::size_t idx_begin = two_string_str.find("font:");
+        std::size_t idx_end = two_string_str.find('}', idx_begin);
+
+        if (idx_begin != std::string::npos && idx_end != std::string::npos) {
+            idx_begin += 5;
+            std::string font{};
+            res = sscanf_s(two_string_str.substr(idx_begin, idx_end - idx_begin).c_str(), "%[^0]s", font.data(), 20);
+            if (res == 1) {
+                m_twoStrFont = m_rs->LoadFont(font);
+            }
+        }
+        if (m_twoStrFont == -1) {
+            core.Trace("can not load font:");
+        }
+
+        idx_begin = two_string_str.find("off:(");
+        idx_end = two_string_str.find(')', idx_begin);
+        if (idx_begin != std::string::npos && idx_end != std::string::npos) {
+            idx_begin += 5;
+            int x{0}, y{0};
+            res = sscanf_s(two_string_str.substr(idx_begin, idx_end - idx_begin).c_str(), "%d,%d", &x, &y);
+            if (res == 2) {
+                m_xTwoOffset = x;
+                m_nTwoStrOffset = y;
             }
         }
 
-        m_xTwoOffset = m_nTwoStrOffset = 0;
-        if (GetMidStr(param, param1, sizeof(param1), "off:(", ")")) {
-            GetDataStr(param1, "ll", &m_xTwoOffset, &m_nTwoStrOffset);
+        idx_begin = two_string_str.find("fc:{");
+        idx_end = two_string_str.find('}', idx_begin);
+        if (idx_begin != std::string::npos && idx_end != std::string::npos) {
+            idx_begin += 4;
+            int a{0}, r{0}, g{0}, b{0};
+            res = sscanf_s(two_string_str.substr(idx_begin, idx_end - idx_begin).c_str(), "%d,%d,%d,%d", &a, &r, &g, &b);
+            if (res == 4) {
+                m_foreColTwoStr = ARGB(a, r, g, b);
+            }
         }
 
-        m_foreColTwoStr = ARGB(255, 255, 255, 255);
-        if (GetMidStr(param, param1, sizeof(param1), "fc:{", "}")) {
-            m_foreColTwoStr = GetColorFromStr(param1, m_foreColTwoStr);
+        idx_begin = two_string_str.find("bc:{");
+        idx_end = two_string_str.find('}', idx_begin);
+        if (idx_begin != std::string::npos && idx_end != std::string::npos) {
+            idx_begin += 4;
+            int a{0}, r{0}, g{0}, b{0};
+            res = sscanf_s(two_string_str.substr(idx_begin, idx_end - idx_begin).c_str(), "%d,%d,%d,%d", &a, &r, &g, &b);
+            if (res == 4) {
+                m_backColTwoStr = ARGB(a, r, g, b);
+            }
         }
-
-        m_backColTwoStr = ARGB(0, 0, 0, 0);
-        if (GetMidStr(param, param1, sizeof(param1), "bc:{", "}")) {
-            m_backColTwoStr = GetColorFromStr(param1, m_backColTwoStr);
-        }
-    } else {
-        m_nTwoStrOffset = 0;
-        m_foreColTwoStr = ARGB(255, 255, 255, 255);
-        m_backColTwoStr = ARGB(0, 0, 0, 0);
-        m_xTwoOffset = 0;
     }
 
     auto *pAttribute = core.Entity_GetAttributeClass(g_idInterface, "FourImage");
     if (pAttribute != nullptr) {
         m_nSelectItem = pAttribute->GetAttributeAsDword("current", 0);
         // get bad picture
-        const char *sBadPict;
-        if ((sBadPict = pAttribute->GetAttribute("BadOnePicture")) != nullptr)
-            m_oneBadTexture = m_rs->TextureCreate(sBadPict);
-        else
-            m_oneBadTexture = -1;
-        if ((sBadPict = pAttribute->GetAttribute("BadTwoPicture")) != nullptr)
-            m_twoBadTexture = m_rs->TextureCreate(sBadPict);
-        else
-            m_twoBadTexture = -1;
+        const char *sBadPict = pAttribute->GetAttribute("BadOnePicture");
+        m_oneBadTexture = sBadPict == nullptr
+            ? -1
+            : m_rs->TextureCreate(sBadPict);
+
+        sBadPict = pAttribute->GetAttribute("BadTwoPicture");
+        m_twoBadTexture = sBadPict == nullptr
+            ? -1
+            : m_rs->TextureCreate(sBadPict);
 
         // get textures
         auto *pA = pAttribute->GetAttributeClass("ImagesGroup");
@@ -350,7 +396,7 @@ void CXI_FOURIMAGE::LoadIni(const Config& node_config, const Config& def_config)
             if (m_sGroupName == nullptr || m_nTextureId == nullptr) {
                 throw std::runtime_error("Allocate memory error");
             }
-            for (i = 0; i < m_nTexturesQuantity; i++) {
+            for (int i = 0; i < m_nTexturesQuantity; i++) {
                 const char *stmp = pA->GetAttribute(i);
                 if (stmp == nullptr) {
                     m_sGroupName[i] = nullptr;
@@ -363,27 +409,22 @@ void CXI_FOURIMAGE::LoadIni(const Config& node_config, const Config& def_config)
                 }
             }
         }
-        for (i = 0; i < m_nTexturesQuantity; i++) {
+        for (auto i = 0; i < m_nTexturesQuantity; i++) {
             m_nTextureId[i] = pPictureService->GetTextureID(m_sGroupName[i]);
         }
 
-        for (i = 0; i < 4; i++) {
-            std::string attr_name{"pic" + std::to_string(i + 1)};
-            auto *pAttrTmp = pAttribute->GetAttributeClass(attr_name);
+        for (auto i = 0; i < 4; i++) {
+            auto *pAttrTmp = pAttribute->GetAttributeClass("pic" + std::to_string(i + 1));
             if (pAttrTmp != nullptr) {
                 m_bUsed[i] = pAttrTmp->GetAttributeAsDword("selected", 0) != 0;
                 m_oneTexID[i] = pAttrTmp->GetAttributeAsDword("tex1", -1);
                 m_twoTexID[i] = pAttrTmp->GetAttributeAsDword("tex2", -1);
-                if (m_oneTexID[i] != -1 && m_oneTexID[i] < m_nTexturesQuantity) {
-                    m_oneImgID[i] = pPictureService->GetImageNum(m_sGroupName[m_oneTexID[i]], pAttrTmp->GetAttribute("img1"));
-                } else {
-                    m_oneImgID[i] = -1;
-                }
-                if (m_twoTexID[i] != -1 && m_twoTexID[i] < m_nTexturesQuantity) {
-                    m_twoImgID[i] = pPictureService->GetImageNum(m_sGroupName[m_twoTexID[i]], pAttrTmp->GetAttribute("img2"));
-                } else {
-                    m_twoImgID[i] = -1;
-                }
+                m_oneImgID[i] = m_oneTexID[i] != -1 && m_oneTexID[i] < m_nTexturesQuantity
+                    ? m_oneImgID[i] = pPictureService->GetImageNum(m_sGroupName[m_oneTexID[i]], pAttrTmp->GetAttribute("img1"))
+                    : -1;
+                m_twoTexID[i] = m_twoTexID[i] != -1 && m_twoTexID[i] < m_nTexturesQuantity
+                    ? m_twoImgID[i] = pPictureService->GetImageNum(m_sGroupName[m_twoTexID[i]], pAttrTmp->GetAttribute("img2"))
+                    : -1;
                 const char *tmps = pAttrTmp->GetAttribute("str1");
                 if (tmps != nullptr && *tmps == '#') {
                     const auto len = strlen(tmps);
@@ -426,28 +467,22 @@ void CXI_FOURIMAGE::LoadIni(const Config& node_config, const Config& def_config)
     }
 
     auto bRelativeRect = Config::GetOrGet<std::int64_t>(configs, "bAbsoluteRectangle", 0) == false;
-    for (i = 0; i < 4; i++) {
-        std::string key = "position" + std::to_string(i + 1);
-        m_imgRect[i] = Config::GetOrGet<Types::Vector4<std::int64_t>>(configs, key, {});
+    for (auto i = 0; i < 4; i++) {
+        m_imgRect[i] = Config::GetOrGet<Types::Vector4<std::int64_t>>(configs, "position" + std::to_string(i + 1), {});
         if (bRelativeRect) {
             GetRelativeRect(m_imgRect[i]);
         }
     }
 
     // get border picture
-    const auto border = Config::GetOrGet<std::string>(configs, "border", {});
-    if (!border.empty()) {
-        std::string sub_str{GetSubStr(param, param1, sizeof(param1))};
-        if ((m_sBorderGroupName = new char[sizeof param1]) == nullptr)
-            throw std::runtime_error("allocate memory error");
-        strcpy_s(m_sBorderGroupName, sizeof param1, param1);
-        m_texBorder = pPictureService->GetTextureID(m_sBorderGroupName);
-        m_nBorderPicture = pPictureService->GetImageNum(m_sBorderGroupName, sub_str.c_str());
+    const auto border = Config::GetOrGet<std::vector<std::string>>(configs, "border", {});
+    m_bShowBorder = false;
+    m_texBorder = -1;
+    if (std::size(border) > 1) {
+        m_sBorderGroupName = border[0];
+        m_texBorder = pPictureService->GetTextureID(m_sBorderGroupName.c_str());
+        m_nBorderPicture = pPictureService->GetImageNum(m_sBorderGroupName.c_str(), border[0].c_str());
         m_bShowBorder = m_texBorder != -1 && m_nBorderPicture != -1;
-    } else {
-        m_bShowBorder = false;
-        m_texBorder = -1;
-        m_sBorderGroupName = nullptr;
     }
 
     // create index & vertex buffers
@@ -456,29 +491,27 @@ void CXI_FOURIMAGE::LoadIni(const Config& node_config, const Config& def_config)
 
 void CXI_FOURIMAGE::ReleaseAll()
 {
-    int i;
     VERTEX_BUFFER_RELEASE(m_rs, vBuf);
 
     TEXTURE_RELEASE(m_rs, m_oneBadTexture);
     TEXTURE_RELEASE(m_rs, m_twoBadTexture);
     // Release all used textures
-    for (i = 0; i < m_nTexturesQuantity; i++)
+    for (int i = 0; i < m_nTexturesQuantity; i++)
     {
         PICTURE_TEXTURE_RELEASE(pPictureService, m_sGroupName[i], m_nTextureId[i]);
         STORM_DELETE(m_sGroupName[i]);
     }
     STORM_DELETE(m_sGroupName);
     STORM_DELETE(m_nTextureId);
-    PICTURE_TEXTURE_RELEASE(pPictureService, m_sBorderGroupName, m_texBorder);
+    PICTURE_TEXTURE_RELEASE(pPictureService, m_sBorderGroupName.c_str(), m_texBorder);
 
-    for (i = 0; i < 4; i++)
-    {
+    for (int i = 0; i < 4; i++) {
         STORM_DELETE(m_pOneStr[i]);
         STORM_DELETE(m_pTwoStr[i]);
     }
 
     // release all image list names
-    STORM_DELETE(m_sBorderGroupName);
+    m_sBorderGroupName.clear();
 
     FONT_RELEASE(m_rs, m_oneStrFont);
     FONT_RELEASE(m_rs, m_twoStrFont);

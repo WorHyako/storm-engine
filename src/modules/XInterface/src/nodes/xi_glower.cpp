@@ -158,7 +158,7 @@ void CXI_GLOWER::LoadIni(const Config& node_config, const Config& def_config) {
     // set colors
     const auto min_color = Config::GetOrGet<Types::Vector4<std::int64_t>>(configs, "minColor", {});
     m_dwMinColor = ARGB(min_color.x, min_color.y, min_color.z, min_color.w);
-    const auto max_color = Config::GetOrGet<Types::Vector4<std::int64_t>>(configs, "maxColor", {255, 255, 255, 255});
+    const auto max_color = Config::GetOrGet<Types::Vector4<std::int64_t>>(configs, "maxColor", {255});
     m_dwMaxColor = ARGB(max_color.x, max_color.y, max_color.z, max_color.w);
 
     m_minGlowTime = Config::GetOrGet<std::int64_t>(configs, "minGlowTime", 200);

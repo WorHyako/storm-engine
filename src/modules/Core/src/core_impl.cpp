@@ -275,7 +275,7 @@ void CoreImpl::ProcessEngineIniFile() {
     auto config = Storm::Filesystem::Config::Load(Storm::Filesystem::Constants::ConfigNames::engine());
     std::ignore = config.SelectSection("Main");
 
-    const auto program_dir = config.Get<std::string>("program_directory", "");
+    const auto program_dir = config.Get<std::string>("program_directory", {});
     const auto run = config.Get<std::string>("run");
 
     Compiler->SetProgramDirectory(program_dir.c_str());

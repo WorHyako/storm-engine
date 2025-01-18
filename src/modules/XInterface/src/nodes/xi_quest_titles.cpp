@@ -259,9 +259,9 @@ void CXI_QUESTTITLE::LoadIni(const Config& node_config, const Config& def_config
 
     auto complete_color = Config::GetOrGet<Types::Vector4<std::int64_t>>(configs, "completeColor", {255, 128, 128, 128});
     m_dwCompleteColor = ARGB(complete_color.x, complete_color.y, complete_color.z, complete_color.w);
-    auto noncomplete_color = Config::GetOrGet<Types::Vector4<std::int64_t>>(configs, "noncompleteColor", {255, 255, 255, 255});
+    auto noncomplete_color = Config::GetOrGet<Types::Vector4<std::int64_t>>(configs, "noncompleteColor", {255});
     m_dwNonCompleteColor = ARGB(noncomplete_color.x, noncomplete_color.y, noncomplete_color.z, noncomplete_color.w);
-    auto select_color = Config::GetOrGet<Types::Vector4<std::int64_t>>(configs, "selectColor", {255, 255, 255, 255});
+    auto select_color = Config::GetOrGet<Types::Vector4<std::int64_t>>(configs, "selectColor", {255});
     m_dwSelectRectangleColor = ARGB(select_color.x, select_color.y, select_color.z, select_color.w);
 
     auto font = Config::GetOrGet<std::string>(configs, "font", {});

@@ -9,7 +9,6 @@ CXI_STATUSLINE::CXI_STATUSLINE()
     : m_fLineOffset(0)
 {
     m_rs = nullptr;
-    m_sGroupName = nullptr;
     m_idTex = -1L;
     m_vBuf = -1L;
     m_iBuf = -1L;
@@ -55,7 +54,7 @@ int CXI_STATUSLINE::CommandExecute(int wActCode)
 void CXI_STATUSLINE::LoadIni(const Config& node_config, const Config& def_config) {
     // Get texture name and load that texture
     std::pair<const Config&, const Config&> configs{node_config, def_config};
-    m_sGroupName = Config::GetOrGet<std::string>(configs, "groupName", "");
+    m_sGroupName = Config::GetOrGet<std::string>(configs, "groupName", {});
     if (!m_sGroupName.empty()) {
         m_idTex = pPictureService->GetTextureID(m_sGroupName.c_str());
     }
@@ -102,7 +101,7 @@ void CXI_STATUSLINE::LoadIni(const Config& node_config, const Config& def_config
 
         // get texture coordinates
         fMediumX /= (m_rect.right - m_rect.left);
-        auto filled_picture = Config::GetOrGet<std::string>(configs, "filledPicture", "");
+        auto filled_picture = Config::GetOrGet<std::string>(configs, "filledPicture", {});
         if (!filled_picture.empty()) {
             pPictureService->GetTexturePos(m_sGroupName.c_str(), filled_picture.c_str(), m_texRect1);
         }
@@ -110,7 +109,7 @@ void CXI_STATUSLINE::LoadIni(const Config& node_config, const Config& def_config
         memcpy(&texRect1, &m_texRect1, sizeof(FRECT));
         texRect1.right = m_texRect1.left + (m_texRect1.right - m_texRect1.left) * fMediumX;
         // .. other ..
-        auto empty_picture = Config::GetOrGet<std::string>(configs, "emptyPicture", "");
+        auto empty_picture = Config::GetOrGet<std::string>(configs, "emptyPicture", {});
         if (!empty_picture.empty()) {
             pPictureService->GetTexturePos(m_sGroupName.c_str(), empty_picture.c_str(), m_texRect2);
         }

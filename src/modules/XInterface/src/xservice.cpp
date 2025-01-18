@@ -2,7 +2,6 @@
 
 #include "dx9render.h"
 #include "string_compare.hpp"
-#include "file_service.h"
 
 #include "Filesystem/Config/Config.hpp"
 #include "Filesystem/Constants/ConfigNames.hpp"
@@ -191,7 +190,7 @@ void XSERVICE::LoadAllPicturesInfo() {
         std::ignore = config.SelectSection(sections[i]);
         m_pList.emplace_back();
         m_pList[i].sImageListName = sections[i];
-        m_pList[i].sTextureName = config.Get<std::string>("sTextureName", "");
+        m_pList[i].sTextureName = config.Get<std::string>("sTextureName", {});
         m_pList[i].textureWidth = config.Get<std::int64_t>("wTextureWidth", 1024);
         m_pList[i].textureHeight = config.Get<std::int64_t>("wTextureHeight", 1024);
 

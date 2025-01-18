@@ -222,10 +222,10 @@ bool HELPCHOOSER::RunChooser(const char *ChooserGroup)
     pRenderTarget->Release();
 
     // texture of the selected image
-    m_idPicTexture = rs->TextureCreate(config.Get<std::string>("FrontTexture", "").c_str());
+    m_idPicTexture = rs->TextureCreate(config.Get<std::string>("FrontTexture", {}).c_str());
 
     // texture of unselected (background) image
-    m_idBackTexture = rs->TextureCreate(config.Get<std::string>("BackTexture", "").c_str());
+    m_idBackTexture = rs->TextureCreate(config.Get<std::string>("BackTexture", {}).c_str());
 
     // fill in all the rectangles
     auto rect_vec = config.Get<std::vector<std::vector<std::string>>>("rect", {});
@@ -263,7 +263,7 @@ bool HELPCHOOSER::RunChooser(const char *ChooserGroup)
     m_nMouseCornerX = config.Get<std::int64_t>("mouseCornerX", 0);
     m_nMouseCornerY = config.Get<std::int64_t>("mouseCornerY", 0);
     if (m_nMouseWidth > 0 && m_nMouseHeight > 0)
-        m_idMouseTexture = rs->TextureCreate(config.Get<std::string>("mouseTexture", "").c_str());
+        m_idMouseTexture = rs->TextureCreate(config.Get<std::string>("mouseTexture", {}).c_str());
 
     // create a vertex buffer
     m_idVBuf = rs->CreateVertexBuffer(HCHOOSER_FVF, 18 * sizeof(HCHOOSER_VERTEX), D3DUSAGE_WRITEONLY);

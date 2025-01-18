@@ -34,6 +34,8 @@ namespace Storm::Math::Types {
          */
         Vector4() noexcept;
 
+        Vector4(T rhs) noexcept;
+
         /**
          * @brief   Ctor
          *
@@ -110,6 +112,14 @@ namespace Storm::Math::Types {
           y(static_cast<T>(0)),
           z(static_cast<T>(0)),
           w(static_cast<T>(0)) {
+    }
+
+    template<typename T>
+    Vector4<T>::Vector4(T rhs) noexcept
+        : x(rhs),
+          y(rhs),
+          z(rhs),
+          w(rhs) {
     }
 
     template<typename T>

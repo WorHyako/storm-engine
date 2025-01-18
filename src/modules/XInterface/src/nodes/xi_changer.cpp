@@ -80,14 +80,12 @@ void CXI_CHANGER::LoadIni(const Config& node_config, const Config& def_config) {
     std::pair<const Config&, const Config&> configs{node_config, def_config};
     const auto bRelativeRect = Config::GetOrGet<std::int64_t>(configs, "bAbsoluteRectangle", 0) == false;
     // get position quantity
-    m_nPlaceQuantity = 0;
 
     auto place_vec = Config::GetOrGet<std::vector<std::vector<std::string>>>(configs, "place", {});
     m_nPlaceQuantity = std::size(place_vec);
 
     // create position array
-    if (m_nPlaceQuantity > 0)
-    {
+    if (m_nPlaceQuantity > 0) {
         m_pPlace = new XYRECT[m_nPlaceQuantity];
         std::memset(m_pPlace, 0, sizeof(XYRECT) * m_nPlaceQuantity);
     }
@@ -99,14 +97,15 @@ void CXI_CHANGER::LoadIni(const Config& node_config, const Config& def_config) {
             ss << each << ',';
         });
         std::string str {ss.str()};
-        GetDataStr(str.c_str(), "llll", &m_pPlace[i].left, &m_pPlace[i].top, &m_pPlace[i].right, &m_pPlace[i].bottom);
+        str.erase(std::size(str) - 1);
+        sscanf_s(str.data(), "%d,%d,%d,%d", &m_pPlace[i].left, &m_pPlace[i].top, &m_pPlace[i].right, &m_pPlace[i].bottom);
         if (bRelativeRect) {
             GetRelativeRect(m_pPlace[i]);
         }
     }
 
     // get fone color
-    auto fone_color = Config::GetOrGet<Types::Vector4<std::int64_t>>(configs, "foneColor", {255, 255, 255, 255});
+    auto fone_color = Config::GetOrGet<Types::Vector4<std::int64_t>>(configs, "foneColor", {255});
     m_dwFoneColor = ARGB(fone_color.x, fone_color.y, fone_color.z, fone_color.w);
     m_dwCurColor = m_dwFoneColor;
 
@@ -131,7 +130,7 @@ void CXI_CHANGER::LoadIni(const Config& node_config, const Config& def_config) {
 
     // get outside picture offset
     FXYPOINT fPnt;
-    fPnt = Config::GetOrGet<Types::Vector2<double>>(configs, "offset", {0.0, 0.0});
+    fPnt = Config::GetOrGet<Types::Vector2<std::int64_t>>(configs, "offset", {}).to<float>();
     m_xOffset = fPnt.x;
     m_yOffset = fPnt.y;
 

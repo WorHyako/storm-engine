@@ -113,6 +113,12 @@ struct FXYPOINT
     }
 
     FXYPOINT& operator=(const Storm::Math::Types::Vector2<double>& vec) noexcept {
+        x = static_cast<float>(vec.x);
+        y = static_cast<float>(vec.y);
+        return *this;
+    }
+
+    FXYPOINT& operator=(const Storm::Math::Types::Vector2<float>& vec) noexcept {
         x = vec.x;
         y = vec.y;
         return *this;

@@ -80,13 +80,13 @@ void CXI_SLIDEPICTURE::LoadIni(const Config& node_config, const Config& def_conf
     strTechniqueName = Config::GetOrGet<std::string>(configs, "techniqueName", {});
 
     auto texture_name = Config::GetOrGet<std::string>(configs, "textureName", {});
-    if (!texture_name.empty()) {
-        m_idTex = m_rs->TextureCreate(texture_name.c_str());
-    }
+    m_idTex = texture_name.empty()
+        ? -1
+        : m_rs->TextureCreate(texture_name.c_str());
 
     m_texRect = Config::GetOrGet<Types::Vector4<double>>(configs, "textureRect", {0.0, 0.0, 1.0, 1.0});
 
-    auto color_vec = Config::GetOrGet<Types::Vector4<std::int64_t>>(configs, "color", {255, 255, 255, 255});
+    auto color_vec = Config::GetOrGet<Types::Vector4<std::int64_t>>(configs, "color", {255});
     const auto color = ARGB(color_vec.x, color_vec.y, color_vec.z, color_vec.w);
 
     // Create rectangle
@@ -105,9 +105,9 @@ void CXI_SLIDEPICTURE::LoadIni(const Config& node_config, const Config& def_conf
     m_v[3].pos.x = static_cast<float>(m_rect.right), m_v[3].pos.y = static_cast<float>(m_rect.bottom);
     m_v[3].tu = m_texRect.right;
     m_v[3].tv = m_texRect.bottom;
-    for (int i = 0; i < 4; i++) {
-        m_v[i].color = color;
-        m_v[i].pos.z = 1.f;
+    for (auto &each : m_v) {
+        each.color = color;
+        each.pos.z = 1.f;
     }
 
     curAngle = 0.f;
@@ -119,13 +119,10 @@ void CXI_SLIDEPICTURE::LoadIni(const Config& node_config, const Config& def_conf
 
     nLifeTime = 0;
     nCurSlide = 0;
-    nSlideListSize = 0;
     pSlideSpeedList = nullptr;
 
-    bool bUse1Ini{true};
-
-    auto speed_vec = Config::GetOrGet<std::vector<std::string>>(configs, "speed", {});
-    nSlideListSize = std::size(speed_vec);
+    auto speed = Config::GetOrGet<std::vector<Types::Vector3<double>>>(configs, "speed", {});
+    nSlideListSize = std::size(speed);
 
     if (nSlideListSize > 0) {
         pSlideSpeedList = new SLIDE_SPEED[nSlideListSize];
@@ -135,10 +132,9 @@ void CXI_SLIDEPICTURE::LoadIni(const Config& node_config, const Config& def_conf
     }
 
     for (int i = 0; i < nSlideListSize; i++) {
-        pSlideSpeedList[i].time = 0;
-        pSlideSpeedList[i].xspeed = 0;
-        pSlideSpeedList[i].yspeed = 0;
-        GetDataStr(speed_vec[i].c_str(), "lff", &pSlideSpeedList[i].time, &pSlideSpeedList[i].xspeed, &pSlideSpeedList[i].yspeed);
+        pSlideSpeedList[i].time = static_cast<std::uint32_t>(speed[i].x);
+        pSlideSpeedList[i].xspeed = static_cast<float>(speed[i].y);
+        pSlideSpeedList[i].yspeed = static_cast<float>(speed[i].z);
     }
 }
 

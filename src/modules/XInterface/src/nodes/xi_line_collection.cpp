@@ -48,17 +48,43 @@ void CXI_LINECOLLECTION::LoadIni(const Config& node_config, const Config& def_co
                 ss << each << ',';
         });
         std::string str {ss.str()};
-        char param1[256];
         XYRECT scrRect;
-        uint32_t dwCol = 0;
-        if (GetMidStr(str.c_str(), param1, sizeof(param1), "(", ")-(")) {
-            GetDataStr(param1, "ll", &scrRect.left, &scrRect.top);
+        uint32_t dwCol{0};
+        std::size_t idx_begin{0}, idx_end{0}, res{0};
+
+        idx_begin = str.find("col:{");
+        idx_end = str.find('}', idx_begin);
+        if (idx_begin != std::string::npos && idx_end != std::string::npos) {
+            idx_begin += 5;
+            int a{}, r{}, g{}, b{};
+            res = sscanf_s(str.substr(idx_begin, idx_end - idx_begin).c_str(), "%d,%d,%d,%d", &a, &r, &g, &b);
+            if (res == 4) {
+                dwCol = ARGB(a, r, g, b);
+            }
         }
-        if (GetMidStr(str.c_str(), param1, sizeof(param1), ")-(", ")")) {
-            GetDataStr(param1, "ll", &scrRect.right, &scrRect.bottom);
+
+        idx_begin = str.find('(');
+        idx_end = str.find(")-(", idx_begin);
+        if (idx_begin != std::string::npos && idx_end != std::string::npos) {
+            int x{0}, y{0};
+            idx_begin += 1;
+            res = sscanf_s(str.substr(idx_begin, idx_end - idx_begin).c_str(), "%d,%d", &x, &y);
+            if (res == 2) {
+                scrRect.left = x;
+                scrRect.top = y;
+            }
         }
-        if (GetMidStr(str.c_str(), param1, sizeof(param1), "col:{", "}")) {
-            dwCol = GetColorFromStr(param1, dwCol);
+
+        idx_begin = str.find(")-(");
+        idx_end = str.find('(', idx_begin);
+        if (idx_begin != std::string::npos && idx_end != std::string::npos) {
+            int x{0}, y{0};
+            idx_begin += 3;
+            res = sscanf_s(str.substr(idx_begin, idx_end - idx_begin).c_str(), "%d,%d", &x, &y);
+            if (res == 2) {
+                scrRect.right = x;
+                scrRect.bottom = y;
+            }
         }
         if (bRelativeRect) {
             GetRelativeRect(scrRect);

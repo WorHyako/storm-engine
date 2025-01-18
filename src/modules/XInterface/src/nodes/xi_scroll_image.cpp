@@ -22,7 +22,6 @@ CXI_SCROLLIMAGE::CXI_SCROLLIMAGE()
     m_nCurImage = 0;
     m_pScroll = nullptr;
     m_bDoMove = false;
-    m_sBorderGroupName = nullptr;
 
     m_nOneStrFont = -1L;
     m_nTwoStrFont = -1L;
@@ -31,7 +30,6 @@ CXI_SCROLLIMAGE::CXI_SCROLLIMAGE()
     m_nNodeType = NODETYPE_SCROLLIMAGE;
 
     m_nGroupQuantity = 0;
-    m_sGroupName = nullptr;
     m_nGroupTex = nullptr;
     m_nShowOrder = 100;
     m_nNotUsedQuantity = 0;
@@ -371,7 +369,7 @@ void CXI_SCROLLIMAGE::LoadIni(const Config& node_config, const Config& def_confi
     m_fScale = Config::GetOrGet<double>(configs, "fBoundScale", 1.0);
     m_lDelta = Config::GetOrGet<std::int64_t>(configs, "wDelta", 0);
     
-    auto blend_color = Config::GetOrGet<Types::Vector4<std::int64_t>>(configs, "blendColor", {255, 255, 255, 255});
+    auto blend_color = Config::GetOrGet<Types::Vector4<std::int64_t>>(configs, "blendColor", {255});
     m_dwOneStrForeColor = ARGB(blend_color.x, blend_color.y, blend_color.z, blend_color.w);
 
     //
@@ -425,7 +423,7 @@ void CXI_SCROLLIMAGE::LoadIni(const Config& node_config, const Config& def_confi
         else
             m_nOneStrAlign = PR_ALIGN_CENTER;
         m_lOneStrOffset = Config::GetOrGet<std::int64_t>(configs, "dwYOffset1", 0);
-        auto fore_color1 = Config::GetOrGet<Types::Vector4<std::int64_t>>(configs, "dwForeColor1", {255, 255, 255, 255});
+        auto fore_color1 = Config::GetOrGet<Types::Vector4<std::int64_t>>(configs, "dwForeColor1", {255});
         m_dwOneStrForeColor = ARGB(fore_color1.x, fore_color1.y, fore_color1.z, fore_color1.w);
         auto back_color1 = Config::GetOrGet<Types::Vector4<std::int64_t>>(configs, "dwBackColor1", {});
         m_dwOneStrBackColor = ARGB(back_color1.x, back_color1.y, back_color1.z, back_color1.w);
@@ -447,7 +445,7 @@ void CXI_SCROLLIMAGE::LoadIni(const Config& node_config, const Config& def_confi
             m_nTwoStrAlign = PR_ALIGN_CENTER;
         m_lTwoStrOffset = m_lTwoStrX;
         
-        auto fore_color2 = Config::GetOrGet<Types::Vector4<std::int64_t>>(configs, "dwForeColor2", {255, 255, 255, 255});
+        auto fore_color2 = Config::GetOrGet<Types::Vector4<std::int64_t>>(configs, "dwForeColor2", {255});
         m_dwTwoStrForeColor = ARGB(fore_color2.x, fore_color2.y, fore_color2.z, fore_color2.w);
 
         auto back_color2 = Config::GetOrGet<Types::Vector4<std::int64_t>>(configs, "dwBackColor2", {});;
@@ -461,8 +459,7 @@ void CXI_SCROLLIMAGE::LoadIni(const Config& node_config, const Config& def_confi
         const char *sTechnique = pAttribute->GetAttribute("SpecTechniqueName");
         if (sTechnique != nullptr) {
             const auto len = strlen(sTechnique) + 1;
-            if ((m_sSpecTechniqueName = new char[len]) == nullptr)
-            {
+            if ((m_sSpecTechniqueName = new char[len]) == nullptr) {
                 throw std::runtime_error("Allocate memory error");
             }
             memcpy(m_sSpecTechniqueName, sTechnique, len);
@@ -482,8 +479,7 @@ void CXI_SCROLLIMAGE::LoadIni(const Config& node_config, const Config& def_confi
         ATTRIBUTES *pA = pAttribute->GetAttributeClass("ImagesGroup");
         if (pA != nullptr) {
             m_nGroupQuantity = pA->GetAttributesNum();
-            if (m_nGroupQuantity != 0)
-            {
+            if (m_nGroupQuantity != 0) {
                 m_nGroupTex = new int32_t[m_nGroupQuantity];
                 m_sGroupName = new char *[m_nGroupQuantity];
                 if (m_nGroupTex == nullptr || m_sGroupName == nullptr) {
@@ -505,8 +501,7 @@ void CXI_SCROLLIMAGE::LoadIni(const Config& node_config, const Config& def_confi
         }
 
         // get bad picture
-        for (int n = 0; n < m_nSlotsQnt; n++)
-        {
+        for (int n = 0; n < m_nSlotsQnt; n++) {
             const char *sBadPict = sBadPict = pAttribute->GetAttribute("BadPicture" + std::to_string(n + 1));
             if (sBadPict != nullptr) {
                 m_idBadTexture[n] = m_rs->TextureCreate(sBadPict);
@@ -517,10 +512,12 @@ void CXI_SCROLLIMAGE::LoadIni(const Config& node_config, const Config& def_confi
                 if (m_idBadTexture[n] >= 0) {
                     m_idBadPic[n] = pPictureService->GetImageNum(m_sGroupName[m_idBadTexture[n]],
                     pAttribute->GetAttribute("BadPic" + std::to_string(n + 1)));
-                } else
+                } else {
                     m_idBadPic[n] = -1;
-                if (m_idBadPic[n] == -1)
+                }
+                if (m_idBadPic[n] == -1) {
                     m_idBadTexture[n] = -1;
+                }
             }
         }
 
@@ -583,21 +580,14 @@ void CXI_SCROLLIMAGE::LoadIni(const Config& node_config, const Config& def_confi
 
     // get border picture
     m_nShowOrder = Config::GetOrGet<std::int64_t>(configs, "borderShowOrder", 100);
-    auto border = Config::GetOrGet<std::string>(configs, "border", {});
-    if (!border.empty()) {
-        char param1[256];
-        const char *tmpstr = GetSubStr(border.c_str(), param1, sizeof(param1));
-        const auto len = strlen(param1) + 1;
-        if ((m_sBorderGroupName = new char[len]) == nullptr)
-            throw std::runtime_error("allocate memory error");
-        memcpy(m_sBorderGroupName, param1, len);
-        m_texBorder = pPictureService->GetTextureID(m_sBorderGroupName);
-        m_nBorderPicture = pPictureService->GetImageNum(m_sBorderGroupName, tmpstr);
+    auto border_vec = Config::GetOrGet<std::vector<std::string>>(configs, "border", {});
+    m_bShowBorder = false;
+    m_texBorder = -1;
+    if (std::size(border_vec) > 1) {
+        m_sBorderGroupName = border_vec[1];
+        m_texBorder = pPictureService->GetTextureID(m_sBorderGroupName.c_str());
+        m_nBorderPicture = pPictureService->GetImageNum(m_sBorderGroupName.c_str(), border_vec[0].c_str());
         m_bShowBorder = m_texBorder != -1;
-    } else {
-        m_bShowBorder = false;
-        m_texBorder = -1;
-        m_sBorderGroupName = nullptr;
     }
 
     // set images parameters
@@ -847,8 +837,8 @@ void CXI_SCROLLIMAGE::ReleaseAll()
     STORM_DELETE(m_sGroupName);
     STORM_DELETE(m_nGroupTex);
 
-    PICTURE_TEXTURE_RELEASE(pPictureService, m_sBorderGroupName, m_texBorder);
-    STORM_DELETE(m_sBorderGroupName);
+    PICTURE_TEXTURE_RELEASE(pPictureService, m_sBorderGroupName.c_str(), m_texBorder);
+    m_sBorderGroupName.clear();
 
     FONT_RELEASE(m_rs, m_nOneStrFont);
     FONT_RELEASE(m_rs, m_nTwoStrFont);

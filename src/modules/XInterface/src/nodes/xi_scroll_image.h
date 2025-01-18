@@ -109,7 +109,7 @@ class CXI_SCROLLIMAGE : public CINODE
     char **m_sGroupName;
     int32_t *m_nGroupTex;
     int m_nGroupQuantity;
-    char *m_sBorderGroupName; //
+    std::string m_sBorderGroupName; //
     int32_t m_texBorder;         // select border texture identificator
     int32_t m_nBorderPicture;    // select border picture identificator
     int32_t *m_idBadTexture;     // image texture to replace nonexistent

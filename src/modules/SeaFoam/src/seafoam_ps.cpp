@@ -177,32 +177,32 @@ bool SEAFOAM_PS::Init(const std::string_view& section)
         }
     }
 
-    TechniqueName = config.Get<std::string>(PSKEY_TECHNIQUE, "");
+    TechniqueName = config.Get<std::string>(PSKEY_TECHNIQUE, {});
 
     // configure particles
     ParticlesNum = config.Get<std::int64_t>(PSKEY_PNUM, 32);
-    EmissionTime = config.Get<double>(PSKEY_EMISSIONTIME, 0.0f);
+    EmissionTime = config.Get<double>(PSKEY_EMISSIONTIME, 0.0);
     DeltaTimeSLE = static_cast<std::int32_t>(EmissionTime);
-    EmissionTimeRand = config.Get<double>(PSKEY_EMISSIONTIMERAND, 0.0f);
+    EmissionTimeRand = config.Get<double>(PSKEY_EMISSIONTIMERAND, 0.0);
     CurrentEmissionTimeRand = EmissionTimeRand * rand() / RAND_MAX;
     fSurfaceOffset = config.Get<double>(PSKEY_SURFACEOFFSET, 0);
     ParticleColor = config.Get<std::int64_t>("color", 0xffffffff);
 
-    fWindEffect = config.Get<double>(PSKEY_WINDEFFECT, 0.0f);
+    fWindEffect = config.Get<double>(PSKEY_WINDEFFECT, 0.0);
 
-    DirectionDeviation = config.Get<double>(PSKEY_DDEVIATION, 0.0f);
-    Gravity = config.Get<double>(PSKEY_GRAVITY, 0.0f);
-    Inispeed = config.Get<double>(PSKEY_INISPEED, 0.0f);
-    SpeedDeviation = config.Get<double>(PSKEY_SDEVIATION, 0.0f);
+    DirectionDeviation = config.Get<double>(PSKEY_DDEVIATION, 0.0);
+    Gravity = config.Get<double>(PSKEY_GRAVITY, 0.0);
+    Inispeed = config.Get<double>(PSKEY_INISPEED, 0.0);
+    SpeedDeviation = config.Get<double>(PSKEY_SDEVIATION, 0.0);
     Lifetime = config.Get<std::int64_t>(PSKEY_LIFETIME, 1000);
-    Spin = config.Get<double>(PSKEY_SPIN, 0.0f);
-    SpinDeviation = config.Get<double>(PSKEY_SPINDEV, 0.0f);
+    Spin = config.Get<double>(PSKEY_SPIN, 0.0);
+    SpinDeviation = config.Get<double>(PSKEY_SPINDEV, 0.0);
     EmitterIniTime = config.Get<std::int64_t>(PSKEY_EMITTERINITIME, 0);
-    Weight = config.Get<double>(PSKEY_WEIGHT, 0.0f);
-    WeightDeviation = config.Get<double>(PSKEY_WEIGHTDEVIATION, 0.0f);
+    Weight = config.Get<double>(PSKEY_WEIGHT, 0.0);
+    WeightDeviation = config.Get<double>(PSKEY_WEIGHTDEVIATION, 0.0);
     Emitdelta = config.Get<std::int64_t>(PSKEY_EMITDELTA, 0);
-    ESpace = config.Get<double>(PSKEY_EMITRADIUS, 0.0f);
-    fTrackPointRadius = config.Get<double>(PSKEY_TRACKPOINTRADIUS, 1.0f);
+    ESpace = config.Get<double>(PSKEY_EMITRADIUS, 0.0);
+    fTrackPointRadius = config.Get<double>(PSKEY_TRACKPOINTRADIUS, 1.0);
 
     bColorInverse = config.Get<std::int64_t>(PSKEY_COLORINVERSE, 0);
     bUniformEmit = config.Get<std::int64_t>(PSKEY_UNIFORMEMIT, 0);

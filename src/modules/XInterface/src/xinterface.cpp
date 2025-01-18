@@ -4,8 +4,6 @@
 
 #include "xinterface.h"
 #include "back_scene/back_scene.h"
-#include "help_chooser/help_chooser.h"
-#include "info_handler.h"
 #include "string_compare.hpp"
 #include "nodes/all_xi_node.h"
 #include "string_service/obj_str_service.h"
@@ -1080,8 +1078,7 @@ void XINTERFACE::LoadIni()
     auto config = Config::Load(Storm::Filesystem::Constants::ConfigNames::interfaces());
     std::ignore = config.SelectSection("COMMON");
     // set screen parameters
-    if (config.Get<std::int64_t>("bDynamicScaling", 0) == 0)
-    {
+    if (config.Get<std::int64_t>("bDynamicScaling", 0) == 0) {
         std::ignore = config.SelectSection("PC_SCREEN");
         const auto &canvas_size = core.GetScreenSize();
         fScale = static_cast<float>(config.Get<double>("fScale", 1.0));
@@ -1186,14 +1183,14 @@ void XINTERFACE::LoadDialog(const char *sFileName) {
             priority = 80;
         }
 
-        if (*item_it == "pc") {
+        if (*item_it == "PC") {
             ++item_it;
         }
 
         std::string node_type{*item_it};
         ++item_it;
         std::string node_name{*item_it};
-        SFLB_CreateNode(Storm::Filesystem::Constants::ConfigNames::defaultnode().string(),
+        SFLB_CreateNode(Constants::ConfigNames::defaultnode().string(),
             std::filesystem::path(sFileName).replace_extension(".toml").string(),
             node_type.data(), node_name.data(), priority);
     }
@@ -1252,10 +1249,8 @@ void XINTERFACE::CreateNode(const char *sFileName, const char *sNodeType, const 
 }
 
 void XINTERFACE::SFLB_CreateNode(const std::string& def_node_config_name, const std::string& node_config_name,
-            const char *sNodeType, const char *sNodeName,int32_t priority)
-{
-    if (!sNodeType || !sNodeType[0])
-    {
+            const char *sNodeType, const char *sNodeName,int32_t priority) {
+    if (!sNodeType || !sNodeType[0]) {
         core.Trace("Warning! Interface: Can`t create node with null type.");
         return;
     }
@@ -1280,9 +1275,11 @@ void XINTERFACE::SFLB_CreateNode(const std::string& def_node_config_name, const 
     if (!sNodeName)
         sNodeName = "?";
 
-    CINODE *pNewNod = NewNode(def_config.Get<std::string>("class", "").c_str());
-    if (pNewNod)
-    {
+    auto class_str = def_config.Get<std::string>("class", {});
+    CINODE *pNewNod = NewNode(class_str.empty()
+        ? sNodeType
+        : class_str.c_str());
+    if (pNewNod) {
         pNewNod->ptrOwner = this;
         pNewNod->pPictureService = pPictureService;
         pNewNod->pStringService = pStringService;
@@ -1295,86 +1292,81 @@ void XINTERFACE::SFLB_CreateNode(const std::string& def_node_config_name, const 
         if (!pNewNod->m_nodeName)
             throw std::runtime_error("allocate memory error");
         memcpy(pNewNod->m_nodeName, sNodeName, len);
-        if (!pNewNod->Init(node_config, def_config, pRenderService, GlobalRect, xypScreenSize))
-        {
+        if (!pNewNod->Init(node_config, def_config, pRenderService, GlobalRect, xypScreenSize)) {
             delete pNewNod;
             pNewNod = nullptr;
-        }
-        else
-        {
+        } else {
             AddNodeToList(pNewNod, priority);
         }
 
         pNewNod->m_bBreakPress = Config::GetOrGet<std::int64_t>(configs, "bBreakCommand", 0);
-        pNewNod->m_bMouseSelect = Config::GetOrGet<std::int64_t>(configs, "moveMouseDoSelect", 0);;
-        // if( pNewNod->ReadIniString(pUserIni,sNodeName, pOwnerIni,sNodeType, "command", param,sizeof(param)-1, "") )
-        // do
-        auto command_opt = node_config.Get<std::vector<std::vector<std::string>>>("command");
-        if (command_opt.has_value()) {
-            for (const auto& command : command_opt.value()) {
-                std::string command_str;
-                for (const auto& each : command) {
-                    command_str += each;
-                }
-                // get command name
-                char stmp[512];
-                sscanf(command_str.c_str(), "%[^,]", stmp);
-                // search command
-                const int nComNum = FindCommand(stmp);
-                if (nComNum == -1)
+        pNewNod->m_bMouseSelect = Config::GetOrGet<std::int64_t>(configs, "moveMouseDoSelect", 0);
+        auto command_vec = node_config.Get<std::vector<std::vector<std::string>>>("command", {});
+        for (const auto& command : command_vec) {
+            std::stringstream ss;
+            std::ranges::for_each(command,
+                [&ss](const std::string& each) {
+                    ss << each << ',';
+            });
+            std::string command_str{ss.str()};
+            // get command name
+            char stmp[512];
+            sscanf(command_str.c_str(), "%[^,]", stmp);
+            // search command
+            const int nComNum = FindCommand(stmp);
+            if (nComNum == -1)
+                continue;
+
+            pNewNod->m_bSelected = true;
+            pNewNod->m_bClickable = true;
+            pNewNod->m_pCommands[nComNum].bUse = true;
+            // command sequence
+            size_t nFirstChar = strlen(stmp) + 1;
+            while (nFirstChar < std::size(command_str)) {
+                sscanf(&command_str[nFirstChar], "%[^,]", stmp);
+                nFirstChar += strlen(stmp) + 1;
+
+                // redirect control
+                if (!strncmp(stmp, "select:", 7)) {
+                    DublicateString(pNewNod->m_pCommands[nComNum].sRetControl, &stmp[7]);
                     continue;
+                }
 
-                pNewNod->m_bSelected = true;
-                pNewNod->m_bClickable = true;
-                pNewNod->m_pCommands[nComNum].bUse = true;
-                // command sequence
-                size_t nFirstChar = strlen(stmp) + 1;
-                while (nFirstChar < std::size(command_str)) {
-                    sscanf(&command_str[nFirstChar], "%[^,]", stmp);
-                    nFirstChar += strlen(stmp) + 1;
-
-                    // redirect control
-                    if (!strncmp(stmp, "select:", 7)) {
-                        DublicateString(pNewNod->m_pCommands[nComNum].sRetControl, &stmp[7]);
+                // subnodes control
+                if (!strncmp(stmp, "com:", 4)) {
+                    char sSubNodName[512];
+                    char sSubCommand[512];
+                    sscanf(stmp, "com:%[^:]:%[^,]", sSubCommand, sSubNodName);
+                    int nSubCommand = FindCommand(sSubCommand);
+                    if (nSubCommand == -1) {
                         continue;
                     }
 
-                    // subnodes control
-                    if (!strncmp(stmp, "com:", 4)) {
-                        char sSubNodName[512];
-                        char sSubCommand[512];
-                        sscanf(stmp, "com:%[^:]:%[^,]", sSubCommand, sSubNodName);
-                        int nSubCommand = FindCommand(sSubCommand);
-                        if (nSubCommand == -1) {
-                            continue;
-                        }
+                    auto *pHead = new CINODE::COMMAND_REDIRECT{};
+                    if (pHead == nullptr)
+                        throw std::runtime_error("allocate memory error");
+                    pHead->next = pNewNod->m_pCommands[nComNum].pNextControl;
+                    pNewNod->m_pCommands[nComNum].pNextControl = pHead;
+                    DublicateString(pHead->sControlName, sSubNodName);
+                    pHead->command = pCommandsList[nSubCommand].code;
 
-                        auto *pHead = new CINODE::COMMAND_REDIRECT{};
-                        if (pHead == nullptr)
-                            throw std::runtime_error("allocate memory error");
-                        pHead->next = pNewNod->m_pCommands[nComNum].pNextControl;
-                        pNewNod->m_pCommands[nComNum].pNextControl = pHead;
-                        DublicateString(pHead->sControlName, sSubNodName);
-                        pHead->command = pCommandsList[nSubCommand].code;
+                    continue;
+                }
 
-                        continue;
-                    }
+                if (!strncmp(stmp, "event:", 6)) {
+                    char sEventName[512];
+                    sscanf(stmp, "event:%[^,]", sEventName);
+                    DublicateString(pNewNod->m_pCommands[nComNum].sEventName, sEventName);
+                    continue;
+                }
 
-                    if (!strncmp(stmp, "event:", 6)) {
-                        char sEventName[512];
-                        sscanf(stmp, "event:%[^,]", sEventName);
-                        DublicateString(pNewNod->m_pCommands[nComNum].sEventName, sEventName);
-                        continue;
-                    }
+                if (!strncmp(stmp, "delay:", 6)) {
+                    sscanf(stmp, "delay:%d", &pNewNod->m_pCommands[nComNum].nActionDelay);
+                    continue;
+                }
 
-                    if (!strncmp(stmp, "delay:", 6)) {
-                        sscanf(stmp, "delay:%d", &pNewNod->m_pCommands[nComNum].nActionDelay);
-                        continue;
-                    }
-
-                    if (!strncmp(stmp, "sound:", 6)) {
-                        sscanf(stmp, "sound:%d", &pNewNod->m_pCommands[nComNum].nSound);
-                    }
+                if (!strncmp(stmp, "sound:", 6)) {
+                    sscanf(stmp, "sound:%d", &pNewNod->m_pCommands[nComNum].nSound);
                 }
             }
         }

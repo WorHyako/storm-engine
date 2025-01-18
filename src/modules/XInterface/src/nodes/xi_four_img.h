@@ -43,7 +43,7 @@ class CXI_FOURIMAGE : public CINODE
     char **m_sGroupName;
     int32_t *m_nTextureId;
     int32_t m_nTexturesQuantity;
-    char *m_sBorderGroupName; // picture list name for border image
+    std::string m_sBorderGroupName; // picture list name for border image
     int32_t m_texBorder;         // border texture identify
     XYRECT m_imgRect[4];      // images position
     int32_t m_nBorderPicture;    // image id for border picture

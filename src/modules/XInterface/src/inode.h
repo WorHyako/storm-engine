@@ -304,11 +304,6 @@ class CINODE
     void GetAbsoluteRect(XYRECT &rect, int at) const;
     void GetAbsoluteRectForSave(XYRECT &rect, int at) const;
 
-    static const char *GetSubStr(const char *inStr, char *buf, size_t bufSize, char devChar = ',');
-    static bool GetMidStr(const char *inStr, char *buf, size_t bufSize, const char *begStr, const char *endStr);
-    static const char *GetDataStr(const char *inStr, const char *strOrder, ...);
-    static uint32_t GetColorFromStr(const char *inStr, uint32_t dwDefColor);
-
     virtual void MoveMouseOutScreen(float fX, float fY)
     {
     }

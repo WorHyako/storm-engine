@@ -216,15 +216,27 @@ void CXI_PCEDITBOX::LoadIni(const Config& node_config, const Config& def_config)
         if (m_pRightImage)
             m_pRightImage->LoadAccordingToString(right_image.c_str());
     }
-    auto middle_image = Config::GetOrGet<std::string>(configs, "MiddleImage", {});
+    auto middle_image_vec = Config::GetOrGet<std::vector<std::string>>(configs, "MiddleImage", {});
+    std::stringstream ss;
+    std::ranges::for_each(middle_image_vec,
+        [&ss](const auto& each) {
+            ss << each << ',';
+    });
+    std::string middle_image{ss.str()};
+    middle_image.erase(std::size(middle_image));
     if (!middle_image.empty()) {
         m_pMiddleImage = new CXI_IMAGE;
         if (m_pMiddleImage)
             m_pMiddleImage->LoadAccordingToString(middle_image.c_str());
     }
 
-    m_sExcludeChars = Config::GetOrGet<std::string>(configs, "excludechars", {});
-
+    auto excluce_chars_vec = Config::GetOrGet<std::vector<std::string>>(configs, "excludechars", {});
+    ss.clear();
+    std::ranges::for_each(excluce_chars_vec,
+        [&ss](const auto& each) {
+        ss << each << ',';
+    });
+    m_sExcludeChars = ss.str();
     // update position
     auto nMiddleLeft = m_rect.left;
     auto nMiddleRight = m_rect.right;

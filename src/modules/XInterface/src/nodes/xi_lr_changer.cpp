@@ -132,7 +132,7 @@ void CXI_LRCHANGER::LoadIni(const Config& node_config, const Config& def_config)
     m_posRRect.bottom = static_cast<float>(m_rect.bottom);
 
     // get face color
-    auto face_color = Config::GetOrGet<Types::Vector4<std::int64_t>>(configs, "faceColor", {255, 255, 255, 255});
+    auto face_color = Config::GetOrGet<Types::Vector4<std::int64_t>>(configs, "faceColor", {255});
     m_dwFaceColor = ARGB(face_color.x, face_color.y, face_color.z, face_color.w);
 
     // get shadow color
@@ -169,13 +169,13 @@ void CXI_LRCHANGER::LoadIni(const Config& node_config, const Config& def_config)
     }
 
     // get offset button image in case pressed button
-    m_PressShift = Config::GetOrGet<Types::Vector2<double>>(configs, "pressPictureOffset", {});
+    m_PressShift = Config::GetOrGet<Types::Vector2<std::int64_t>>(configs, "pressPictureOffset", {}).to<float>();
 
     // get offset button shadow in case not pressed button
-    m_ShadowShift = Config::GetOrGet<Types::Vector2<double>>(configs, "shadowOffset", {});
+    m_ShadowShift = Config::GetOrGet<Types::Vector2<std::int64_t>>(configs, "shadowOffset", {}).to<float>();
 
     // get offset button shadow in case pressed button
-    m_PressShadowShift = Config::GetOrGet<Types::Vector2<double>>(configs, "pressShadowOffset", {});
+    m_PressShadowShift = Config::GetOrGet<Types::Vector2<std::int64_t>>(configs, "pressShadowOffset", {}).to<float>();
 
     // get press delay
     nMaxDelay = Config::GetOrGet<std::int64_t>(configs, "pressDelay", 20);

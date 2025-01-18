@@ -96,7 +96,7 @@ void CXI_CHECKBUTTONS::LoadIni(const Config& node_config, const Config& def_conf
     }
     m_fFontScale = Config::GetOrGet<double>(configs, "fontScale", 1.0);
 
-    auto normal_font_color = Config::GetOrGet<Types::Vector4<std::int64_t>>(configs, "normalFontColor", {255, 255, 255, 255});
+    auto normal_font_color = Config::GetOrGet<Types::Vector4<std::int64_t>>(configs, "normalFontColor", {255});
     m_dwNormalFontColor = ARGB(normal_font_color.x, normal_font_color.y, normal_font_color.z, normal_font_color.w);
 
     auto select_font_color = Config::GetOrGet<Types::Vector4<std::int64_t>>(configs, "selectFontColor");
@@ -109,17 +109,18 @@ void CXI_CHECKBUTTONS::LoadIni(const Config& node_config, const Config& def_conf
         ? ARGB(disable_font_color->x, disable_font_color->y, disable_font_color->z, disable_font_color->w)
         : m_dwNormalFontColor;
 
-    m_frTextOffset = Config::GetOrGet<Types::Vector4<double>>(configs, "rect_textoffset", {});
+    m_frTextOffset = Config::GetOrGet<Types::Vector4<std::int64_t>>(configs, "rect_textoffset", {}).to<double>();
 
-    m_fTextLineHeight = Config::GetOrGet<double>(configs, "lineheight", m_rs->CharHeight(m_nFontNum));
-    m_fTextSectionInterval = Config::GetOrGet<double>(configs, "sectioninterval", m_rs->CharHeight(m_nFontNum));
+    m_fTextLineHeight = Config::GetOrGet<std::int64_t>(configs, "lineheight", m_rs->CharHeight(m_nFontNum));
+    m_fTextSectionInterval = Config::GetOrGet<std::int64_t>(configs, "sectioninterval", m_rs->CharHeight(m_nFontNum));
 
-    m_fpIconSize = Config::GetOrGet<Types::Vector2<double>>(configs, "iconsize", {m_fpIconSize.x, m_fpIconSize.y});
+    m_fpIconSize = Config::GetOrGet<Types::Vector2<std::int64_t>>(configs, "iconsize",
+        {static_cast<std::int64_t>(m_fpIconSize.x), static_cast<std::int64_t>(m_fpIconSize.y)}).to<double>();
     m_sIconGroupName = Config::GetOrGet<std::string>(configs, "icongroup", {});
 
     m_sNormalPicture = Config::GetOrGet<std::string>(configs, "normalpicture", {});
 
-    auto normal_pic_color = Config::GetOrGet<Types::Vector4<std::int64_t>>(configs, "normalpiccolor", {255, 255, 255, 255});
+    auto normal_pic_color = Config::GetOrGet<Types::Vector4<std::int64_t>>(configs, "normalpiccolor", {255});
     m_dwNormalPicColor = ARGB(normal_pic_color.x, normal_pic_color.y, normal_pic_color.z, normal_pic_color.w);
 
     const auto select_picture = Config::GetOrGet<std::string>(configs, "selectpicture", {});
@@ -142,7 +143,8 @@ void CXI_CHECKBUTTONS::LoadIni(const Config& node_config, const Config& def_conf
         ? ARGB(disable_pic_color->x, disable_pic_color->y, disable_pic_color->z, disable_pic_color->w)
         : m_dwNormalPicColor;
 
-    m_fpIconOffset = Config::GetOrGet<Types::Vector2<double>>(configs, "iconoffset", {m_fpIconOffset.x, m_fpIconOffset.y});
+    m_fpIconOffset = Config::GetOrGet<Types::Vector2<std::int64_t>>(configs, "iconoffset",
+        {static_cast<std::int64_t>(m_fpIconOffset.x), static_cast<std::int64_t>(m_fpIconOffset.y)}).to<double>();
     m_bIndividualPos = Config::GetOrGet<std::int64_t>(configs, "individualpos", 0);
 
     // read out all the sections in turn

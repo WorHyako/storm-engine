@@ -13,7 +13,6 @@ CXI_PICTURE::CXI_PICTURE()
     m_idTex = -1;
     m_pTex = nullptr;
     m_nNodeType = NODETYPE_PICTURE;
-    m_pcGroupName = nullptr;
     m_bMakeBlind = false;
     m_fCurBlindTime = 0.f;
     m_bBlindUp = true;
@@ -28,41 +27,33 @@ CXI_PICTURE::~CXI_PICTURE()
     ReleaseAll();
 }
 
-void CXI_PICTURE::Draw(bool bSelected, uint32_t Delta_Time)
-{
-    if (m_bUse)
-    {
-        if (m_bMakeBlind)
-        {
-            if (m_bBlindUp)
-            {
-                m_fCurBlindTime += m_fBlindUpSpeed * Delta_Time;
-                if (m_fCurBlindTime >= 1.f)
-                {
-                    m_fCurBlindTime = 1.f;
-                    m_bBlindUp = false;
-                }
+void CXI_PICTURE::Draw(bool bSelected, uint32_t Delta_Time) {
+    if (!m_bUse) {
+        return;
+    }
+    if (m_bMakeBlind) {
+        if (m_bBlindUp) {
+            m_fCurBlindTime += m_fBlindUpSpeed * Delta_Time;
+            if (m_fCurBlindTime >= 1.f) {
+                m_fCurBlindTime = 1.f;
+                m_bBlindUp = false;
             }
-            else
-            {
-                m_fCurBlindTime -= m_fBlindDownSpeed * Delta_Time;
-                if (m_fCurBlindTime <= 0.f)
-                {
-                    m_fCurBlindTime = 0.f;
-                    m_bBlindUp = true;
-                }
+        } else {
+            m_fCurBlindTime -= m_fBlindDownSpeed * Delta_Time;
+            if (m_fCurBlindTime <= 0.f) {
+                m_fCurBlindTime = 0.f;
+                m_bBlindUp = true;
             }
-            ChangeColor(ptrOwner->GetBlendColor(m_dwBlindMin, m_dwBlindMax, m_fCurBlindTime));
         }
+        ChangeColor(ptrOwner->GetBlendColor(m_dwBlindMin, m_dwBlindMax, m_fCurBlindTime));
+    }
 
-        if (m_idTex != -1 || m_pTex)
-        {
-            if (m_idTex != -1)
-                m_rs->TextureSet(0, m_idTex);
-            else
-                m_rs->SetTexture(0, m_pTex ? m_pTex->m_pTexture : nullptr);
-            m_rs->DrawPrimitiveUP(D3DPT_TRIANGLESTRIP, XI_ONETEX_FVF, 2, m_v, sizeof(XI_ONETEX_VERTEX), "iVideo");
-        }
+    if (m_idTex != -1 || m_pTex) {
+        if (m_idTex != -1)
+            m_rs->TextureSet(0, m_idTex);
+        else
+            m_rs->SetTexture(0, m_pTex ? m_pTex->m_pTexture : nullptr);
+        m_rs->DrawPrimitiveUP(D3DPT_TRIANGLESTRIP, XI_ONETEX_FVF, 2, m_v, sizeof(XI_ONETEX_VERTEX), "iVideo");
     }
 }
 
@@ -73,7 +64,6 @@ bool CXI_PICTURE::Init(const Config& node_config, const Config& def_config, VDX9
 
 void CXI_PICTURE::LoadIni(const Config& node_config, const Config& def_config) {
     std::pair<const Config&, const Config&> configs{node_config, def_config};
-    m_idTex = -1;
 
     auto texRect = FXYRECT(0.f, 0.f, 1.f, 1.f);
 
@@ -86,20 +76,19 @@ void CXI_PICTURE::LoadIni(const Config& node_config, const Config& def_config) {
         }
     } else {
         auto texture_name = Config::GetOrGet<std::string>(configs, "textureName", {});
-        if (!texture_name.empty()) {
-            m_idTex = m_rs->TextureCreate(texture_name.c_str());
-        }
+        m_idTex = texture_name.empty()
+            ? -1
+            : m_rs->TextureCreate(texture_name.c_str());
         auto texture_rect_opt = Config::GetOrGet<Types::Vector4<double>>(configs, "textureRect");
         if (texture_rect_opt) {
             texRect = *texture_rect_opt;
         }
     }
 
-    m_pTex = nullptr;
     auto video_name = Config::GetOrGet<std::string>(configs, "videoName", {});
-    if (!video_name.empty()) {
-        m_pTex = m_rs->GetVideoTexture(video_name.c_str());
-    }
+    m_pTex = video_name.empty()
+        ? nullptr
+        : m_rs->GetVideoTexture(video_name.c_str());
 
     auto color_vec = Config::GetOrGet<Types::Vector4<std::int64_t>>(configs, "color", {255, 128, 128, 128});
     auto color = ARGB(color_vec.x, color_vec.y, color_vec.z, color_vec.w);
@@ -115,17 +104,17 @@ void CXI_PICTURE::LoadIni(const Config& node_config, const Config& def_config) {
     m_bMakeBlind = Config::GetOrGet<std::int64_t>(configs, "blind", false);
     m_fCurBlindTime = 0.f;
     m_bBlindUp = true;
-    auto fTmp = Config::GetOrGet<double>(configs, "blindUpTime", 1.f);
+    auto fTmp = Config::GetOrGet<double>(configs, "blindUpTime", 1.0);
     if (fTmp > 0.f) {
         m_fBlindUpSpeed = 0.001f / fTmp;
     }
-    fTmp = Config::GetOrGet<double>(configs, "blindDownTime", 1.f);
+    fTmp = Config::GetOrGet<double>(configs, "blindDownTime", 1.0);
     if (fTmp > 0.f)
         m_fBlindDownSpeed = 0.001f / fTmp;
     auto blind_min = Config::GetOrGet<Types::Vector4<std::int64_t>>(configs, "blindMinColor", {255, 128, 128, 128});
     m_dwBlindMin = ARGB(blind_min.x, blind_min.y, blind_min.z, blind_min.w);
 
-    auto blind_max = Config::GetOrGet<Types::Vector4<std::int64_t>>(configs, "blindMaxColor", {255, 255, 255, 255});
+    auto blind_max = Config::GetOrGet<Types::Vector4<std::int64_t>>(configs, "blindMaxColor", {255});
     m_dwBlindMin = ARGB(blind_max.x, blind_max.y, blind_max.z, blind_max.w);
 }
 
@@ -330,7 +319,6 @@ uint32_t CXI_PICTURE::MessageProc(int32_t msgcode, MESSAGE &message)
             if (!pOtherPic->m_pcGroupName.empty())
             {
                 m_pcGroupName = pOtherPic->m_pcGroupName;
-                pOtherPic->m_pcGroupName = nullptr;
             }
             if (pOtherPic->m_idTex != -1)
             {

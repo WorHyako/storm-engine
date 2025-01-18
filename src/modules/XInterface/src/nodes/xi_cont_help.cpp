@@ -82,7 +82,7 @@ void CXI_CONTEXTHELP::LoadIni(const Config& node_config, const Config& def_confi
 
     std::pair<const Config&, const Config&> configs{node_config, def_config};
     // Get rectangle color
-    auto color = Config::GetOrGet<Types::Vector4<std::int64_t>>(configs, "color", {255, 255, 255, 255});
+    auto color = Config::GetOrGet<Types::Vector4<std::int64_t>>(configs, "color", {255});
     m_dwColor = ARGB(color.x, color.y, color.z, color.w);
 
     // Get bounder parameters
@@ -94,7 +94,7 @@ void CXI_CONTEXTHELP::LoadIni(const Config& node_config, const Config& def_confi
 
     // Get help string  parameters
     m_nMaxDelayCounter = Config::GetOrGet<std::int64_t>(configs, "delay", 0);
-    auto font_color = Config::GetOrGet<Types::Vector4<std::int64_t>>(configs, "fontColor", {255, 255, 255, 255});
+    auto font_color = Config::GetOrGet<Types::Vector4<std::int64_t>>(configs, "fontColor", {255});
     m_dwFontColor = ARGB(font_color.x, font_color.y, font_color.z, font_color.w);
 
     m_idFont = m_rs->LoadFont(Config::GetOrGet<std::string>(configs, "font", {}));

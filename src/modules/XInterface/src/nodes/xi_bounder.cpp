@@ -57,7 +57,7 @@ void CXI_BOUNDER::ReleaseAll()
 
 void CXI_BOUNDER::LoadIni(const Config& node_config, const Config& def_config) {
     std::pair<const Config&, const Config&> configs{node_config, def_config};
-    auto color = Config::GetOrGet<Types::Vector4<std::int64_t>>(configs, "color", {255, 255, 255, 255});
+    auto color = Config::GetOrGet<Types::Vector4<std::int64_t>>(configs, "color", {255});
     m_dwColor = ARGB(color.x, color.y, color.z, color.w);
 
     // Get texture name and load that texture
@@ -70,18 +70,9 @@ void CXI_BOUNDER::LoadIni(const Config& node_config, const Config& def_config) {
     m_idAngle = -1;
     m_idHorzLine = -1;
     auto pictures_vec = Config::GetOrGet<std::vector<std::string>>(configs, "pictures", {});
-    std::stringstream ss;
-    std::ranges::for_each(pictures_vec,
-    [&ss](const auto& str) {
-        ss << str << ',';
-    });
-    std::string pictures{ss.str()};
-    if (!pictures.empty()) {
-        char* param = pictures.data();
-        char param2[256];
-        std::string sub_str = GetSubStr(param, param2, sizeof(param2) - 1);
-        m_idAngle = pPictureService->GetImageNum(m_sGroupName.c_str(), param2);
-        m_idHorzLine = pPictureService->GetImageNum(m_sGroupName.c_str(), sub_str.c_str());
+    if (!pictures_vec.empty()) {
+        m_idAngle = pPictureService->GetImageNum(m_sGroupName.c_str(), pictures_vec[1].c_str());
+        m_idHorzLine = pPictureService->GetImageNum(m_sGroupName.c_str(), pictures_vec[0].c_str());
     }
 
     // get picture width & height

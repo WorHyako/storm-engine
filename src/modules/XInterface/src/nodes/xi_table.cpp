@@ -785,7 +785,7 @@ void CXI_TABLE::LoadIni(const Config& node_config, const Config& def_config) {
     if (!font_cell.empty()) {
         m_nFontCellID = m_rs->LoadFont(font_cell.c_str());
     }
-    auto font_cell_color = Config::GetOrGet<Types::Vector4<std::int64_t>>(configs, "fontcellcolor", {255, 255, 255, 255});
+    auto font_cell_color = Config::GetOrGet<Types::Vector4<std::int64_t>>(configs, "fontcellcolor", {255});
     m_dwFontCellColor = ARGB(font_cell_color.x, font_cell_color.y, font_cell_color.z, font_cell_color.w);
     m_fFontCellScale = Config::GetOrGet<double>(configs, "fontcellscale", 1.0);
     m_nFontCellAlignment = PR_ALIGN_LEFT;
@@ -808,7 +808,7 @@ void CXI_TABLE::LoadIni(const Config& node_config, const Config& def_config) {
     if (!font_title.empty()) {
         m_nFontTitleID = m_rs->LoadFont(font_title.c_str());
     }
-    auto font_title_color = Config::GetOrGet<Types::Vector4<std::int64_t>>(configs, "fonttitlecolor", {255, 255, 255, 255});
+    auto font_title_color = Config::GetOrGet<Types::Vector4<std::int64_t>>(configs, "fonttitlecolor", {255});
     m_dwFontTitleColor = ARGB(font_title_color.x, font_title_color.y, font_title_color.z, font_title_color.w);
     m_fFontTitleScale = Config::GetOrGet<double>(configs, "fonttitlescale", 1.0);
     m_nFontTitleAlignment = PR_ALIGN_LEFT;
@@ -828,14 +828,20 @@ void CXI_TABLE::LoadIni(const Config& node_config, const Config& def_config) {
         m_nFontTitleVAlignment = ALIGN_BOTTOM;
     }
 
-    const auto select_image = Config::GetOrGet<std::string>(configs, "selectimage", {});
+    const auto select_image_vec = Config::GetOrGet<std::vector<std::string>>(configs, "selectimage", {});
+    std::stringstream ss;
+    std::ranges::for_each(select_image_vec,
+        [&ss](const std::string &img) {
+            ss << img << ',';
+        });
+    std::string select_image{ss.str()};
     if (!select_image.empty()) {
         m_SelectImg.LoadAccordingToString(select_image.c_str());
     }
     m_bDoColsSelect = Config::GetOrGet<std::int64_t>(configs, "iscolselect", 0);
-    if (m_bDoColsSelect)
+    if (m_bDoColsSelect) {
         m_nSelectColIndex = 0;
-
+    }
     const auto border_icon_group = Config::GetOrGet<std::string>(configs, "bordericongroup", {});
     if (!border_icon_group.empty()) {
         m_sBorderIconGroupName = border_icon_group;
@@ -913,56 +919,67 @@ void CXI_TABLE::LoadIni(const Config& node_config, const Config& def_config) {
     m_anRowsHeights.clear();
 
     auto rows_vec = Config::GetOrGet<std::vector<std::int64_t>>(configs, "rowsheight", {});
-    std::int32_t nUsedQ = std::size(m_anRowsHeights);       // hard-coded strings
-    m_anColsWidth.resize(nUsedQ);
-    std::ranges::move(rows_vec, std::begin(m_anColsWidth));
+    std::int32_t nUsedQ = std::size(rows_vec);       // hard-coded strings
     std::int32_t nCommonWidth{0}; // the total height of these lines
-    std::ranges::for_each(m_anRowsHeights,
-        [&nCommonWidth](std::int64_t row_height) {
-            nCommonWidth += row_height;
+    std::ranges::for_each(rows_vec,
+        [&rows = m_anRowsHeights, &nCommonWidth](auto row) {
+            rows.emplace_back(static_cast<std::int32_t>(row));
+            nCommonWidth += row;
     });
 
-    for (int n = std::size(m_anRowsHeights); n < m_nRowQuantity; n++)
+    for (auto n = std::size(m_anRowsHeights); n < m_nRowQuantity; n++) {
         m_anRowsHeights.emplace_back(0);
+    }
     if (m_nRowQuantity > nUsedQ && m_rect.bottom - m_rect.top > nCommonWidth) {
         const int32_t nH = (m_rect.bottom - m_rect.top - nCommonWidth) / (m_nRowQuantity - nUsedQ);
-        for (int n = 0; n < std::size(m_anRowsHeights); n++)
-            if (m_anRowsHeights[n] == 0)
-                m_anRowsHeights[n] = nH;
+        for (int & m_anRowsHeight : m_anRowsHeights) {
+            if (m_anRowsHeight == 0) {
+                m_anRowsHeight = nH;
+            }
+        }
     }
     // bring the height of the table to the total value
     m_rect.bottom = m_rect.top + m_nBorderWidth;
-    for (int n = 0; n < m_anRowsHeights.size(); n++) {
-        m_rect.bottom += m_anRowsHeights[n];
+    for (int m_anRowsHeight : m_anRowsHeights) {
+        m_rect.bottom += m_anRowsHeight;
     }
 
     // filling columns
     m_anColsWidth.clear();
     auto cols_vec = Config::GetOrGet<std::vector<std::int64_t>>(configs, "colswidth", {});
-    std::ranges::move(cols_vec, std::begin(m_anColsWidth));
-    nUsedQ = std::size(m_anColsWidth);
+    nUsedQ = std::size(cols_vec);
     nCommonWidth = 0; // the total height of these lines
-    std::ranges::for_each(m_anColsWidth,
-        [&nCommonWidth](std::int64_t col_width) {
-            nCommonWidth += col_width;
+    std::ranges::for_each(cols_vec,
+        [&cols = m_anColsWidth, &nCommonWidth](auto col) {
+            cols.emplace_back(static_cast<std::int32_t>(col));
+            nCommonWidth += col;
     });
-    for (int n = std::size(m_anColsWidth); n < m_nColQuantity; n++)
-        m_anColsWidth.push_back(0);
+    for (int n = std::size(m_anColsWidth); n < m_nColQuantity; n++) {
+        m_anColsWidth.emplace_back(0);
+    }
     if (m_nColQuantity > nUsedQ && m_rect.right - m_rect.left > nCommonWidth) {
         const int32_t nW = (m_rect.right - m_rect.left - m_nBorderWidth - nCommonWidth) / (m_nColQuantity - nUsedQ);
-        for (int n = 0; n < std::size(m_anColsWidth); n++)
-            if (m_anColsWidth[n] == 0)
-                m_anColsWidth[n] = nW;
+        for (int & col : m_anColsWidth) {
+            if (col == 0) {
+                col = nW;
+            }
+        }
     }
     // change the width of the table to the total value
     m_rect.right = m_rect.left + m_nBorderWidth;
-    for (int n = 0; n < std::size(m_anColsWidth); n++) {
-        m_rect.right += m_anColsWidth[n];
+    for (auto n : m_anColsWidth) {
+        m_rect.right += n;
     }
 
     // back
     m_bBackPresent = false;
-    const auto back_image = Config::GetOrGet<std::string>(configs, "backimage", {});
+    const auto back_image_vec = Config::GetOrGet<std::vector<std::string>>(configs, "backimage", {});
+    ss.clear();
+    std::ranges::for_each(back_image_vec,
+        [&ss](const std::string &img) {
+            ss << img << ',';
+        });
+    std::string back_image{ss.str()};
     if (!back_image.empty()) {
         m_bBackPresent = true;
         m_BackImg.LoadAccordingToString(back_image.c_str());

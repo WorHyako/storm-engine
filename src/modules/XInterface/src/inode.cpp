@@ -295,93 +295,6 @@ void CINODE::GetAbsoluteRectForSave(XYRECT &rect, int at) const
         rect.bottom -= m_hostRect.top;
 }
 
-const char *CINODE::GetSubStr(const char *inStr, char *buf, size_t bufSize, char devChar)
-{
-    if (bufSize <= 0 || buf == nullptr)
-        return inStr;
-    if (inStr == nullptr)
-    {
-        buf[0] = 0;
-        return nullptr;
-    }
-    auto curSize = 0;
-    const char *curStr;
-    for (curStr = inStr; *curStr != 0; curStr++)
-    {
-        if (*curStr == ' ' && curSize == 0)
-            continue;
-        if (*curStr == devChar || *curStr == 0)
-            break;
-        if (curSize < static_cast<int>(bufSize) - 1)
-            buf[curSize++] = *curStr;
-    }
-    buf[curSize] = 0;
-    if (*curStr == devChar)
-        curStr++;
-    return curStr;
-}
-
-bool CINODE::GetMidStr(const char *inStr, char *buf, size_t bufSize, const char *begStr, const char *endStr)
-{
-    if (bufSize <= 0 || buf == nullptr)
-        return false;
-    if (inStr == nullptr || begStr == nullptr || endStr == nullptr)
-    {
-        buf[0] = 0;
-        return false;
-    }
-    const int lenIn = strlen(inStr);
-    const int lenBeg = strlen(begStr);
-    const int lenEnd = strlen(endStr);
-
-    int i;
-    auto fcn = -1, lcn = -1;
-    for (i = 0; i <= lenIn - lenBeg; i++)
-        if (storm::iEquals(&inStr[i], begStr, lenBeg))
-        {
-            fcn = i;
-            break;
-        }
-    if (fcn < 0)
-    {
-        buf[0] = 0;
-        return false;
-    }
-    fcn += lenBeg;
-
-    for (i = fcn; i <= lenIn - lenEnd; i++)
-        if (storm::iEquals(&inStr[i], endStr, lenEnd))
-        {
-            lcn = i;
-            break;
-        }
-    if (lcn <= fcn)
-    {
-        buf[0] = 0;
-        return false;
-    }
-
-    if (lcn - fcn > static_cast<int>(bufSize) - 1)
-        lcn = fcn + bufSize - 1;
-    strncpy_s(buf, bufSize, &inStr[fcn], lcn - fcn);
-    buf[lcn - fcn] = 0;
-    return true;
-}
-
-uint32_t CINODE::GetColorFromStr(const char *inStr, uint32_t dwDefColor)
-{
-    if (inStr)
-    {
-        int a = ALPHA(dwDefColor);
-        int r = RED(dwDefColor);
-        int g = GREEN(dwDefColor);
-        int b = BLUE(dwDefColor);
-        GetDataStr(inStr, "llll", &a, &r, &g, &b);
-        dwDefColor = ARGB(a, r, g, b);
-    }
-    return dwDefColor;
-}
-
 bool CINODE::CheckByToolTip(float fX, float fY)
 {
     if (m_pToolTip)
@@ -396,31 +309,6 @@ void CINODE::ShowToolTip() const
 {
     if (m_pToolTip)
         m_pToolTip->Draw();
-}
-
-const char *CINODE::GetDataStr(const char *inStr, const char *strOrder, ...)
-{
-    if (inStr == nullptr || strOrder == nullptr)
-        return nullptr;
-    va_list vl;
-    va_start(vl, strOrder);
-    char param[256];
-    for (auto i = 0; strOrder[i] != 0; i++)
-    {
-        inStr = GetSubStr(inStr, param, sizeof(param));
-        switch (strOrder[i])
-        {
-        case 'f':
-        case 'F':
-            *va_arg(vl, float *) = static_cast<float>(atof(param));
-            break;
-        case 'l':
-        case 'L':
-            *va_arg(vl, int32_t *) = atol(param);
-            break;
-        }
-    }
-    return inStr;
 }
 
 uint32_t CINODE::MessageProc(int32_t msgcode, MESSAGE &message)
@@ -517,12 +405,12 @@ bool CINODE::Init(const Config& node_config, const Config& def_config,
 
     m_frectHelpTextureUV = Config::GetOrGet<Types::Vector4<std::int64_t>>(configs, "position", {0, 0, 1, 1}).to<double>();
 
-    auto glow_rect_opt = Config::GetOrGet<Types::Vector4<std::string>>(configs, "GlowRectangle");
+    auto glow_rect_opt = Config::GetOrGet<Types::Vector4<std::int64_t>>(configs, "GlowRectangle");
     if (glow_rect_opt.has_value()) {
-        m_rectUserGlowCursor.left = std::stol(glow_rect_opt->x);
-        m_rectUserGlowCursor.top = std::stol(glow_rect_opt->y);
-        m_rectUserGlowCursor.right = std::stol(glow_rect_opt->z);
-        m_rectUserGlowCursor.bottom = std::stol(glow_rect_opt->w);
+        m_rectUserGlowCursor.left = glow_rect_opt->x;
+        m_rectUserGlowCursor.top = glow_rect_opt->y;
+        m_rectUserGlowCursor.right = glow_rect_opt->z;
+        m_rectUserGlowCursor.bottom = glow_rect_opt->w;
         GetAbsoluteRect(m_rectUserGlowCursor, m_nAbsoluteRectVal);
     }
 

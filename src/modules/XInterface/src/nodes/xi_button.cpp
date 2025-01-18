@@ -8,7 +8,6 @@ using namespace Storm::Math;
 CXI_BUTTON::CXI_BUTTON()
 {
     m_rs = nullptr;
-    m_sGroupName = nullptr;
     m_idTex = -1;
     m_pTex = nullptr;
 
@@ -150,15 +149,15 @@ void CXI_BUTTON::LoadIni(const Config& node_config, const Config& def_config) {
     std::pair<const Config&, const Config&> configs{node_config, def_config};
     m_nFontNum = m_rs->LoadFont(Config::GetOrGet<std::string>(configs, "font", {}));
     if (m_nFontNum == -1) {
-        throw std::exception("Failed to load font");
+        std::printf("Failed to load font");
     }
-    auto face_color = Config::GetOrGet<Types::Vector4<std::int64_t>>(configs, "faceColor", {255, 255, 255, 255});
+    auto face_color = Config::GetOrGet<Types::Vector4<std::int64_t>>(configs, "faceColor", {255});
     m_dwFaceColor = ARGB(face_color.x, face_color.y, face_color.z, face_color.w);
 
-    auto light_color = Config::GetOrGet<Types::Vector4<std::int64_t>>(configs, "lightColor", {255, 255, 255, 255});
+    auto light_color = Config::GetOrGet<Types::Vector4<std::int64_t>>(configs, "lightColor", {255});
     m_dwLightColor = ARGB(light_color.x, light_color.y, light_color.z, light_color.w);
 
-    auto dark_color = Config::GetOrGet<Types::Vector4<std::int64_t>>(configs, "darkColor", {255, 255, 255, 255});
+    auto dark_color = Config::GetOrGet<Types::Vector4<std::int64_t>>(configs, "darkColor", {255});
     m_dwDarkColor = ARGB(dark_color.x, dark_color.y, dark_color.z, dark_color.w);
 
     // blinking speed
@@ -176,10 +175,10 @@ void CXI_BUTTON::LoadIni(const Config& node_config, const Config& def_config) {
     auto shadow_color = Config::GetOrGet<Types::Vector4<std::int64_t>>(configs, "shadowColor", {255, 0, 0, 0});
     m_dwShadowColor = ARGB(shadow_color.x, shadow_color.y, shadow_color.z, shadow_color.w);
 
-    auto font_color = Config::GetOrGet<Types::Vector4<std::int64_t>>(configs, "fontColor", {255, 255, 255, 255});
+    auto font_color = Config::GetOrGet<Types::Vector4<std::int64_t>>(configs, "fontColor", {255});
     m_dwFontColor = ARGB(font_color.x, font_color.y, font_color.z, font_color.w);
 
-    m_sGroupName = Config::GetOrGet<std::string>(configs, "group", "");
+    m_sGroupName = Config::GetOrGet<std::string>(configs, "group", {});
     if (!m_sGroupName.empty()) {
         m_idTex = pPictureService->GetTextureID(m_sGroupName.c_str());
 
@@ -218,11 +217,10 @@ void CXI_BUTTON::LoadIni(const Config& node_config, const Config& def_config) {
 
     m_dwStrOffset = Config::GetOrGet<std::int64_t>(configs, "strOffset", 0);
 
-    m_idString = -1;
-    auto group = Config::GetOrGet<std::string>(configs, "group", "");
-    if (!group.empty()) {
-        m_idString = pStringService->GetStringNum(group.c_str());
-    }
+    auto group = Config::GetOrGet<std::string>(configs, "group", {});
+    m_idString = group.empty()
+        ? -1
+        : pStringService->GetStringNum(group.c_str());
 }
 
 void CXI_BUTTON::ReleaseAll()

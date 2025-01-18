@@ -111,7 +111,13 @@ void CXI_BORDER::SaveParametersToIni()
 
 void CXI_BORDER::LoadIni(const Config& node_config, const Config& def_config) {
     std::pair<const Config&, const Config&> configs{node_config, def_config};
-    auto back_image = Config::GetOrGet<std::string>(configs, "backimage", {});
+    auto back_image_vec = Config::GetOrGet<std::vector<std::string>>(configs, "backimage", {});
+    std::stringstream ss;
+    std::ranges::for_each(back_image_vec,
+        [&ss](const std::string &img) {
+            ss << img << ',';
+        });
+    std::string back_image{ss.str()};
     // get back image
     if (!back_image.empty()) {
         m_pBackImage = new CXI_IMAGE;
@@ -125,18 +131,20 @@ void CXI_BORDER::LoadIni(const Config& node_config, const Config& def_config) {
     // get caption rectangle
     m_nCaptionHeight = Config::GetOrGet<std::int64_t>(configs, "captionheight", 0);
     m_mCaptionDividerHeight = Config::GetOrGet<std::int64_t>(configs, "captiondividerheight", 2);
-    auto captionimage = Config::GetOrGet<std::string>(configs, "captionimage", {});
-    if (m_nCaptionHeight > 0 && !captionimage.empty())
-    {
+    auto caption_image_vec = Config::GetOrGet<std::vector<std::string>>(configs, "captionimage", {});
+    ss.clear();
+    std::ranges::for_each(caption_image_vec, [&ss](const std::string &each) {
+        ss << each << ',';
+    });
+    std::string caption_image{ss.str()};
+    caption_image.erase(std::size(caption_image) - 1);
+    if (m_nCaptionHeight > 0 && !caption_image.empty()) {
         m_pCaptionImage = new CXI_IMAGE;
-        if (m_pCaptionImage)
-        {
-            m_pCaptionImage->LoadAccordingToString(captionimage.c_str());
-        }
+        m_pCaptionImage->LoadAccordingToString(caption_image.c_str());
     }
 
     // get show color
-    auto color = Config::GetOrGet<Types::Vector4<std::int64_t>>(configs, "color", {255, 255, 255, 255});
+    auto color = Config::GetOrGet<Types::Vector4<std::int64_t>>(configs, "color", {255});
     m_dwColor = ARGB(color.x, color.y, color.z, color.w);
     // Get texture name and load that texture
     m_sGroupName = "";

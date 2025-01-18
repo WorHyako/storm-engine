@@ -158,15 +158,15 @@ void CXI_SCROLLBAR::LoadIni(const Config& node_config, const Config& def_config)
         }
     }
     // get font color
-    auto font_color = Config::GetOrGet<Types::Vector4<std::int64_t>>(configs, "fontColor", {255, 255, 255, 255});
+    auto font_color = Config::GetOrGet<Types::Vector4<std::int64_t>>(configs, "fontColor", {255});
     m_dwFontColor = ARGB(font_color.x, font_color.y, font_color.z, font_color.w);
     // get font scale
     m_fFontScale = static_cast<float>(Config::GetOrGet<double>(configs, "fontScale", 1.0));
     // get font offset
-    m_pntFontOffset = Config::GetOrGet<Types::Vector2<std::int64_t>>(configs, "fontOffset", {0, 0});
+    m_pntFontOffset = Config::GetOrGet<Types::Vector2<std::int64_t>>(configs, "fontOffset", {});
 
     // get face color
-    auto face_color = Config::GetOrGet<Types::Vector4<std::int64_t>>(configs, "faceColor", {255, 255, 255, 255});
+    auto face_color = Config::GetOrGet<Types::Vector4<std::int64_t>>(configs, "faceColor", {255});
     m_dwFaceColor = ARGB(face_color.x, face_color.y, face_color.z, face_color.w);
 
     // get shadow color
@@ -174,25 +174,23 @@ void CXI_SCROLLBAR::LoadIni(const Config& node_config, const Config& def_config)
     m_dwShadowColor = ARGB(shadow_color.x, shadow_color.y, shadow_color.z, shadow_color.w);
 
     // get group name and get texture for this
-    m_idTex = -1;
-    m_sGroupName = Config::GetOrGet<std::string>(configs, "group", "");
-    if (m_sGroupName.empty()) {
-        throw std::runtime_error("allocate memory error");
-    }
-    m_idTex = pPictureService->GetTextureID(m_sGroupName.c_str());
+    m_sGroupName = Config::GetOrGet<std::string>(configs, "group", {});
+    m_idTex = m_sGroupName.empty()
+        ? -1
+        : pPictureService->GetTextureID(m_sGroupName.c_str());
 
     // get offset button image in case pressed button
-    fPnt = Config::GetOrGet<Types::Vector2<double>>(configs, "pressPictureOffset", {0.0, 0.0});
+    fPnt = Config::GetOrGet<Types::Vector2<std::int64_t>>(configs, "pressPictureOffset", {}).to<float>();
     m_fXDeltaPress = fPnt.x;
     m_fYDeltaPress = fPnt.y;
 
     // get offset button shadow in case pressed button
-    fPnt = Config::GetOrGet<Types::Vector2<double>>(configs, "shadowOffset", {0.0, 0.0});
+    fPnt = Config::GetOrGet<Types::Vector2<std::int64_t>>(configs, "shadowOffset", {}).to<float>();
     m_fXShadow = fPnt.x;
     m_fYShadow = fPnt.y;
 
     // get offset button shadow in case not pressed button
-    fPnt = Config::GetOrGet<Types::Vector2<double>>(configs, "pressShadowOffset", {0.0, 0.0});
+    fPnt = Config::GetOrGet<Types::Vector2<std::int64_t>>(configs, "pressShadowOffset", {}).to<float>();
     m_fXShadowPress = fPnt.x;
     m_fYShadowPress = fPnt.y;
 

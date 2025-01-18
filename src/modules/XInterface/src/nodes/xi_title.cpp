@@ -92,11 +92,11 @@ void CXI_TITLE::SaveParametersToIni()
 void CXI_TITLE::LoadIni(const Config& node_config, const Config& def_config) {
     std::pair<const Config&, const Config&> configs{node_config, def_config};
     // Get font color
-    auto font_color = Config::GetOrGet<Types::Vector4<std::int64_t>>(configs, "fontColor", {255, 255, 255, 255});
+    auto font_color = Config::GetOrGet<Types::Vector4<std::int64_t>>(configs, "fontColor", {255});
     m_fontColor = ARGB(font_color.x, font_color.y, font_color.z, font_color.w);
 
     // get back font color
-    auto back_font_color = Config::GetOrGet<Types::Vector4<std::int64_t>>(configs, "backFontColor", {255, 255, 255, 255});
+    auto back_font_color = Config::GetOrGet<Types::Vector4<std::int64_t>>(configs, "backFontColor", {255});
     m_backColor = ARGB(back_font_color.x, back_font_color.y, back_font_color.z, back_font_color.w);
 
     // get font number
@@ -194,7 +194,7 @@ void CXI_TITLE::LoadIni(const Config& node_config, const Config& def_config) {
         throw std::runtime_error("vertex buffer not create");
 
     // Get image color
-    auto img_color_vec = Config::GetOrGet<Types::Vector4<std::int64_t>>(configs, "imageColor", {255, 255, 255, 255});
+    auto img_color_vec = Config::GetOrGet<Types::Vector4<std::int64_t>>(configs, "imageColor", {255});
     auto imgColor = ARGB(img_color_vec.x, img_color_vec.y, img_color_vec.z, img_color_vec.w);
     for (int i = 0; i < m_nVert; i++)
     {
