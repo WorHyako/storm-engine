@@ -80,15 +80,15 @@ namespace
 
 } // namespace
 
-uint32_t dwTotalSize = 0;
+std::uint32_t dwTotalSize = 0;
 
 struct SphereVertex
 {
     CVECTOR v;
-    uint32_t c;
+    std::uint32_t c;
 };
 
-uint32_t sphereNumTrgs;
+std::uint32_t sphereNumTrgs;
 SphereVertex* sphereVertex = nullptr;
 
 void CreateSphere()
@@ -100,7 +100,7 @@ void CreateSphere()
         if (kColor < 0.0f)                                                                                             \
             kColor = 0.0f;                                                                                             \
     }
-#define CLerp(c, min) (uint32_t(c * (kColor * (1.0f - min) + min)))
+#define CLerp(c, min) (std::uint32_t(c * (kColor * (1.0f - min) + min)))
 #define Color1                                                                                                         \
     ((CLerp(255.0f, 0.5f) << 24) | (CLerp(255.0f, 0.7f) << 16) | (CLerp(255.0f, 0.7f) << 8) |                          \
      (CLerp(255.0f, 0.7f) << 0));
@@ -109,8 +109,8 @@ void CreateSphere()
         return;
 
     const float myPI = 3.1415926535897932f;
-    const int32_t a1 = 32;
-    const int32_t a2 = (a1 / 2);
+    const std::int32_t a1 = 32;
+    const std::int32_t a2 = (a1 / 2);
 
     sphereNumTrgs = a1 * a2 * 2;
     sphereVertex = new SphereVertex[sphereNumTrgs * 6];
@@ -118,13 +118,13 @@ void CreateSphere()
     const CVECTOR light = !CVECTOR(0.0f, 0.0f, 1.0f);
     float kColor;
     // fill in the vertices
-    for (int32_t i = 0, t = 0; i < a2; i++)
+    for (std::int32_t i = 0, t = 0; i < a2; i++)
     {
         const float r1 = sinf(myPI * i / static_cast<float>(a2));
         const float y1 = cosf(myPI * i / static_cast<float>(a2));
         const float r2 = sinf(myPI * (i + 1) / static_cast<float>(a2));
         const float y2 = cosf(myPI * (i + 1) / static_cast<float>(a2));
-        for (int32_t j = 0; j < a1; j++)
+        for (std::int32_t j = 0; j < a1; j++)
         {
             const float x1 = sinf(2.0f * myPI * j / static_cast<float>(a1));
             const float z1 = cosf(2.0f * myPI * j / static_cast<float>(a1));
@@ -184,7 +184,7 @@ SD_TEXTURE_FORMAT textureFormats[] = {
 
 #define CHECKERR(expr) ErrorHandler(expr, __FILE__, __LINE__, __func__, #expr)
 
-inline bool ErrorHandler(uint32_t hr, const char* file, unsigned line, const char* func, const char* expr)
+inline bool ErrorHandler(std::uint32_t hr, const char* file, unsigned line, const char* func, const char* expr)
 {
     if (hr != 0)
     {
@@ -279,7 +279,7 @@ bool RENDER::Init() {
         throw std::runtime_error("Cannot create LostDeviceSentinel! Abort");
     }
 
-    for (int32_t i = 0; i < MAX_STEXTURES; i++)
+    for (std::int32_t i = 0; i < MAX_STEXTURES; i++)
         Textures[i].tex = nullptr;
 
     device = nullptr;
@@ -372,11 +372,11 @@ bool RENDER::Init() {
             if (window)
             {
                 //window->GetRequiredExtension(deviceParams.requiredVulkanInstanceExtensions);
-                uint32_t extensionsCount = 0;
+                std::uint32_t extensionsCount = 0;
                 const char** sdlExtensions;
                 if (SDL_Vulkan_GetInstanceExtensions(window->SDLHandle(), &extensionsCount, sdlExtensions))
                 {
-                    for (uint32_t i = 0; i < extensionsCount; i++) {
+                    for (std::uint32_t i = 0; i < extensionsCount; i++) {
                         deviceParams.requiredVulkanInstanceExtensions.push_back(sdlExtensions[i]);
                     }
                 }
@@ -473,9 +473,9 @@ bool RENDER::Init() {
 
     uint16_t* pI = &SeaEffectQuadIndices[0];
     // setup ibuffer
-    for (int32_t y = 0; y < 31; y++)
+    for (std::int32_t y = 0; y < 31; y++)
     {
-        for (int32_t x = 0; x < 31; x++)
+        for (std::int32_t x = 0; x < 31; x++)
         {
             *pI++ = static_cast<uint16_t>((y + 0) * 32 + x + 1);
             *pI++ = static_cast<uint16_t>((y + 1) * 32 + x);
@@ -517,7 +517,7 @@ RENDER::~RENDER()
     ReleaseDevice();
 }
 
-bool RENDER::InitDevice(bool windowed, uint32_t width, uint32_t height)
+bool RENDER::InitDevice(bool windowed, std::uint32_t width, std::uint32_t height)
 {
     aniVBuffer = nullptr;
     numAniVerteces = 0;
@@ -577,7 +577,7 @@ bool RENDER::InitDevice(bool windowed, uint32_t width, uint32_t height)
 
     OriginalViewPort = RHI::Viewport(0.0f, static_cast<float>(width), 0.0f, static_cast<float>(height), 0.0f, 1.0f);
 
-    for (int32_t b = 0; b < MAX_BUFFERS; b++)
+    for (std::int32_t b = 0; b < MAX_BUFFERS; b++)
     {
         VertexBuffers[b].buff = nullptr;
         IndexBuffers[b].buff = nullptr;
@@ -608,14 +608,14 @@ bool RENDER::ReleaseDevice()
 {
     aniVBuffer = nullptr;
     numAniVerteces = 0;
-    for (int32_t b = 0; b < MAX_BUFFERS; b++)
+    for (std::int32_t b = 0; b < MAX_BUFFERS; b++)
     {
         VertexBuffers[b].buff = nullptr;
         IndexBuffers[b].buff = nullptr;
     }
 
     bool res = true;
-    for (int32_t t = 0; t < MAX_STEXTURES; t++)
+    for (std::int32_t t = 0; t < MAX_STEXTURES; t++)
     {
         Textures[t].tex = nullptr;
     }
@@ -776,7 +776,7 @@ void RENDER::CopyGlowToScreen()
     if (GlowIntensity > 255)
         GlowIntensity = 255;
     const uint8_t bGLOW = static_cast<uint8_t>(GlowIntensity);
-    const uint32_t dwTFactor = (bGLOW << 24) | (bGLOW << 16) | (bGLOW << 8) | bGLOW;
+    const std::uint32_t dwTFactor = (bGLOW << 24) | (bGLOW << 16) | (bGLOW << 8) | bGLOW;
 
     // Draw the GLOW screen
     textureFactorColor = dwTFactor;
@@ -835,12 +835,9 @@ void RENDER::CopyPostProcessToScreen()
     }
 }
 
-void RENDER::ClearPostProcessTexture(RHI::TextureHandle tex)
+void RENDER::ClearPostProcessTexture(RHI::TextureHandle texture)
 {
-    HRESULT hr = SetRenderTarget(tex, nullptr);
-    hr = BeginScene();
-    hr = d3d9->Clear(0, nullptr, D3DCLEAR_TARGET, 0x0, 0.0f, 0x0);
-    hr = EndScene();
+    commandList->clearColorTexture(texture.get(), RHI::TextureSubresourse(), RHI::Color(0.0f, 0.0f, 0.0f, 1.0f));
 }
 
 void RENDER::SetScreenAsRenderTarget()
@@ -897,10 +894,10 @@ bool RENDER::EndScene()
 
     if (bShowExInfo)
     {
-        uint32_t dwTotalTexSize = 0;
-        uint32_t dwTotalTexNum = 0, dwTotalVB = 0, dwTotalIB = 0, dwTotalVBSize = 0, dwTotalIBSize = 0;
+        std::uint32_t dwTotalTexSize = 0;
+        std::uint32_t dwTotalTexNum = 0, dwTotalVB = 0, dwTotalIB = 0, dwTotalVBSize = 0, dwTotalIBSize = 0;
 
-        int32_t t;
+        std::int32_t t;
         for (t = 0; t < MAX_STEXTURES; t++)
             if (Textures[t].tex != nullptr)
             {
@@ -935,7 +932,7 @@ bool RENDER::EndScene()
     if (bDropVideoConveyor && pDropConveyorVBuffer)
     {
         CVECTOR pV[3];
-        for (int32_t i = 0; i < 2; i++)
+        for (std::int32_t i = 0; i < 2; i++)
             pV[i] = CVECTOR(1e6f, 1e6f, 1e6f);
         commandList->writeBuffer(pDropConveyorVBuffer.get(), sizeof(pV), &pV[0]);
         vertexFormat = VertexFVFBits::XYZ;
@@ -965,7 +962,7 @@ bool RENDER::EndScene()
 //################################################################################
 static int totSize = 0;
 
-int32_t RENDER::TextureCreate(const char* fname)
+std::int32_t RENDER::TextureCreate(const char* fname)
 {
     // start add texture path
     if ((uintptr_t)fname == -1)
@@ -1000,7 +997,7 @@ int32_t RENDER::TextureCreate(const char* fname)
     if (!bLoadTextureEnabled)
         return -1;
 
-    for (int32_t i = 3; i >= -1; i--)
+    for (std::int32_t i = 3; i >= -1; i--)
     {
         char _fname[256];
 
@@ -1008,9 +1005,9 @@ int32_t RENDER::TextureCreate(const char* fname)
             continue;
         if (i >= 0)
         {
-            const uint32_t dwLen = strlen(fname);
+            const std::uint32_t dwLen = strlen(fname);
 
-            int32_t j;
+            std::int32_t j;
             for (j = dwLen - 1; j >= 0; j--)
                 if (fname[j] == '\\')
                     break;
@@ -1030,9 +1027,9 @@ int32_t RENDER::TextureCreate(const char* fname)
 
         std::ranges::for_each(_fname, [](char& c) { c = std::toupper(c); });
 
-        const uint32_t hf = MakeHashValue(_fname);
+        const std::uint32_t hf = MakeHashValue(_fname);
 
-        int32_t t;
+        std::int32_t t;
         for (t = 0; t < MAX_STEXTURES; t++)
             if (Textures[t].ref != 0)
                 if (Textures[t].name)
@@ -1063,9 +1060,9 @@ int32_t RENDER::TextureCreate(const char* fname)
     return -1;
 }
 
-int32_t RENDER::TextureCreate(uint32_t width, uint32_t height, uint32_t levels, uint32_t usage, RHI::Format format, RHI::MemoryPropertiesBits pool)
+std::int32_t RENDER::TextureCreate(std::uint32_t width, std::uint32_t height, std::uint32_t levels, std::uint32_t usage, RHI::Format format, RHI::MemoryPropertiesBits pool)
 {
-    int32_t t;
+    std::int32_t t;
     for (t = 0; t < MAX_STEXTURES; t++)
     {
         if (Textures[t].tex == nullptr)
@@ -1092,13 +1089,13 @@ int32_t RENDER::TextureCreate(uint32_t width, uint32_t height, uint32_t levels, 
     return t;
 }
 
-bool RENDER::TextureIncReference(int32_t texid)
+bool RENDER::TextureIncReference(std::int32_t texid)
 {
     ++Textures[texid].ref;
     return true;
 }
 
-bool RENDER::TextureLoad(int32_t t)
+bool RENDER::TextureLoad(std::int32_t t)
 {
     using namespace std::literals;
 
@@ -1118,7 +1115,7 @@ bool RENDER::TextureLoad(int32_t t)
 
     sprintf_s(fn, "%s%s%s", has_resource_prefix ? "" : "resource\\textures\\", Textures[t].name, has_tx_postfix ? "" : ".tx");
 
-    for (int32_t s = 0, d = 0; fn[d]; s++)
+    for (std::int32_t s = 0, d = 0; fn[d]; s++)
     {
         if (d > 0 && (fn[d - 1] == PATH_SEP || fn[d - 1] == WRONG_PATH_SEP) &&
             (fn[s] == PATH_SEP || fn[s] == WRONG_PATH_SEP))
@@ -1161,7 +1158,7 @@ bool RENDER::TextureLoad(int32_t t)
     }
     // Analyzing the format
     RHI::Format format = RHI::Format::UNKNOWN;
-    int32_t textureFI;
+    std::int32_t textureFI;
     for (textureFI = 0; textureFI < sizeof(textureFormats) / sizeof(SD_TEXTURE_FORMAT); textureFI++)
     {
         if (textureFormats[textureFI].txFormat == head.format)
@@ -1184,8 +1181,8 @@ bool RENDER::TextureLoad(int32_t t)
     bool isSwizzled = textureFormats[textureFI].isSwizzled;
     const char* formatTxt = textureFormats[textureFI].formatTxt;
     // Skipping mips
-    uint32_t seekposition = 0;
-    for (int32_t nTD = nTextureDegradation; nTD > 0; nTD--)
+    std::uint32_t seekposition = 0;
+    for (std::int32_t nTD = nTextureDegradation; nTD > 0; nTD--)
     {
         if (head.nmips <= 1 || head.width <= 32 || head.height <= 32)
         {
@@ -1227,7 +1224,7 @@ bool RENDER::TextureLoad(int32_t t)
             return false;
         }
         // Filling the levels
-        for (int32_t m = 0; m < head.nmips; m++)
+        for (std::int32_t m = 0; m < head.nmips; m++)
         {
             // take into account the size of the mip
             Textures[t].dwSize += head.mip_size;
@@ -1308,7 +1305,7 @@ bool RENDER::TextureLoad(int32_t t)
         {
             fio->_SetFilePointer(fileS, seekposition, std::ios::cur);
         }
-        uint32_t sz =
+        std::uint32_t sz =
             LoadCubmapSide(fileS, tex, CubemapFaces::CUBEMAP_FACE_POSITIVE_Z, head.nmips, head.mip_size, head.width, isSwizzled);
         if (sz)
         {
@@ -1429,12 +1426,12 @@ bool RENDER::TextureLoad(int32_t t)
     return true;
 }
 
-uint32_t RENDER::LoadCubmapSide(std::fstream& fileS, RHI::TextureHandle tex, CubemapFaces face,
-    uint32_t numMips, uint32_t mipSize, uint32_t size, bool isSwizzled)
+std::uint32_t RENDER::LoadCubmapSide(std::fstream& fileS, RHI::TextureHandle tex, CubemapFaces face,
+    std::uint32_t numMips, std::uint32_t mipSize, std::uint32_t size, bool isSwizzled)
 {
-    uint32_t texsize = 0;
+    std::uint32_t texsize = 0;
     // Filling the levels
-    for (uint32_t m = 0; m < numMips; m++)
+    for (std::uint32_t m = 0; m < numMips; m++)
     {
         // take into account the size of the mip
         texsize += mipSize;
@@ -1467,7 +1464,7 @@ uint32_t RENDER::LoadCubmapSide(std::fstream& fileS, RHI::TextureHandle tex, Cub
 }
 
 //################################################################################
-bool RENDER::TextureSet(uint32_t textureIndex, uint32_t textureBindingIndex, RHI::SamplerHandle sampler, RHI::DescriptorSetInfo& dsInfos)
+bool RENDER::TextureSet(std::uint32_t textureIndex, std::uint32_t textureBindingIndex, RHI::SamplerHandle sampler, RHI::DescriptorSetInfo& dsInfos)
 {
     if (textureIndex >= Textures.size())
     {
@@ -1480,7 +1477,7 @@ bool RENDER::TextureSet(uint32_t textureIndex, uint32_t textureBindingIndex, RHI
 }
 
 //################################################################################
-bool RENDER::TextureRelease(int32_t texid)
+bool RENDER::TextureRelease(std::int32_t texid)
 {
     if (texid == -1)
     {
@@ -1651,7 +1648,7 @@ bool RENDER::SetMaterial(Material& m)
     return true;
 }
 
-bool RENDER::SetLight(uint32_t dwIndex, const Light* pLight)
+bool RENDER::SetLight(std::uint32_t dwIndex, const Light* pLight)
 {
     // Set the property information for the first light.
     Light tmpLight = *pLight;
@@ -1667,7 +1664,7 @@ bool RENDER::SetLight(uint32_t dwIndex, const Light* pLight)
     return false;
 }
 
-bool RENDER::LightEnable(uint32_t dwIndex, bool bOn)
+bool RENDER::LightEnable(std::uint32_t dwIndex, bool bOn)
 {
     if(dwIndex < lights.size())
     {
@@ -1678,7 +1675,7 @@ bool RENDER::LightEnable(uint32_t dwIndex, bool bOn)
     return false;
 }
 
-bool RENDER::GetLightEnable(uint32_t dwIndex, bool* pEnable) const
+bool RENDER::GetLightEnable(std::uint32_t dwIndex, bool* pEnable) const
 {
     if(dwIndex < lights.size())
     {
@@ -1689,7 +1686,7 @@ bool RENDER::GetLightEnable(uint32_t dwIndex, bool* pEnable) const
     return false;
 }
 
-bool RENDER::GetLight(uint32_t dwIndex, Light* pLight) const
+bool RENDER::GetLight(std::uint32_t dwIndex, Light* pLight) const
 {
     if (dwIndex < lights.size())
     {
@@ -1704,12 +1701,12 @@ bool RENDER::GetLight(uint32_t dwIndex, Light* pLight) const
 }
 
 //################################################################################
-int32_t RENDER::CreateVertexBuffer(size_t size, uint32_t type, RHI::MemoryPropertiesBits memoryProperties)
+std::int32_t RENDER::CreateVertexBuffer(size_t size, std::uint32_t type, RHI::MemoryPropertiesBits memoryProperties)
 {
     if (size <= 0)
         return -1; // fix
 
-    int32_t b;
+    std::int32_t b;
     for (b = 0; b < MAX_BUFFERS; b++)
         if (VertexBuffers[b].buff == nullptr)
             break;
@@ -1729,7 +1726,7 @@ int32_t RENDER::CreateVertexBuffer(size_t size, uint32_t type, RHI::MemoryProper
     return b;
 }
 
-RHI::BufferHandle RENDER::GetVertexBuffer(int32_t id)
+RHI::BufferHandle RENDER::GetVertexBuffer(std::int32_t id)
 {
     if (id < 0 || id >= MAX_BUFFERS)
         return nullptr;
@@ -1737,9 +1734,9 @@ RHI::BufferHandle RENDER::GetVertexBuffer(int32_t id)
 }
 
 //################################################################################
-int32_t RENDER::CreateIndexBuffer(size_t size, uint32_t usage)
+std::int32_t RENDER::CreateIndexBuffer(size_t size, std::uint32_t usage)
 {
-    int32_t b;
+    std::int32_t b;
     for (b = 0; b < MAX_BUFFERS; b++)
         if (IndexBuffers[b].buff == nullptr)
             break;
@@ -1764,9 +1761,9 @@ int32_t RENDER::CreateIndexBuffer(size_t size, uint32_t usage)
 
 void RENDER::CreateInputLayout(const VertexFVFBits vertexBindingsFormat, RHI::IInputLayout* inputLayout)
 {
-    uint32_t attributeOffset = 0;
-    uint32_t location = 0;
-    uint32_t stride = 0;
+    std::uint32_t attributeOffset = 0;
+    std::uint32_t location = 0;
+    std::uint32_t stride = 0;
     std::vector<RHI::VertexInputAttributeDesc> attributes;
     if ((vertexBindingsFormat | VertexFVFBits::XYZ) != 0)
     {
@@ -1817,8 +1814,8 @@ void RENDER::CreateInputLayout(const VertexFVFBits vertexBindingsFormat, RHI::II
 
 void RENDER::MakeVertexBindings(RHI::BufferHandle vertexBuffer, const VertexFVFBits vertexBindingsFormat, std::vector<RHI::VertexBufferBinding>& vertexBufferBindings)
 {
-    uint32_t bindingSlotIndex = 0;
-    uint32_t bindingSlotOffset = 0;
+    std::uint32_t bindingSlotIndex = 0;
+    std::uint32_t bindingSlotOffset = 0;
 	if((vertexBindingsFormat | VertexFVFBits::XYZ) != 0)
 	{
         vertexBufferBindings.push_back({ vertexBuffer.get(), bindingSlotIndex, bindingSlotOffset });
@@ -1869,7 +1866,7 @@ RHI::GraphicsState RENDER::CreateGraphicsState(RHI::GraphicsPipelineHandle pipel
     return state;
 }
 
-void RENDER::DrawBuffer(RHI::PrimitiveType primitiveType, uint32_t vertexBufferIndex, int32_t iStride, size_t vertexCount,
+void RENDER::DrawBuffer(RHI::PrimitiveType primitiveType, std::uint32_t vertexBufferIndex, std::int32_t iStride, size_t vertexCount,
     size_t instanceCount, size_t startVertexLocation, const char* cBlockName)
 {
     bool bDraw = true;
@@ -1900,7 +1897,7 @@ void RENDER::DrawBuffer(RHI::PrimitiveType primitiveType, uint32_t vertexBufferI
         } while (cBlockName && cBlockName[0] && TechniqueExecuteNext());
 }
 
-void RENDER::DrawIndexedBuffer(RHI::PrimitiveType primitiveType, uint32_t vertexBufferIndex, uint32_t indexBufferIndex, size_t vertexCount, size_t instanceCount,
+void RENDER::DrawIndexedBuffer(RHI::PrimitiveType primitiveType, std::uint32_t vertexBufferIndex, std::uint32_t indexBufferIndex, size_t vertexCount, size_t instanceCount,
     size_t startIndexLocation, size_t startVertexLocation, const char* cBlockName)
 {
     bool bDraw = true;
@@ -1933,7 +1930,7 @@ void RENDER::DrawIndexedBuffer(RHI::PrimitiveType primitiveType, uint32_t vertex
         } while (cBlockName && cBlockName[0] && TechniqueExecuteNext());
 }
 
-void RENDER::DrawIndexedBufferNoVShader(RHI::PrimitiveType primitiveType, uint32_t vertexBufferIndex, uint32_t indexBufferIndex, size_t vertexCount, size_t instanceCount,
+void RENDER::DrawIndexedBufferNoVShader(RHI::PrimitiveType primitiveType, std::uint32_t vertexBufferIndex, std::uint32_t indexBufferIndex, size_t vertexCount, size_t instanceCount,
     size_t startIndexLocation, size_t startVertexLocation, const char* cBlockName)
 {
     bool bDraw = true;
@@ -1965,7 +1962,7 @@ void RENDER::DrawIndexedBufferNoVShader(RHI::PrimitiveType primitiveType, uint32
 
 // TODO: Use as dx09->DrawPrimitiveUP analog with correct vertex buffer or Model matrix
 void RENDER::DrawPrimitive(RHI::PrimitiveType primitiveType, VertexFVFBits vertexBufferFormat, size_t vertexCount, size_t instanceCount,
-    size_t startVertexLocation, RHI::BufferHandle vertexBuffer, uint32_t stride, const char* cBlockName)
+    size_t startVertexLocation, RHI::BufferHandle vertexBuffer, std::uint32_t stride, const char* cBlockName)
 {
     bool bDraw = true;
 
@@ -2026,13 +2023,13 @@ void RENDER::DrawIndexedPrimitive(RHI::PrimitiveType primitiveType, RHI::BufferH
 }
 
 //################################################################################
-void RENDER::RenderAnimation(int32_t ib, void* src, int32_t numVrts, int32_t minv, int32_t numv, int32_t startidx, int32_t numtrg,
+void RENDER::RenderAnimation(std::int32_t ib, void* src, std::int32_t numVrts, std::int32_t minv, std::int32_t numv, std::int32_t startidx, std::int32_t numtrg,
     bool isUpdateVB)
 {
     if (numVrts <= 0 || !src || ib < 0)
         return;
     vertexFormat = VertexFVFBits::XYZ | VertexFVFBits::Normal | VertexFVFBits::UV1;
-    const int32_t size = numVrts * sizeof(FVF_VERTEX);
+    const std::int32_t size = numVrts * sizeof(FVF_VERTEX);
     if (isUpdateVB || numVrts > numAniVerteces || !aniVBuffer)
     {
         // Create vertex buffer
@@ -2070,25 +2067,25 @@ void RENDER::RenderAnimation(int32_t ib, void* src, int32_t numVrts, int32_t min
 }
 
 //################################################################################
-int32_t RENDER::GetVertexBufferSize(int32_t id)
+std::int32_t RENDER::GetVertexBufferSize(std::int32_t id)
 {
     return VertexBuffers[id].size;
 }
 
 
 //################################################################################
-void RENDER::ReleaseVertexBuffer(int32_t id)
+void RENDER::ReleaseVertexBuffer(std::int32_t id)
 {
     VertexBuffers[id].buff = nullptr;
 }
 
 //################################################################################
-void RENDER::ReleaseIndexBuffer(int32_t id)
+void RENDER::ReleaseIndexBuffer(std::int32_t id)
 {
     IndexBuffers[id].buff = nullptr;
 }
 
-void RENDER::SetTransform(int32_t type, const CMatrix& mtx)
+void RENDER::SetTransform(std::int32_t type, const CMatrix& mtx)
 {
     CMatrix m = mtx;
     if (type == TSType::TS_VIEW)
@@ -2118,7 +2115,7 @@ void RENDER::SetTransform(int32_t type, const CMatrix& mtx)
     }
 }
 
-void RENDER::GetTransform(int32_t type, CMatrix* mtx)
+void RENDER::GetTransform(std::int32_t type, CMatrix* mtx)
 {
     if (type == TSType::TS_VIEW)
     {
@@ -2151,7 +2148,7 @@ void RENDER::LostRender()
     pOriginalScreenSurface = nullptr;
     pOriginalDepthTexture = nullptr;
     rectsVBuffer = nullptr;
-    for (int32_t b = 0; b < MAX_BUFFERS; b++)
+    for (std::int32_t b = 0; b < MAX_BUFFERS; b++)
     {
         if (VertexBuffers[b].buff)
         {
@@ -2212,7 +2209,7 @@ void RENDER::RestoreRender()
 		.setMemoryProperties(RHI::MemoryPropertiesBits::DEVICE_LOCAL_BIT);// RHI::MemoryPropertiesBits::HOST_VISIBLE_BIT | RHI::MemoryPropertiesBits::HOST_COHERENT_BIT
     rectsVBuffer = device->createBuffer(rectsVBufferDesc);
 
-    for (int32_t b = 0; b < MAX_BUFFERS; b++)
+    for (std::int32_t b = 0; b < MAX_BUFFERS; b++)
     {
         if (VertexBuffers[b].buff)
         {
@@ -2223,9 +2220,9 @@ void RENDER::RestoreRender()
             CHECKERR(CreateIndexBuffer(IndexBuffers[b].size, IndexBuffers[b].dwUsage));
         }
     }
-    int32_t num_stages;
+    std::int32_t num_stages;
     num_stages = 8;
-    for (int32_t s = 0; s < num_stages; s++)
+    for (std::int32_t s = 0; s < num_stages; s++)
     {
         // texture operation
         // TODO: remake texture operations in shader
@@ -2298,7 +2295,7 @@ bool RENDER::ResetDevice()
     return true;
 }
 
-void RENDER::SetGLOWParams(float _fBlurBrushSize, int32_t _GlowIntensity, int32_t _GlowPasses)
+void RENDER::SetGLOWParams(float _fBlurBrushSize, std::int32_t _GlowIntensity, std::int32_t _GlowPasses)
 {
     fBlurSize = _fBlurBrushSize;
     GlowIntensity = _GlowIntensity;
@@ -2322,15 +2319,15 @@ void RENDER::RunStart()
         const auto sx = static_cast<float>(screen_size.x);
         const auto sy = static_cast<float>(screen_size.y);
 
-        const auto fDX = static_cast<float>(static_cast<int32_t>(sx * fSeaEffectSize));
-        const float fDY = static_cast<float>(static_cast<int32_t>(sy * fSeaEffectSize));
+        const auto fDX = static_cast<float>(static_cast<std::int32_t>(sx * fSeaEffectSize));
+        const float fDY = static_cast<float>(static_cast<std::int32_t>(sy * fSeaEffectSize));
 
         const float sx2 = sx + fDX * 2.0f;
         const float sy2 = sy + fDY * 2.0f;
 
-        for (int32_t y = 0; y < 32; y++)
+        for (std::int32_t y = 0; y < 32; y++)
         {
-            for (int32_t x = 0; x < 32; x++)
+            for (std::int32_t x = 0; x < 32; x++)
             {
                 SeaEffectQuadVertices[x + y * 32].vPos =
                     Vector4(sx * static_cast<float>(x) / 31.0f, sy * static_cast<float>(y) / 31.0f, 0.0f, 1.0f);
@@ -2408,7 +2405,7 @@ void RENDER::RunEnd()
     EndScene();
     if (progressTexture >= 0)
     {
-        const int32_t oldCnt = progressSafeCounter;
+        const std::int32_t oldCnt = progressSafeCounter;
         ProgressView();
         progressSafeCounter = oldCnt;
         if (progressSafeCounter >= 50)
@@ -2422,7 +2419,7 @@ void RENDER::RunEnd()
 
 char Buff_4k[4096];
 
-int32_t RENDER::Print(int32_t x, int32_t y, const char* format, ...)
+std::int32_t RENDER::Print(std::int32_t x, std::int32_t y, const char* format, ...)
 {
     // GUARD(DX9RENDER::Print)
     if (idFontCurrent < 0 || idFontCurrent >= FontList.size())
@@ -2439,7 +2436,7 @@ int32_t RENDER::Print(int32_t x, int32_t y, const char* format, ...)
     // UNGUARD
 }
 
-int32_t RENDER::Print(int32_t nFontNum, uint32_t color, int32_t x, int32_t y, const char* format, ...)
+std::int32_t RENDER::Print(std::int32_t nFontNum, std::uint32_t color, std::int32_t x, std::int32_t y, const char* format, ...)
 {
     // GUARD(DX9RENDER::Print)
     if (nFontNum < 0 || nFontNum >= FontList.size())
@@ -2452,12 +2449,12 @@ int32_t RENDER::Print(int32_t nFontNum, uint32_t color, int32_t x, int32_t y, co
     vsnprintf(Buff_4k, sizeof(Buff_4k), format, args);
     va_end(args);
 
-    const int32_t retVal = FontList[nFontNum].font->Print(static_cast<float>(x), static_cast<float>(y), Buff_4k, { .color = color }).value_or(0);
+    const std::int32_t retVal = FontList[nFontNum].font->Print(static_cast<float>(x), static_cast<float>(y), Buff_4k, { .color = color }).value_or(0);
     return retVal;
     // UNGUARD
 }
 
-int32_t RENDER::StringWidth(const char* string, int32_t nFontNum, float fScale, int32_t scrWidth)
+std::int32_t RENDER::StringWidth(const char* string, std::int32_t nFontNum, float fScale, std::int32_t scrWidth)
 {
     if (string == nullptr)
     {
@@ -2466,7 +2463,7 @@ int32_t RENDER::StringWidth(const char* string, int32_t nFontNum, float fScale, 
     return StringWidth(std::string_view(string), nFontNum, fScale, scrWidth);
 }
 
-int32_t RENDER::StringWidth(const std::string_view& string, int32_t nFontNum, float fScale, int32_t scrWidth)
+std::int32_t RENDER::StringWidth(const std::string_view& string, std::int32_t nFontNum, float fScale, std::int32_t scrWidth)
 {
     if (nFontNum < 0 || nFontNum >= FontList.size())
         return 0;
@@ -2475,22 +2472,22 @@ int32_t RENDER::StringWidth(const std::string_view& string, int32_t nFontNum, fl
         return 0;
 
 
-    const int32_t xs = screen_size.x;
+    const std::int32_t xs = screen_size.x;
     if (scrWidth == 0)
         scrWidth = xs;
     if (xs != scrWidth)
         fScale *= static_cast<float>(xs) / scrWidth;
-    const int32_t retVal = pFont->GetStringWidth(string, { .scale = fScale });
+    const std::int32_t retVal = pFont->GetStringWidth(string, { .scale = fScale });
     return retVal;
 }
 
-int32_t RENDER::CharWidth(utf8::u8_char ch, int32_t nFontNum, float fScale, int32_t scrWidth)
+std::int32_t RENDER::CharWidth(utf8::u8_char ch, std::int32_t nFontNum, float fScale, std::int32_t scrWidth)
 {
     std::string str(ch.b, ch.l);
     return StringWidth(str.c_str(), nFontNum, fScale, scrWidth);
 }
 
-int32_t RENDER::CharHeight(int32_t fontID)
+std::int32_t RENDER::CharHeight(std::int32_t fontID)
 {
     if (fontID < 0 || fontID >= FontList.size())
         return 0;
@@ -2500,8 +2497,8 @@ int32_t RENDER::CharHeight(int32_t fontID)
     return FontList[fontID].font->GetHeight();
 }
 
-int32_t RENDER::ExtPrint(int32_t nFontNum, uint32_t foreColor, uint32_t backColor, int wAlign, bool bShadow, float fScale,
-    int32_t scrWidth, int32_t scrHeight, int32_t x, int32_t y, const char* format, ...)
+std::int32_t RENDER::ExtPrint(std::int32_t nFontNum, std::uint32_t foreColor, std::uint32_t backColor, int wAlign, bool bShadow, float fScale,
+    std::int32_t scrWidth, std::int32_t scrHeight, std::int32_t x, std::int32_t y, const char* format, ...)
 {
     // GUARD(DX9RENDER::ExtPrint)
 
@@ -2517,8 +2514,8 @@ int32_t RENDER::ExtPrint(int32_t nFontNum, uint32_t foreColor, uint32_t backColo
     va_end(args);
 
     RHI::FramebufferHandle BackBuffer = m_DynamicRHI->GetFramebuffer(m_DynamicRHI->GetCurrentBackBufferIndex());
-    const int32_t xs = static_cast<int32_t>(BackBuffer->framebufferWidth);
-    const int32_t ys = static_cast<int32_t>(BackBuffer->framebufferHeight);
+    const std::int32_t xs = static_cast<std::int32_t>(BackBuffer->framebufferWidth);
+    const std::int32_t ys = static_cast<std::int32_t>(BackBuffer->framebufferHeight);
     if (scrWidth == 0)
         scrWidth = xs;
     if (scrHeight == 0)
@@ -2526,23 +2523,23 @@ int32_t RENDER::ExtPrint(int32_t nFontNum, uint32_t foreColor, uint32_t backColo
     if (xs != scrWidth)
     {
         const float fHorzScale = static_cast<float>(xs) / scrWidth;
-        x = static_cast<int32_t>(x * fHorzScale);
+        x = static_cast<std::int32_t>(x * fHorzScale);
         fScale *= fHorzScale;
     }
     if (ys != scrHeight)
-        y = static_cast<int32_t>(y * (static_cast<float>(ys) / scrHeight));
+        y = static_cast<std::int32_t>(y * (static_cast<float>(ys) / scrHeight));
 
     switch (wAlign)
     {
     case Align::CENTER:
-        x -= static_cast<int32_t>(pFont->GetStringWidth(Buff_4k, { .scale = fScale }) / 2);
+        x -= static_cast<std::int32_t>(pFont->GetStringWidth(Buff_4k, { .scale = fScale }) / 2);
         break;
     case Align::RIGHT:
-        x -= static_cast<int32_t>(pFont->GetStringWidth(Buff_4k, { .scale = fScale }));
+        x -= static_cast<std::int32_t>(pFont->GetStringWidth(Buff_4k, { .scale = fScale }));
         break;
     }
 
-    const int32_t retVal = pFont->Print(static_cast<float>(x), static_cast<float>(y), Buff_4k,
+    const std::int32_t retVal = pFont->Print(static_cast<float>(x), static_cast<float>(y), Buff_4k,
         {
             .scale = fScale,
             .color = foreColor,
@@ -2552,13 +2549,13 @@ int32_t RENDER::ExtPrint(int32_t nFontNum, uint32_t foreColor, uint32_t backColo
     // UNGUARD
 }
 
-int32_t RENDER::LoadFont(const std::string_view& fontName)
+std::int32_t RENDER::LoadFont(const std::string_view& fontName)
 {
     const auto sDup = std::string(fontName);
 
-    const uint32_t hashVal = MakeHashValue(fontName);
+    const std::uint32_t hashVal = MakeHashValue(fontName);
 
-    int32_t i;
+    std::int32_t i;
 
     auto existing_font = std::find_if(std::begin(FontList), std::end(FontList), [&](FONTEntity& font) {
         return font.hash == hashVal && storm::iEquals(font.name, fontName);
@@ -2608,7 +2605,7 @@ bool RENDER::UnloadFont(const char* fontName)
     }
     std::ranges::for_each(sDup, [](char& c) { c = std::toupper(c); });
     fontName = sDup;
-    const uint32_t hashVal = MakeHashValue(fontName);
+    const std::uint32_t hashVal = MakeHashValue(fontName);
 
     for (int i = 0; i < FontList.size(); i++)
         if (FontList[i].hash == hashVal && storm::iEquals(FontList[i].name, fontName))
@@ -2617,7 +2614,7 @@ bool RENDER::UnloadFont(const char* fontName)
     return false;
 }
 
-bool RENDER::UnloadFont(int32_t fontID)
+bool RENDER::UnloadFont(std::int32_t fontID)
 {
     if (fontID < 0 || fontID >= FontList.size())
         return false;
@@ -2638,7 +2635,7 @@ bool RENDER::UnloadFont(int32_t fontID)
     return true;
 }
 
-bool RENDER::IncRefCounter(int32_t fontID)
+bool RENDER::IncRefCounter(std::int32_t fontID)
 {
     if (fontID < 0 || fontID >= FontList.size())
         return false;
@@ -2662,7 +2659,7 @@ bool RENDER::SetCurFont(const char* fontName)
     }
     std::ranges::for_each(sDup, [](char& c) { c = std::toupper(c); });
     fontName = sDup;
-    const uint32_t hashVal = MakeHashValue(fontName);
+    const std::uint32_t hashVal = MakeHashValue(fontName);
 
     for (int i = 0; i < FontList.size(); i++)
         if (FontList[i].hash == hashVal)
@@ -2674,7 +2671,7 @@ bool RENDER::SetCurFont(const char* fontName)
     return false;
 }
 
-bool RENDER::SetCurFont(int32_t fontID)
+bool RENDER::SetCurFont(std::int32_t fontID)
 {
     if (fontID < 0 || fontID >= FontList.size())
         return false;
@@ -2682,7 +2679,7 @@ bool RENDER::SetCurFont(int32_t fontID)
     return true;
 }
 
-int32_t RENDER::GetCurFont()
+std::int32_t RENDER::GetCurFont()
 {
     if (idFontCurrent >= 0 && idFontCurrent < FontList.size())
         return idFontCurrent;
@@ -2789,22 +2786,22 @@ void RENDER::SetViewport(const RHI::Viewport& pViewport)
 }
 
 // TODO: make RHI analog
-//uint32_t RENDER::GetSamplerState(uint32_t Sampler, D3DSAMPLERSTATETYPE Type, uint32_t* pValue)
+//std::uint32_t RENDER::GetSamplerState(std::uint32_t Sampler, D3DSAMPLERSTATETYPE Type, std::uint32_t* pValue)
 //{
 //    return CHECKERR(d3d9->GetSamplerState(Sampler, Type, (DWORD*)pValue));
 //}
 //
-//uint32_t RENDER::SetSamplerState(uint32_t Sampler, D3DSAMPLERSTATETYPE Type, uint32_t Value)
+//std::uint32_t RENDER::SetSamplerState(std::uint32_t Sampler, D3DSAMPLERSTATETYPE Type, std::uint32_t Value)
 //{
 //    return CHECKERR(d3d9->SetSamplerState(Sampler, Type, Value));
 //}
 //
-//uint32_t RENDER::SetTextureStageState(uint32_t Stage, uint32_t Type, uint32_t Value)
+//std::uint32_t RENDER::SetTextureStageState(std::uint32_t Stage, std::uint32_t Type, std::uint32_t Value)
 //{
 //    return CHECKERR(d3d9->SetTextureStageState(Stage, static_cast<D3DTEXTURESTAGESTATETYPE>(Type), Value));
 //}
 //
-//uint32_t RENDER::GetTextureStageState(uint32_t Stage, uint32_t Type, uint32_t* pValue)
+//std::uint32_t RENDER::GetTextureStageState(std::uint32_t Stage, std::uint32_t Type, std::uint32_t* pValue)
 //{
 //    return CHECKERR(d3d9->GetTextureStageState(Stage, static_cast<D3DTEXTURESTAGESTATETYPE>(Type), (DWORD*)pValue));
 //}
@@ -2967,8 +2964,8 @@ bool RENDER::TechniqueExecuteNext()
 #endif
 }
 
-void RENDER::DrawRects(RS_RECT* pRSR, uint32_t dwRectsNum, const char* cBlockName, uint32_t dwSubTexturesX,
-    uint32_t dwSubTexturesY, float fScaleX, float fScaleY)
+void RENDER::DrawRects(RS_RECT* pRSR, std::uint32_t dwRectsNum, const char* cBlockName, std::uint32_t dwSubTexturesX,
+    std::uint32_t dwSubTexturesY, float fScaleX, float fScaleY)
 {
     if (!pRSR || dwRectsNum == 0 || !rectsVBuffer)
         return;
@@ -3007,10 +3004,10 @@ void RENDER::DrawRects(RS_RECT* pRSR, uint32_t dwRectsNum, const char* cBlockNam
     mView = IMatrix;
     mWorld = IMatrix;
 
-    for (uint32_t cnt = 0; cnt < dwRectsNum;)
+    for (std::uint32_t cnt = 0; cnt < dwRectsNum;)
     {
         // Number of rectangles to draw at a time
-        uint32_t drawCount = dwRectsNum - cnt;
+        std::uint32_t drawCount = dwRectsNum - cnt;
         if (drawCount > rectsVBuffer_SizeInRects)
             drawCount = rectsVBuffer_SizeInRects;
         // Buffer
@@ -3018,7 +3015,7 @@ void RENDER::DrawRects(RS_RECT* pRSR, uint32_t dwRectsNum, const char* cBlockNam
         if (!rectData)
             return;
         // Filling the buffer
-        for (uint32_t i = 0; i < drawCount && cnt < dwRectsNum; i++)
+        for (std::uint32_t i = 0; i < drawCount && cnt < dwRectsNum; i++)
         {
             // Local array of a particle
             RECT_VERTEX* buffer = &rectData[i * 6];
@@ -3028,7 +3025,7 @@ void RENDER::DrawRects(RS_RECT* pRSR, uint32_t dwRectsNum, const char* cBlockNam
             const float sizey = rect.fSize * fScaleY;
             const float sn = sinf(rect.fAngle);
             const float cs = cosf(rect.fAngle);
-            const int32_t color = rect.dwColor;
+            const std::int32_t color = rect.dwColor;
             float u1, v1, u2, v2;
             if (!bUseSubTextures)
             {
@@ -3091,14 +3088,14 @@ void RENDER::DrawRects(RS_RECT* pRSR, uint32_t dwRectsNum, const char* cBlockNam
     mWorld = oldWorldMatrix;
 }
 
-void RENDER::DrawSprites(RS_SPRITE* pRSS, uint32_t dwSpritesNum, const char* cBlockName)
+void RENDER::DrawSprites(RS_SPRITE* pRSS, std::uint32_t dwSpritesNum, const char* cBlockName)
 {
-    uint32_t i;
+    std::uint32_t i;
     if (dwSpritesNum == 0)
         return;
 
     auto* pIndices = new uint16_t[dwSpritesNum * 6];
-    const uint32_t indicesArraySize = dwSpritesNum * 6 * sizeof(uint16_t);
+    const std::uint32_t indicesArraySize = dwSpritesNum * 6 * sizeof(uint16_t);
 
     for (i = 0; i < dwSpritesNum; i++)
     {
@@ -3141,7 +3138,7 @@ void RENDER::DrawSprites(RS_SPRITE* pRSS, uint32_t dwSpritesNum, const char* cBl
     delete[] pIndices;
 }
 
-void RENDER::DrawLines(RS_LINE* pRSL, uint32_t dwLinesNum, const char* cBlockName)
+void RENDER::DrawLines(RS_LINE* pRSL, std::uint32_t dwLinesNum, const char* cBlockName)
 {
     if (!pRSL || dwLinesNum == 0)
         return;
@@ -3208,7 +3205,7 @@ RHI::BufferHandle RENDER::CreateVertexBufferAndUpload(size_t vertexBufferSize, c
     return vertexBuffer;
 }
 
-int32_t RENDER::Release(IUnknown* pObject)
+std::int32_t RENDER::Release(IUnknown* pObject)
 {
     if (pObject)
     {
@@ -3220,38 +3217,38 @@ int32_t RENDER::Release(IUnknown* pObject)
     return 0;
 }
 
-int32_t RENDER::GetRenderTarget(RHI::TextureHandle pRenderTarget)
+std::int32_t RENDER::GetRenderTarget(RHI::TextureHandle pRenderTarget)
 {
     pRenderTarget = currentRenderTarget.pRenderTarget;
     return 0;
 }
 
-int32_t RENDER::GetDepthStencilSurface(RHI::TextureHandle pZStencilSurface)
+std::int32_t RENDER::GetDepthStencilSurface(RHI::TextureHandle pZStencilSurface)
 {
     pZStencilSurface = currentRenderTarget.pDepthSurface;
     return 0;
 }
 
-int32_t RENDER::GetCubeMapSurface(RHI::TextureHandle pCubeTexture, CubemapFaces FaceType, uint32_t Level,
+std::int32_t RENDER::GetCubeMapSurface(RHI::TextureHandle pCubeTexture, CubemapFaces FaceType, std::uint32_t Level,
     RHI::TextureHandle pCubeMapSurface)
 {
     return ppCubeTexture->GetCubeMapSurface(FaceType, Level, ppCubeMapSurface);
 }
 
-int32_t RENDER::SetRenderTarget(RHI::TextureHandle pRenderTarget, RHI::TextureHandle pNewZStencil)
+std::int32_t RENDER::SetRenderTarget(RHI::TextureHandle pRenderTarget, RHI::TextureHandle pNewZStencil)
 {
     currentRenderTarget.pRenderTarget = pRenderTarget;
     currentRenderTarget.pDepthSurface = pNewZStencil;
     return 0;
 }
 
-int32_t RENDER::Clear(uint32_t Count, const D3DRECT* pRects, uint32_t Flags, Color Color, float Z,
-    uint32_t Stencil)
+std::int32_t RENDER::Clear(std::uint32_t Count, const D3DRECT* pRects, std::uint32_t Flags, Color Color, float Z,
+    std::uint32_t Stencil)
 {
     return CHECKERR(d3d9->Clear(Count, pRects, Flags, Color, Z, Stencil));
 }
 
-int32_t RENDER::CreateTexture(uint32_t Width, uint32_t Height, uint32_t Levels, uint32_t Usage, RHI::Format Format, RHI::MemoryPropertiesBits Pool,
+std::int32_t RENDER::CreateTexture(std::uint32_t Width, std::uint32_t Height, std::uint32_t Levels, std::uint32_t Usage, RHI::Format Format, RHI::MemoryPropertiesBits Pool,
     RHI::TextureHandle pTexture)
 {
     RHI::TextureDesc desc = {};
@@ -3265,7 +3262,7 @@ int32_t RENDER::CreateTexture(uint32_t Width, uint32_t Height, uint32_t Levels, 
     return 0;
 }
 
-int32_t RENDER::CreateCubeTexture(uint32_t EdgeLength, uint32_t Levels, uint32_t Usage, RHI::Format Format, RHI::MemoryPropertiesBits Pool,
+std::int32_t RENDER::CreateCubeTexture(std::uint32_t EdgeLength, std::uint32_t Levels, std::uint32_t Usage, RHI::Format Format, RHI::MemoryPropertiesBits Pool,
     RHI::TextureHandle pCubeTexture)
 {
     RHI::TextureDesc desc = {};
@@ -3280,7 +3277,7 @@ int32_t RENDER::CreateCubeTexture(uint32_t EdgeLength, uint32_t Levels, uint32_t
     return 0;
 }
 
-int32_t RENDER::CreateOffscreenPlainSurface(uint32_t Width, uint32_t Height, RHI::Format Format, RHI::TextureHandle pSurface)
+std::int32_t RENDER::CreateOffscreenPlainSurface(std::uint32_t Width, std::uint32_t Height, RHI::Format Format, RHI::TextureHandle pSurface)
 {
     RHI::TextureDesc desc = {};
     desc.setWidth(Width)
@@ -3296,7 +3293,7 @@ int32_t RENDER::CreateOffscreenPlainSurface(uint32_t Width, uint32_t Height, RHI
     return 0;
 }
 
-uint32_t RENDER::CreateDepthStencilSurface(uint32_t Width, uint32_t Height, RHI::Format Format, uint32_t msaaSamples,
+std::uint32_t RENDER::CreateDepthStencilSurface(std::uint32_t Width, std::uint32_t Height, RHI::Format Format, std::uint32_t msaaSamples,
     RHI::TextureHandle pSurface)
 {
     RHI::TextureDesc desc{};
@@ -3317,7 +3314,7 @@ ID3DXEffect* RENDER::GetEffectPointer(const char* techniqueName)
 }
 #endif
 
-int32_t RENDER::SetTexture(RHI::TextureHandle pTexture, RHI::SamplerHandle sampler, uint32_t textureBindingIndex, RHI::DescriptorSetInfo& dsInfos)
+std::int32_t RENDER::SetTexture(RHI::TextureHandle pTexture, RHI::SamplerHandle sampler, std::uint32_t textureBindingIndex, RHI::DescriptorSetInfo& dsInfos)
 {
     RHI::TextureAttachment textureAttachment = {};
     textureAttachment
@@ -3335,25 +3332,25 @@ int32_t RENDER::SetTexture(RHI::TextureHandle pTexture, RHI::SamplerHandle sampl
     }
 }
 
-int32_t RENDER::GetLevelDesc(RHI::TextureHandle pTexture, uint32_t Level, D3DSURFACE_DESC* pDesc)
+std::int32_t RENDER::GetLevelDesc(RHI::TextureHandle pTexture, std::uint32_t Level, D3DSURFACE_DESC* pDesc)
 {
     return CHECKERR(pTexture->GetLevelDesc(Level, pDesc));
 }
 
-int32_t RENDER::GetLevelDesc(RHI::TextureHandle pCubeTexture, uint32_t Level, D3DSURFACE_DESC* pDesc)
+std::int32_t RENDER::GetLevelDesc(RHI::TextureHandle pCubeTexture, std::uint32_t Level, D3DSURFACE_DESC* pDesc)
 {
     return CHECKERR(pCubeTexture->GetLevelDesc(Level, pDesc));
 }
 
 // TODO: use RHI updateTextureImage() instead rect lock/unlock or create analog for it 
 //HRESULT RENDER::LockRect(IDirect3DCubeTexture9* ppCubeTexture, D3DCUBEMAP_FACES FaceType, UINT Level,
-//    D3DLOCKED_RECT* pLockedRect, const RECT* pRect, uint32_t Flags)
+//    D3DLOCKED_RECT* pLockedRect, const RECT* pRect, std::uint32_t Flags)
 //{
 //    return CHECKERR(ppCubeTexture->LockRect(FaceType, Level, pLockedRect, pRect, Flags));
 //}
 //
 //HRESULT RENDER::LockRect(IDirect3DTexture9* ppTexture, UINT Level, D3DLOCKED_RECT* pLockedRect, const RECT* pRect,
-//    uint32_t Flags)
+//    std::uint32_t Flags)
 //{
 //    return CHECKERR(ppTexture->LockRect(Level, pLockedRect, pRect, Flags));
 //}
@@ -3368,24 +3365,24 @@ int32_t RENDER::GetLevelDesc(RHI::TextureHandle pCubeTexture, uint32_t Level, D3
 //    return CHECKERR(pTexture->UnlockRect(Level));
 //}
 
-int32_t RENDER::GetSurfaceLevel(RHI::TextureHandle pTexture, uint32_t Level, IDirect3DSurface9** ppSurfaceLevel)
+std::int32_t RENDER::GetSurfaceLevel(RHI::TextureHandle pTexture, std::uint32_t Level, IDirect3DSurface9** ppSurfaceLevel)
 {
     return CHECKERR(pTexture->GetSurfaceLevel(Level, ppSurfaceLevel));
 }
 
-int32_t RENDER::UpdateSurface(RHI::TextureHandle pSourceSurface, RHI::TextureHandle pDestinationSurface)
+std::int32_t RENDER::UpdateSurface(RHI::TextureHandle pSourceSurface, RHI::TextureHandle pDestinationSurface)
 {
     commandList->copyTexture(pSourceSurface.get(), RHI::TextureSubresourse{}, pDestinationSurface.get(), RHI::TextureSubresourse{});
     return 0;
 }
 
-int32_t RENDER::StretchRect(RHI::TextureHandle pSourceSurface, RHI::TextureHandle pDestinationSurface)
+std::int32_t RENDER::StretchRect(RHI::TextureHandle pSourceSurface, RHI::TextureHandle pDestinationSurface)
 {
     commandList->resolveTexture(pSourceSurface.get(), RHI::TextureSubresourse{}, pDestinationSurface.get(), RHI::TextureSubresourse{});
     return 0;
 }
 
-int32_t RENDER::GetRenderTargetData(RHI::TextureHandle pRenderTarget, RHI::TextureHandle pDestSurface)
+std::int32_t RENDER::GetRenderTargetData(RHI::TextureHandle pRenderTarget, RHI::TextureHandle pDestSurface)
 {
     const RHI::TextureDesc& RTDesc = pRenderTarget->getDesc();
 
@@ -3422,7 +3419,7 @@ CVideoTexture* RENDER::GetVideoTexture(const char* sVideoName)
     VideoTextureEntity* pVTLcur = pVTL;
 
     // check already loaded
-    const uint32_t newHash = MakeHashValue(sVideoName);
+    const std::uint32_t newHash = MakeHashValue(sVideoName);
     while (pVTLcur != nullptr)
     {
         if (pVTLcur->hash == newHash && storm::iEquals(pVTLcur->name, sVideoName))
@@ -3527,7 +3524,7 @@ void RENDER::PlayToTexture()
     }
 }
 
-int32_t RENDER::ImageBlt(int32_t TextureID, Rect* pDstRect, Rect* pSrcRect)
+std::int32_t RENDER::ImageBlt(std::int32_t TextureID, Rect* pDstRect, Rect* pSrcRect)
 {
     struct F3DVERTEX
     {
@@ -3536,7 +3533,7 @@ int32_t RENDER::ImageBlt(int32_t TextureID, Rect* pDstRect, Rect* pSrcRect)
     };
     Rect dr;
     F3DVERTEX v[6];
-    int32_t res;
+    std::int32_t res;
 
     if (pDstRect)
     {
@@ -3550,7 +3547,7 @@ int32_t RENDER::ImageBlt(int32_t TextureID, Rect* pDstRect, Rect* pSrcRect)
         dr.bottom = screen_size.y - 1;
     }
 
-    for (uint32_t n = 0; n < 6; n++)
+    for (std::uint32_t n = 0; n < 6; n++)
     {
         v[n].rhw = 1.0f;
         v[n].z = 0.5f;
@@ -3604,11 +3601,11 @@ int32_t RENDER::ImageBlt(int32_t TextureID, Rect* pDstRect, Rect* pSrcRect)
     return res;
 }
 
-int32_t RENDER::ImageBlt(const char* pName, Rect* pDstRect, Rect* pSrcRect)
+std::int32_t RENDER::ImageBlt(const char* pName, Rect* pDstRect, Rect* pSrcRect)
 {
-    int32_t TextureID;
+    std::int32_t TextureID;
     TextureID = TextureCreate(pName);
-    const int32_t res = ImageBlt(TextureID, pDstRect, pSrcRect);
+    const std::int32_t res = ImageBlt(TextureID, pDstRect, pSrcRect);
     TextureRelease(TextureID);
     SetProgressImage(pName);
     return res;
@@ -3622,7 +3619,7 @@ void RENDER::SetProgressImage(const char* image)
             progressImage[0] = 0;
         return;
     }
-    const int32_t s = strlen(image) + 1;
+    const std::int32_t s = strlen(image) + 1;
     if (s > progressImageSize)
     {
         progressImageSize = s;
@@ -3640,7 +3637,7 @@ void RENDER::SetProgressBackImage(const char* image)
             progressBackImage[0] = 0;
         return;
     }
-    const int32_t s = strlen(image) + 1;
+    const std::int32_t s = strlen(image) + 1;
     if (s > progressBackImageSize)
     {
         progressBackImageSize = s;
@@ -3658,7 +3655,7 @@ void RENDER::SetTipsImage(const char* image)
             progressTipsImage[0] = 0;
         return;
     }
-    const int32_t s = strlen(image) + 1;
+    const std::int32_t s = strlen(image) + 1;
     if (s > progressTipsImageSize)
     {
         progressTipsImageSize = s;
@@ -3681,7 +3678,7 @@ void RENDER::StartProgressView()
         // Loading the texture
         loadFrame = 0;
         isInPViewProcess = true;
-        const int32_t t = TextureCreate("Loading\\progress.tga");
+        const std::int32_t t = TextureCreate("Loading\\progress.tga");
         isInPViewProcess = false;
         if (t < 0)
         {
@@ -3741,8 +3738,8 @@ void RENDER::ProgressView()
     if (isInPViewProcess)
         return;
     // Analyzing time
-    const uint32_t time = SDL_GetTicks();
-    if (abs(static_cast<int32_t>(progressUpdateTime - time)) < 50)
+    const std::uint32_t time = SDL_GetTicks();
+    if (abs(static_cast<std::int32_t>(progressUpdateTime - time)) < 50)
         return;
     progressUpdateTime = time;
     isInPViewProcess = true;
@@ -3753,10 +3750,10 @@ void RENDER::ProgressView()
     struct LoadVertex
     {
         float x, y, z, rhw;
-        uint32_t color;
+        std::uint32_t color;
         float u, v;
     } v[4];
-    uint32_t i;
+    std::uint32_t i;
     for (i = 0; i < 4; i++)
     {
         v[i].z = 0.5;
@@ -3861,11 +3858,11 @@ void RENDER::ProgressView()
     v[3].y = pos.y + size.y + 0.5f;
     v[3].y = pos.y + size.y + 0.5f;
     // Frame grid size
-    int32_t sizeX = progressFramesCountX;
-    int32_t sizeY = progressFramesCountY;
+    std::int32_t sizeX = progressFramesCountX;
+    std::int32_t sizeY = progressFramesCountY;
     // Position of the current frame
-    int32_t fx = loadFrame % sizeX;
-    int32_t fy = loadFrame / sizeY;
+    std::int32_t fx = loadFrame % sizeX;
+    std::int32_t fy = loadFrame / sizeY;
     v[0].u = fx / float(sizeX);
     v[0].v = fy / float(sizeY);
     v[1].u = (fx + 1.0f) / float(sizeX);
@@ -3914,7 +3911,7 @@ void RENDER::EndProgressView()
 void RENDER::SetColorParameters(float fGamma, float fBrightness, float fContrast)
 {
     uint16_t rgb[256];
-    for (uint32_t i = 0; i < 256; i++)
+    for (std::uint32_t i = 0; i < 256; i++)
     {
         float fRamp = std::clamp(fContrast * 255.0f * 256.0f * powf(static_cast<float>(i / 255.0f), 1.0f / fGamma) +
             fBrightness * 256.0f,
@@ -3924,11 +3921,11 @@ void RENDER::SetColorParameters(float fGamma, float fBrightness, float fContrast
     core.GetWindow()->SetGamma(rgb, rgb, rgb);
 }
 
-void RENDER::MakeDrawVector(RS_LINE* pLines, uint32_t dwNumSubLines, const CMatrix& mMatrix, CVECTOR vUp, CVECTOR v1,
-    CVECTOR v2, float fScale, uint32_t dwColor)
+void RENDER::MakeDrawVector(RS_LINE* pLines, std::uint32_t dwNumSubLines, const CMatrix& mMatrix, CVECTOR vUp, CVECTOR v1,
+    CVECTOR v2, float fScale, std::uint32_t dwColor)
 {
-    uint32_t i;
-    uint32_t k;
+    std::uint32_t i;
+    std::uint32_t k;
 
     // for (i=0; i<dwNumSubLines * 2 + 2; i++) pLines[i].dwColor = dwColor;
     k = dwNumSubLines * 2 + 2; // boal optimization if the for loop runs the calculations every iteration
@@ -3963,7 +3960,7 @@ void RENDER::MakeDrawVector(RS_LINE* pLines, uint32_t dwNumSubLines, const CMatr
     }
 }
 
-void RENDER::DrawVector(const CVECTOR& v1, const CVECTOR& v2, uint32_t dwColor, const char* pTechniqueName)
+void RENDER::DrawVector(const CVECTOR& v1, const CVECTOR& v2, std::uint32_t dwColor, const char* pTechniqueName)
 {
     RS_LINE lines[51 * 2];
     CMatrix mView;
@@ -3984,7 +3981,7 @@ void RENDER::DrawVector(const CVECTOR& v1, const CVECTOR& v2, uint32_t dwColor, 
     SetTransform(TSType::TS_WORLD, mWorldSave);
 }
 
-void RENDER::DrawSphere(const CVECTOR& vPos, float fRadius, uint32_t dwColor)
+void RENDER::DrawSphere(const CVECTOR& vPos, float fRadius, std::uint32_t dwColor)
 {
     CMatrix m;
     m.BuildPosition(vPos.x, vPos.y, vPos.z);
@@ -3999,7 +3996,7 @@ void RENDER::DrawSphere(const CVECTOR& vPos, float fRadius, uint32_t dwColor)
 }
 
 
-void RENDER::DrawEllipsoid(const CVECTOR& vPos, float a, float b, float c, float ay, uint32_t dwColor)
+void RENDER::DrawEllipsoid(const CVECTOR& vPos, float a, float b, float c, float ay, std::uint32_t dwColor)
 {
     CMatrix trans, scale, rot;
     trans.BuildPosition(vPos.x, vPos.y, vPos.z);
@@ -4018,8 +4015,8 @@ void RENDER::SetLoadTextureEnable(bool bEnable)
     bLoadTextureEnabled = bEnable;
 }
 
-RHI::TextureHandle RENDER::CreateVolumeTexture(uint32_t Width, uint32_t Height, uint32_t Depth, uint32_t Levels,
-    uint32_t Usage, RHI::Format Format, RHI::MemoryPropertiesBits Pool)
+RHI::TextureHandle RENDER::CreateVolumeTexture(std::uint32_t Width, std::uint32_t Height, std::uint32_t Depth, std::uint32_t Levels,
+    std::uint32_t Usage, RHI::Format Format, RHI::MemoryPropertiesBits Pool)
 {
     RHI::TextureDesc desc = {};
     desc.setWidth(Width)
@@ -4061,7 +4058,7 @@ bool RENDER::PopRenderTarget()
     return true;
 }
 
-bool RENDER::SetRenderTarget(RHI::TextureHandle pCubeRenderTarget, uint32_t faceType, uint32_t mipLevel,
+bool RENDER::SetRenderTarget(RHI::TextureHandle pCubeRenderTarget, std::uint32_t faceType, std::uint32_t mipLevel,
     RHI::TextureHandle pZStencil)
 {
     currentRenderTarget.pRenderTarget = pCubeRenderTarget;
@@ -4100,7 +4097,7 @@ const CMatrix& RENDER::GetProjection() const
     return mProjection;
 }
 
-RHI::TextureHandle RENDER::GetTextureFromID(int32_t nTextureID)
+RHI::TextureHandle RENDER::GetTextureFromID(std::int32_t nTextureID)
 {
     if (nTextureID < 0)
         return nullptr;

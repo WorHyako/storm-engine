@@ -21,21 +21,21 @@ struct RS_RECT
     CVECTOR vPos;
     float fSize;
     float fAngle;
-    uint32_t dwColor;
-    uint32_t dwSubTexture;
+    std::uint32_t dwColor;
+    std::uint32_t dwSubTexture;
 };
 
 struct RS_LINE
 {
     CVECTOR vPos;
-    uint32_t dwColor;
+    std::uint32_t dwColor;
 };
 
 struct RS_SPRITE
 {
     CVECTOR vPos;
     float rhw;
-    uint32_t dwColor;
+    std::uint32_t dwColor;
     float tu, tv;
 };
 
@@ -43,7 +43,7 @@ struct RS_LINE2D
 {
     CVECTOR vPos;
     float rhw;
-    uint32_t dwColor;
+    std::uint32_t dwColor;
 };
 
 typedef enum
@@ -94,16 +94,16 @@ typedef struct {
 
 typedef struct
 {
-    uint32_t x;
-    uint32_t y;
+    std::uint32_t x;
+    std::uint32_t y;
 } Point;
 
 typedef struct
 {
-    uint32_t    left;
-    uint32_t    top;
-    uint32_t    right;
-    uint32_t    bottom;
+    std::uint32_t    left;
+    std::uint32_t    top;
+    std::uint32_t    right;
+    std::uint32_t    bottom;
 } Rect;
 
 typedef struct
@@ -154,9 +154,9 @@ struct STEXTURE
 {
     RHI::TextureHandle tex;
     char* name;
-    uint32_t hash;
-    int32_t ref;
-    uint32_t dwSize;
+    std::uint32_t hash;
+    std::int32_t ref;
+    std::uint32_t dwSize;
     bool isCubeMap;
     bool loaded;
 };
@@ -164,33 +164,33 @@ struct STEXTURE
 //-----------buffers-----------
 struct VERTEX_BUFFER
 {
-    uint32_t dwNumLocks;
-    int32_t type;
-    int32_t size;
+    std::uint32_t dwNumLocks;
+    std::int32_t type;
+    std::int32_t size;
     RHI::BufferHandle buff;
 };
 
 struct INDEX_BUFFER
 {
-    uint32_t dwNumLocks;
-    uint32_t dwUsage;
-    int32_t size;
+    std::uint32_t dwNumLocks;
+    std::uint32_t dwUsage;
+    std::int32_t size;
     RHI::BufferHandle buff;
 };
 
 struct FONTEntity
 {
     std::string name;
-    uint32_t hash;
+    std::uint32_t hash;
     std::unique_ptr<storm::VFont> font;
-    int32_t ref;
+    std::int32_t ref;
 };
 
 struct VideoTextureEntity
 {
     char* name;
-    uint32_t hash;
-    int32_t ref;
+    std::uint32_t hash;
+    std::int32_t ref;
     uint64_t videoTexture_id;
     CVideoTexture* VideoTexture;
     VideoTextureEntity* next;
@@ -251,16 +251,16 @@ struct ShadingState
 {
     bool enableLighting = false;
     Color ambientColor ;
-    uint32_t ambientMaterialSource = 1; // First color in vertex declaration
+    std::uint32_t ambientMaterialSource = 1; // First color in vertex declaration
     bool vertexColoring = true;
     bool specularHighlights = false;
     bool localViewerSpecularHighlights = false;
 };
 
 // ----- Sound statistics -----
-extern uint32_t dwSoundBuffersCount;
-extern uint32_t dwSoundBytes;
-extern uint32_t dwSoundBytesCached;
+extern std::uint32_t dwSoundBuffersCount;
+extern std::uint32_t dwSoundBytes;
+extern std::uint32_t dwSoundBytesCached;
 
 class RENDER_SCRIPT_LIBRIARY : public SCRIPT_LIBRIARY
 {
@@ -280,11 +280,11 @@ public:
     RENDER();
     ~RENDER() override;
 
-    bool InitDevice(bool windowed, uint32_t width, uint32_t height);
+    bool InitDevice(bool windowed, std::uint32_t width, std::uint32_t height);
     bool ReleaseDevice();
 
     // Render: Animation
-    void RenderAnimation(int32_t ib, void* src, int32_t numVrts, int32_t minv, int32_t numv, int32_t startidx, int32_t numtrg,
+    void RenderAnimation(std::int32_t ib, void* src, std::int32_t numVrts, std::int32_t minv, std::int32_t numv, std::int32_t startidx, std::int32_t numtrg,
         bool isUpdateVB);
 
     // Render: Return device
@@ -299,11 +299,11 @@ public:
     bool EndScene() override;
 
     // Render: Materials/Lights Section
-    bool SetLight(uint32_t dwIndex, const Light* pLight) override;
-    bool LightEnable(uint32_t dwIndex, bool bOn) override;
+    bool SetLight(std::uint32_t dwIndex, const Light* pLight) override;
+    bool LightEnable(std::uint32_t dwIndex, bool bOn) override;
     bool SetMaterial(Material& material) override;
-    bool GetLightEnable(uint32_t dwIndex, bool* pEnable) const;
-    bool GetLight(uint32_t dwIndex, Light* pLight) const;
+    bool GetLightEnable(std::uint32_t dwIndex, bool* pEnable) const;
+    bool GetLight(std::uint32_t dwIndex, Light* pLight) const;
 
     // Render: Screenshot Section
     void SaveShoot() override;
@@ -312,8 +312,8 @@ public:
     Plane* GetPlanes() override;
 
     // Render: Camera Section
-    void SetTransform(int32_t type, const CMatrix& mtx) override;
-    void GetTransform(int32_t type, CMatrix* mtx) override;
+    void SetTransform(std::int32_t type, const CMatrix& mtx) override;
+    void GetTransform(std::int32_t type, CMatrix* mtx) override;
 
     bool SetCamera(const CVECTOR& pos, const CVECTOR& ang, float perspective) override;
     bool SetCamera(const CVECTOR& pos, const CVECTOR& ang) override;
@@ -324,28 +324,28 @@ public:
     bool SetCurrentMatrix(D3DMATRIX* mtx) override;
 
     // Render: Textures Section
-    int32_t TextureCreate(const char* fname) override;
-    int32_t TextureCreate(uint32_t width, uint32_t height, uint32_t levels, uint32_t usage, RHI::Format format, RHI::MemoryPropertiesBits pool) override;
-    bool TextureSet(uint32_t textureIndex, uint32_t textureBindingIndex, RHI::SamplerHandle sampler, RHI::DescriptorSetInfo& dsInfos);
-    bool TextureRelease(int32_t texid) override;
-    bool TextureIncReference(int32_t texid) override;
+    std::int32_t TextureCreate(const char* fname) override;
+    std::int32_t TextureCreate(std::uint32_t width, std::uint32_t height, std::uint32_t levels, std::uint32_t usage, RHI::Format format, RHI::MemoryPropertiesBits pool) override;
+    bool TextureSet(std::uint32_t textureIndex, std::uint32_t textureBindingIndex, RHI::SamplerHandle sampler, RHI::DescriptorSetInfo& dsInfos);
+    bool TextureRelease(std::int32_t texid) override;
+    bool TextureIncReference(std::int32_t texid) override;
 
     // Render: Fonts Section
-    int32_t Print(int32_t x, int32_t y, const char* format, ...) override;
-    int32_t Print(int32_t nFontNum, uint32_t color, int32_t x, int32_t y, const char* format, ...) override;
-    int32_t ExtPrint(int32_t nFontNum, uint32_t foreColor, uint32_t backColor, int wAlignment, bool bShadow, float fScale,
-        int32_t scrWidth, int32_t scrHeight, int32_t x, int32_t y, const char* format, ...) override;
-    int32_t StringWidth(const char* string, int32_t nFontNum = 0, float fScale = 1.f, int32_t scrWidth = 0) override;
-    int32_t StringWidth(const std::string_view& string, int32_t nFontNum = 0, float fScale = 1.f, int32_t scrWidth = 0) override;
-    int32_t CharWidth(utf8::u8_char, int32_t nFontNum = 0, float fScale = 1.f, int32_t scrWidth = 0) override;
-    int32_t CharHeight(int32_t fontID) override;
-    int32_t LoadFont(const std::string_view& fontName) override;   // returns the number \ font id, or -1 on error
+    std::int32_t Print(std::int32_t x, std::int32_t y, const char* format, ...) override;
+    std::int32_t Print(std::int32_t nFontNum, std::uint32_t color, std::int32_t x, std::int32_t y, const char* format, ...) override;
+    std::int32_t ExtPrint(std::int32_t nFontNum, std::uint32_t foreColor, std::uint32_t backColor, int wAlignment, bool bShadow, float fScale,
+        std::int32_t scrWidth, std::int32_t scrHeight, std::int32_t x, std::int32_t y, const char* format, ...) override;
+    std::int32_t StringWidth(const char* string, std::int32_t nFontNum = 0, float fScale = 1.f, std::int32_t scrWidth = 0) override;
+    std::int32_t StringWidth(const std::string_view& string, std::int32_t nFontNum = 0, float fScale = 1.f, std::int32_t scrWidth = 0) override;
+    std::int32_t CharWidth(utf8::u8_char, std::int32_t nFontNum = 0, float fScale = 1.f, std::int32_t scrWidth = 0) override;
+    std::int32_t CharHeight(std::int32_t fontID) override;
+    std::int32_t LoadFont(const std::string_view& fontName) override;   // returns the number \ font id, or -1 on error
     bool UnloadFont(const char* fontName) override; // returns true if the font is still in use
-    bool UnloadFont(int32_t fontID) override;          // returns true if the font is still in use
-    bool IncRefCounter(int32_t fontID) override;       // increase reference counter if object is being copied
+    bool UnloadFont(std::int32_t fontID) override;          // returns true if the font is still in use
+    bool IncRefCounter(std::int32_t fontID) override;       // increase reference counter if object is being copied
     bool SetCurFont(const char* fontName) override; // returns true if the given font is installed
-    bool SetCurFont(int32_t fontID) override;          // returns true if the given font is installed
-    int32_t GetCurFont() override;
+    bool SetCurFont(std::int32_t fontID) override;          // returns true if the given font is installed
+    std::int32_t GetCurFont() override;
     char* GetFontIniFileName() override;
     bool SetFontIniFileName(const char* iniName) override;
 
@@ -354,20 +354,20 @@ public:
     bool TechniqueExecuteNext() override;
 
     // DX9Render: Draw Section
-    void DrawRects(RS_RECT* pRSR, uint32_t dwRectsNum, const char* cBlockName = nullptr, uint32_t dwSubTexturesX = 1,
-        uint32_t dwSubTexturesY = 1, float fScaleX = 1.0f, float fScaleY = 1.0f) override;
-    void DrawSprites(RS_SPRITE* pRSS, uint32_t dwSpritesNum, const char* cBlockName = nullptr) override;
-    void DrawLines(RS_LINE* pRSL, uint32_t dwLinesNum, const char* cBlockName = nullptr) override;
+    void DrawRects(RS_RECT* pRSR, std::uint32_t dwRectsNum, const char* cBlockName = nullptr, std::uint32_t dwSubTexturesX = 1,
+        std::uint32_t dwSubTexturesY = 1, float fScaleX = 1.0f, float fScaleY = 1.0f) override;
+    void DrawSprites(RS_SPRITE* pRSS, std::uint32_t dwSpritesNum, const char* cBlockName = nullptr) override;
+    void DrawLines(RS_LINE* pRSL, std::uint32_t dwLinesNum, const char* cBlockName = nullptr) override;
     void DrawLines2D(RS_LINE2D* pRSL2D, size_t dwLinesNum, const char* cBlockName = nullptr) override;
 
-    void DrawBuffer(RHI::PrimitiveType primitiveType, uint32_t vertexBufferIndex, int32_t iStride, size_t vertexCount,
+    void DrawBuffer(RHI::PrimitiveType primitiveType, std::uint32_t vertexBufferIndex, std::int32_t iStride, size_t vertexCount,
         size_t instanceCount, size_t startVertexLocation, const char* cBlockName = nullptr) override;
-    void DrawIndexedBuffer(RHI::PrimitiveType primitiveType, uint32_t vertexBufferIndex, uint32_t indexBufferIndex, size_t vertexCount, size_t instanceCount,
+    void DrawIndexedBuffer(RHI::PrimitiveType primitiveType, std::uint32_t vertexBufferIndex, std::uint32_t indexBufferIndex, size_t vertexCount, size_t instanceCount,
         size_t startIndexLocation, size_t startVertexLocation, const char* cBlockName = nullptr) override;
-    void DrawIndexedBufferNoVShader(RHI::PrimitiveType primitiveType, uint32_t vertexBufferIndex, uint32_t indexBufferIndex, size_t vertexCount, size_t instanceCount,
+    void DrawIndexedBufferNoVShader(RHI::PrimitiveType primitiveType, std::uint32_t vertexBufferIndex, std::uint32_t indexBufferIndex, size_t vertexCount, size_t instanceCount,
         size_t startIndexLocation, size_t startVertexLocation, const char* cBlockName = nullptr) override;
     void DrawPrimitive(RHI::PrimitiveType primitiveType, VertexFVFBits vertexBufferFormat, size_t vertexCount, size_t instanceCount,
-        size_t startVertexLocation, RHI::BufferHandle vertexBuffer, uint32_t stride, const char* cBlockName = nullptr)
+        size_t startVertexLocation, RHI::BufferHandle vertexBuffer, std::uint32_t stride, const char* cBlockName = nullptr)
     void DrawIndexedPrimitive(RHI::PrimitiveType primitiveType, RHI::BufferHandle vertexBuffer, VertexFVFBits vertexDataFormat,
         RHI::BufferHandle indexBuffer, RHI::Format indexDataFormat, size_t vertexCount, size_t instanceCount,
         size_t startIndexLocation, size_t startVertexLocation, const char* cBlockName = nullptr) override;
@@ -378,19 +378,19 @@ public:
     void ReleaseVideoTexture(CVideoTexture* pVTexture) override;
 
     // Render: Vertex/Index Buffers Section
-    int32_t CreateVertexBuffer(size_t size, uint32_t type, RHI::MemoryPropertiesBits memoryProperties = RHI::MemoryPropertiesBits::DEVICE_LOCAL_BIT) override;
-    int32_t CreateIndexBuffer(size_t size, uint32_t usage) override;
+    std::int32_t CreateVertexBuffer(size_t size, std::uint32_t type, RHI::MemoryPropertiesBits memoryProperties = RHI::MemoryPropertiesBits::DEVICE_LOCAL_BIT) override;
+    std::int32_t CreateIndexBuffer(size_t size, std::uint32_t usage) override;
 
-    RHI::BufferHandle GetVertexBuffer(int32_t id);
-    int32_t GetVertexBufferSize(int32_t id) override;
-    void ReleaseVertexBuffer(int32_t id) override;
-    void ReleaseIndexBuffer(int32_t id) override;
+    RHI::BufferHandle GetVertexBuffer(std::int32_t id);
+    std::int32_t GetVertexBufferSize(std::int32_t id) override;
+    void ReleaseVertexBuffer(std::int32_t id) override;
+    void ReleaseIndexBuffer(std::int32_t id) override;
 
     // Render: Render/Texture States Section
-    /*uint32_t GetSamplerState(uint32_t Sampler, D3DSAMPLERSTATETYPE Type, uint32_t* pValue);
-    uint32_t SetSamplerState(uint32_t Sampler, D3DSAMPLERSTATETYPE Type, uint32_t Value);
-    uint32_t SetTextureStageState(uint32_t Stage, uint32_t Type, uint32_t Value);
-    uint32_t GetTextureStageState(uint32_t Stage, uint32_t Type, uint32_t* pValue);*/
+    /*std::uint32_t GetSamplerState(std::uint32_t Sampler, D3DSAMPLERSTATETYPE Type, std::uint32_t* pValue);
+    std::uint32_t SetSamplerState(std::uint32_t Sampler, D3DSAMPLERSTATETYPE Type, std::uint32_t Value);
+    std::uint32_t SetTextureStageState(std::uint32_t Stage, std::uint32_t Type, std::uint32_t Value);
+    std::uint32_t GetTextureStageState(std::uint32_t Stage, std::uint32_t Type, std::uint32_t* pValue);*/
 
     // aspect ratio section
     float GetHeightDeformator() const
@@ -413,30 +413,30 @@ public:
     RHI::DeviceParams& GetDeviceParams() const;
 
     // D3D
-    int32_t Release(IUnknown* pSurface) override;
+    std::int32_t Release(IUnknown* pSurface) override;
 
     // Vertex/Index Buffers Section
     RHI::BufferHandle CreateVertexBufferAndUpload(size_t vertexBufferSize, const void* pVertexData);
 
     // D3D Textures/Surfaces Section
-    int32_t GetDepthStencilSurface(RHI::TextureHandle pZStencilSurface) override;
-    int32_t GetCubeMapSurface(RHI::TextureHandle pCubeTexture, CubemapFaces FaceType, uint32_t Level,
+    std::int32_t GetDepthStencilSurface(RHI::TextureHandle pZStencilSurface) override;
+    std::int32_t GetCubeMapSurface(RHI::TextureHandle pCubeTexture, CubemapFaces FaceType, std::uint32_t Level,
         RHI::TextureHandle pCubeMapSurface) override;
-    int32_t CreateTexture(uint32_t Width, uint32_t Height, uint32_t Levels, uint32_t Usage, RHI::Format Format, RHI::MemoryPropertiesBits Pool,
+    std::int32_t CreateTexture(std::uint32_t Width, std::uint32_t Height, std::uint32_t Levels, std::uint32_t Usage, RHI::Format Format, RHI::MemoryPropertiesBits Pool,
         RHI::TextureHandle pTexture) override;
-    int32_t CreateCubeTexture(uint32_t EdgeLength, uint32_t Levels, uint32_t Usage, RHI::Format Format, RHI::MemoryPropertiesBits Pool,
+    std::int32_t CreateCubeTexture(std::uint32_t EdgeLength, std::uint32_t Levels, std::uint32_t Usage, RHI::Format Format, RHI::MemoryPropertiesBits Pool,
         RHI::TextureHandle pCubeTexture) override;
-    int32_t CreateOffscreenPlainSurface(uint32_t Width, uint32_t Height, RHI::Format Format,
+    std::int32_t CreateOffscreenPlainSurface(std::uint32_t Width, std::uint32_t Height, RHI::Format Format,
         RHI::TextureHandle pSurface) override;
-    uint32_t CreateDepthStencilSurface(uint32_t Width, uint32_t Height, RHI::Format Format, uint32_t msaaSamples,
+    std::uint32_t CreateDepthStencilSurface(std::uint32_t Width, std::uint32_t Height, RHI::Format Format, std::uint32_t msaaSamples,
         RHI::TextureHandle pSurface) override;
-    int32_t SetTexture(RHI::TextureHandle pTexture, RHI::SamplerHandle sampler, uint32_t textureBindingIndex, RHI::DescriptorSetInfo& dsInfos) override;
-    int32_t GetLevelDesc(RHI::TextureHandle pTexture, uint32_t Level, D3DSURFACE_DESC* pDesc) override;
-    int32_t GetLevelDesc(RHI::TextureHandle pCubeTexture, uint32_t Level, D3DSURFACE_DESC* pDesc) override;
-    int32_t GetSurfaceLevel(RHI::TextureHandle pTexture, uint32_t Level, IDirect3DSurface9** ppSurfaceLevel) override;
-    int32_t UpdateSurface(RHI::TextureHandle pSourceSurface, RHI::TextureHandle pDestinationSurface) override;
-    int32_t StretchRect(RHI::TextureHandle pSourceSurface, RHI::TextureHandle pDestinationSurface) override;
-    int32_t GetRenderTargetData(RHI::TextureHandle pRenderTarget, RHI::TextureHandle pDestSurface) override;
+    std::int32_t SetTexture(RHI::TextureHandle pTexture, RHI::SamplerHandle sampler, std::uint32_t textureBindingIndex, RHI::DescriptorSetInfo& dsInfos) override;
+    std::int32_t GetLevelDesc(RHI::TextureHandle pTexture, std::uint32_t Level, D3DSURFACE_DESC* pDesc) override;
+    std::int32_t GetLevelDesc(RHI::TextureHandle pCubeTexture, std::uint32_t Level, D3DSURFACE_DESC* pDesc) override;
+    std::int32_t GetSurfaceLevel(RHI::TextureHandle pTexture, std::uint32_t Level, IDirect3DSurface9** ppSurfaceLevel) override;
+    std::int32_t UpdateSurface(RHI::TextureHandle pSourceSurface, RHI::TextureHandle pDestinationSurface) override;
+    std::int32_t StretchRect(RHI::TextureHandle pSourceSurface, RHI::TextureHandle pDestinationSurface) override;
+    std::int32_t GetRenderTargetData(RHI::TextureHandle pRenderTarget, RHI::TextureHandle pDestSurface) override;
 
     // Pixel/Vertex Shaders Section
 #ifdef _WIN32 // Effects
@@ -444,24 +444,24 @@ public:
 #endif
 
     // D3D Render Target/Begin/End/Clear
-    int32_t GetRenderTarget(RHI::TextureHandle pRenderTarget) override;
-    int32_t SetRenderTarget(RHI::TextureHandle pRenderTarget, RHI::TextureHandle pNewZStencil) override;
-    int32_t Clear(uint32_t Count, const D3DRECT* pRects, uint32_t Flags, Color Color, float Z,
-        uint32_t Stencil) override;
+    std::int32_t GetRenderTarget(RHI::TextureHandle pRenderTarget) override;
+    std::int32_t SetRenderTarget(RHI::TextureHandle pRenderTarget, RHI::TextureHandle pNewZStencil) override;
+    std::int32_t Clear(std::uint32_t Count, const D3DRECT* pRects, std::uint32_t Flags, Color Color, float Z,
+        std::uint32_t Stencil) override;
 
-    int32_t ImageBlt(const char* pName, Rect* pDstRect, Rect* pSrcRect);
-    int32_t ImageBlt(int32_t nTextureId, Rect* pDstRect, Rect* pSrcRect) override;
+    std::int32_t ImageBlt(const char* pName, Rect* pDstRect, Rect* pSrcRect);
+    std::int32_t ImageBlt(std::int32_t nTextureId, Rect* pDstRect, Rect* pSrcRect) override;
 
     void MakeScreenShot();
-    uint32_t LoadCubmapSide(std::fstream& fileS, RHI::TextureHandle tex, CubemapFaces face, uint32_t numMips,
-        uint32_t mipSize, uint32_t size, bool isSwizzled);
+    std::uint32_t LoadCubmapSide(std::fstream& fileS, RHI::TextureHandle tex, CubemapFaces face, std::uint32_t numMips,
+        std::uint32_t mipSize, std::uint32_t size, bool isSwizzled);
 
     // core interface
     bool Init() override;
     void RunStart() override;
     void RunEnd() override;
 
-    uint32_t RunSection() override
+    std::uint32_t RunSection() override
     {
         return SECTION_REALIZE;
     };
@@ -477,35 +477,35 @@ public:
     void ProgressView() override;
     void EndProgressView() override;
 
-    static const uint32_t rectsVBuffer_SizeInRects;
+    static const std::uint32_t rectsVBuffer_SizeInRects;
     RHI::BufferHandle rectsVBuffer;
 
     char* progressImage;
-    int32_t progressImageSize;
-    int32_t backTexture;
+    std::int32_t progressImageSize;
+    std::int32_t backTexture;
     char* progressBackImage;
-    int32_t progressBackImageSize;
-    int32_t back0Texture;
-    int32_t progressTexture;
+    std::int32_t progressBackImageSize;
+    std::int32_t back0Texture;
+    std::int32_t progressTexture;
     char* progressTipsImage;
-    int32_t progressTipsImageSize;
-    int32_t progressTipsTexture;
+    std::int32_t progressTipsImageSize;
+    std::int32_t progressTipsTexture;
 
-    int32_t loadFrame;
-    int32_t progressSafeCounter;
+    std::int32_t loadFrame;
+    std::int32_t progressSafeCounter;
     bool isInPViewProcess;
-    uint32_t progressUpdateTime;
+    std::uint32_t progressUpdateTime;
     float progressFramesPosX;
     float progressFramesPosY;
     float progressFramesWidth;
     float progressFramesHeight;
-    int32_t progressFramesCountX;
-    int32_t progressFramesCountY;
+    std::int32_t progressFramesCountX;
+    std::int32_t progressFramesCountY;
 
     // new renderer settings
     bool vSyncEnabled;
-    uint32_t msaa;
-    uint32_t videoAdapterIndex;
+    std::uint32_t msaa;
+    std::uint32_t videoAdapterIndex;
 
     CMatrix mView, mWorld, mProjection;
 
@@ -524,8 +524,8 @@ public:
     char* GetTipsImage() override;
 
     void SetColorParameters(float fGamma, float fBrightness, float fContrast) override;
-    void DrawSphere(const CVECTOR& vPos, float fRadius, uint32_t dwColor) override;
-    void DrawEllipsoid(const CVECTOR& vPos, float a, float b, float c, float ay, uint32_t dwColor) override;
+    void DrawSphere(const CVECTOR& vPos, float fRadius, std::uint32_t dwColor) override;
+    void DrawEllipsoid(const CVECTOR& vPos, float a, float b, float c, float ay, std::uint32_t dwColor) override;
 
     void GetNearFarPlane(float& fNear, float& fFar) override;
     void SetNearFarPlane(float fNear, float fFar) override;
@@ -533,14 +533,14 @@ public:
     void SetLoadTextureEnable(bool bEnable = true) override;
     bool ResetDevice();
 
-    void MakeDrawVector(RS_LINE* pLines, uint32_t dwNumSubLines, const CMatrix& mMatrix, CVECTOR vUp, CVECTOR v1,
-        CVECTOR v2, float fScale, uint32_t dwColor);
-    void DrawVector(const CVECTOR& v1, const CVECTOR& v2, uint32_t dwColor,
+    void MakeDrawVector(RS_LINE* pLines, std::uint32_t dwNumSubLines, const CMatrix& mMatrix, CVECTOR vUp, CVECTOR v1,
+        CVECTOR v2, float fScale, std::uint32_t dwColor);
+    void DrawVector(const CVECTOR& v1, const CVECTOR& v2, std::uint32_t dwColor,
         const char* pTechniqueName = "DXVector") override;
 
     bool PushRenderTarget() override;
     bool PopRenderTarget() override;
-    bool SetRenderTarget(RHI::TextureHandle pCubeRenderTarget, uint32_t faceType, uint32_t mipLevel,
+    bool SetRenderTarget(RHI::TextureHandle pCubeRenderTarget, std::uint32_t faceType, std::uint32_t mipLevel,
         RHI::TextureHandle pNewZStencil) override;
     void SetView(const CMatrix& mView);
     void SetWorld(const CMatrix& mView);
@@ -549,13 +549,13 @@ public:
     const CMatrix& GetWorld() const;
     const CMatrix& GetProjection() const;
 
-    RHI::TextureHandle CreateVolumeTexture(uint32_t Width, uint32_t Height, uint32_t Depth, uint32_t Levels,
-        uint32_t Usage, RHI::Format Format, RHI::MemoryPropertiesBits Pool) override;
+    RHI::TextureHandle CreateVolumeTexture(std::uint32_t Width, std::uint32_t Height, std::uint32_t Depth, std::uint32_t Levels,
+        std::uint32_t Usage, RHI::Format Format, RHI::MemoryPropertiesBits Pool) override;
 
     void MakePostProcess() override;
-    void SetGLOWParams(float _fBlurBrushSize, int32_t _GlowIntensity, int32_t _GlowPasses) override;
+    void SetGLOWParams(float _fBlurBrushSize, std::int32_t _GlowIntensity, std::int32_t _GlowPasses) override;
 
-    RHI::TextureHandle GetTextureFromID(int32_t nTextureID) override;
+    RHI::TextureHandle GetTextureFromID(std::int32_t nTextureID) override;
 
     bool GetRenderTargetAsTexture(RHI::TextureHandle tex) override;
 
@@ -568,7 +568,7 @@ private:
     struct RECT_VERTEX
     {
         CVECTOR pos;
-        uint32_t color;
+        std::uint32_t color;
         float u, v;
     };
 
@@ -577,7 +577,7 @@ private:
         RHI::TextureHandle pRenderTarget;
         RHI::TextureHandle pDepthSurface;
         RHI::Viewport ViewPort;
-        uint32_t CubeFace = 0u;
+        std::uint32_t CubeFace = 0u;
     };
 
     std::shared_ptr<RHI::IDevice> device;
@@ -596,11 +596,11 @@ private:
 
     std::string fontIniFileName;
     std::vector<FONTEntity> FontList{};
-    int32_t idFontCurrent;
+    std::int32_t idFontCurrent;
 
     VideoTextureEntity* pVTL;
 
-    int32_t nTextureDegradation;
+    std::int32_t nTextureDegradation;
     float aspectRatio;
     float m_fHeightDeformator;
 
@@ -653,7 +653,7 @@ private:
     RHI::BufferHandle CreateRenderQuad(float fWidth, float fHeight, float fSrcWidth, float fSrcHeight, float fMulU = 1.0f,
         float fMulV = 1.0f);
 
-    void ClearPostProcessTexture(RHI::TextureHandle tex);
+    void ClearPostProcessTexture(RHI::TextureHandle texture);
     void BlurGlowTexture();
     void CopyGlowToScreen();
     void CopyPostProcessToScreen();
@@ -673,7 +673,7 @@ private:
     bool bSeaEffect;
     float fSeaEffectSize;
     float fSeaEffectSpeed;
-    uint32_t dwBackColor;
+    std::uint32_t dwBackColor;
 
     //-------- post process
 
@@ -687,11 +687,11 @@ private:
     bool bBackBufferCanLock;
 
     RHI::BufferHandle aniVBuffer;
-    int32_t numAniVerteces;
+    std::int32_t numAniVerteces;
 
     RHI::BufferHandle pDropConveyorVBuffer;
 
-    uint32_t dwNumDrawPrimitive, dwNumLV, dwNumLI;
+    std::uint32_t dwNumDrawPrimitive, dwNumLV, dwNumLI;
     float fG, fB, fC;
 
     float fNearClipPlane, fFarClipPlane;
@@ -699,7 +699,7 @@ private:
     bool bLoadTextureEnabled;
 
     bool bTrace;
-    int32_t iSetupPath;
+    std::int32_t iSetupPath;
     uint64_t dwSetupNumber;
     texpaths_t TexPaths[4]{};
 
@@ -712,7 +712,7 @@ private:
 #endif
     std::string screenshotExt;
 
-    bool TextureLoad(int32_t texid);
+    bool TextureLoad(std::int32_t texid);
 
     RHI::BufferHandle sphereVertexBuffer;
 
@@ -731,7 +731,7 @@ private:
     std::bitset<8> enabledLightsBitMask;
     Material material;
     VertexFVFBits vertexFormat = 0;
-    uint32_t textureFactorColor = 0;
+    std::uint32_t textureFactorColor = 0;
 
     void MakeVertexBindings(RHI::BufferHandle vertexBuffer, const VertexFVFBits vertexBindingsFormat, std::vector<RHI::VertexBufferBinding>& vertexBufferBindings);
     void CreateInputLayout(const VertexFVFBits vertexBindingsFormat, RHI::IInputLayout* inputLayout);
