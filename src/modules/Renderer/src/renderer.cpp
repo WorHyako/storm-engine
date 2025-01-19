@@ -471,19 +471,19 @@ bool RENDER::Init() {
         return false;
     }
 
-    uint16_t* pI = &SeaEffectQuadIndices[0];
+    std::uint16_t* pI = &SeaEffectQuadIndices[0];
     // setup ibuffer
     for (std::int32_t y = 0; y < 31; y++)
     {
         for (std::int32_t x = 0; x < 31; x++)
         {
-            *pI++ = static_cast<uint16_t>((y + 0) * 32 + x + 1);
-            *pI++ = static_cast<uint16_t>((y + 1) * 32 + x);
-            *pI++ = static_cast<uint16_t>((y + 0) * 32 + x);
+            *pI++ = static_cast<std::uint16_t>((y + 0) * 32 + x + 1);
+            *pI++ = static_cast<std::uint16_t>((y + 1) * 32 + x);
+            *pI++ = static_cast<std::uint16_t>((y + 0) * 32 + x);
 
-            *pI++ = static_cast<uint16_t>((y + 0) * 32 + x + 1);
-            *pI++ = static_cast<uint16_t>((y + 1) * 32 + x + 1);
-            *pI++ = static_cast<uint16_t>((y + 1) * 32 + x);
+            *pI++ = static_cast<std::uint16_t>((y + 0) * 32 + x + 1);
+            *pI++ = static_cast<std::uint16_t>((y + 1) * 32 + x + 1);
+            *pI++ = static_cast<std::uint16_t>((y + 1) * 32 + x);
         }
     }
 
@@ -775,7 +775,7 @@ void RENDER::CopyGlowToScreen()
         GlowIntensity = 0;
     if (GlowIntensity > 255)
         GlowIntensity = 255;
-    const uint8_t bGLOW = static_cast<uint8_t>(GlowIntensity);
+    const std::uint8_t bGLOW = static_cast<std::uint8_t>(GlowIntensity);
     const std::uint32_t dwTFactor = (bGLOW << 24) | (bGLOW << 16) | (bGLOW << 8) | bGLOW;
 
     // Draw the GLOW screen
@@ -1701,7 +1701,7 @@ bool RENDER::GetLight(std::uint32_t dwIndex, Light* pLight) const
 }
 
 //################################################################################
-std::int32_t RENDER::CreateVertexBuffer(size_t size, std::uint32_t type, RHI::MemoryPropertiesBits memoryProperties)
+std::int32_t RENDER::CreateVertexBuffer(std::size_t size, std::uint32_t type, RHI::MemoryPropertiesBits memoryProperties)
 {
     if (size <= 0)
         return -1; // fix
@@ -1734,7 +1734,7 @@ RHI::BufferHandle RENDER::GetVertexBuffer(std::int32_t id)
 }
 
 //################################################################################
-std::int32_t RENDER::CreateIndexBuffer(size_t size, std::uint32_t usage)
+std::int32_t RENDER::CreateIndexBuffer(std::size_t size, std::uint32_t usage)
 {
     std::int32_t b;
     for (b = 0; b < MAX_BUFFERS; b++)
@@ -1866,8 +1866,8 @@ RHI::GraphicsState RENDER::CreateGraphicsState(RHI::GraphicsPipelineHandle pipel
     return state;
 }
 
-void RENDER::DrawBuffer(RHI::PrimitiveType primitiveType, std::uint32_t vertexBufferIndex, std::int32_t iStride, size_t vertexCount,
-    size_t instanceCount, size_t startVertexLocation, const char* cBlockName)
+void RENDER::DrawBuffer(RHI::PrimitiveType primitiveType, std::uint32_t vertexBufferIndex, std::int32_t iStride, std::size_t vertexCount,
+    std::size_t instanceCount, std::size_t startVertexLocation, const char* cBlockName)
 {
     bool bDraw = true;
 
@@ -1897,8 +1897,8 @@ void RENDER::DrawBuffer(RHI::PrimitiveType primitiveType, std::uint32_t vertexBu
         } while (cBlockName && cBlockName[0] && TechniqueExecuteNext());
 }
 
-void RENDER::DrawIndexedBuffer(RHI::PrimitiveType primitiveType, std::uint32_t vertexBufferIndex, std::uint32_t indexBufferIndex, size_t vertexCount, size_t instanceCount,
-    size_t startIndexLocation, size_t startVertexLocation, const char* cBlockName)
+void RENDER::DrawIndexedBuffer(RHI::PrimitiveType primitiveType, std::uint32_t vertexBufferIndex, std::uint32_t indexBufferIndex, std::size_t vertexCount, std::size_t instanceCount,
+    std::size_t startIndexLocation, std::size_t startVertexLocation, const char* cBlockName)
 {
     bool bDraw = true;
 
@@ -1930,8 +1930,8 @@ void RENDER::DrawIndexedBuffer(RHI::PrimitiveType primitiveType, std::uint32_t v
         } while (cBlockName && cBlockName[0] && TechniqueExecuteNext());
 }
 
-void RENDER::DrawIndexedBufferNoVShader(RHI::PrimitiveType primitiveType, std::uint32_t vertexBufferIndex, std::uint32_t indexBufferIndex, size_t vertexCount, size_t instanceCount,
-    size_t startIndexLocation, size_t startVertexLocation, const char* cBlockName)
+void RENDER::DrawIndexedBufferNoVShader(RHI::PrimitiveType primitiveType, std::uint32_t vertexBufferIndex, std::uint32_t indexBufferIndex, std::size_t vertexCount, std::size_t instanceCount,
+    std::size_t startIndexLocation, std::size_t startVertexLocation, const char* cBlockName)
 {
     bool bDraw = true;
 
@@ -1961,8 +1961,8 @@ void RENDER::DrawIndexedBufferNoVShader(RHI::PrimitiveType primitiveType, std::u
 }
 
 // TODO: Use as dx09->DrawPrimitiveUP analog with correct vertex buffer or Model matrix
-void RENDER::DrawPrimitive(RHI::PrimitiveType primitiveType, VertexFVFBits vertexBufferFormat, size_t vertexCount, size_t instanceCount,
-    size_t startVertexLocation, RHI::BufferHandle vertexBuffer, std::uint32_t stride, const char* cBlockName)
+void RENDER::DrawPrimitive(RHI::PrimitiveType primitiveType, VertexFVFBits vertexBufferFormat, std::size_t vertexCount, std::size_t instanceCount,
+    std::size_t startVertexLocation, RHI::BufferHandle vertexBuffer, std::uint32_t stride, const char* cBlockName)
 {
     bool bDraw = true;
 
@@ -1992,8 +1992,8 @@ void RENDER::DrawPrimitive(RHI::PrimitiveType primitiveType, VertexFVFBits verte
 
 // TODO: Use as dx09->DrawIndexedPrimitiveUP analog with correct vertex buffer or Model matrix
 void RENDER::DrawIndexedPrimitive(RHI::PrimitiveType primitiveType, RHI::BufferHandle vertexBuffer, VertexFVFBits vertexDataFormat,
-    RHI::BufferHandle indexBuffer, RHI::Format indexDataFormat, size_t vertexCount, size_t instanceCount,
-    size_t startIndexLocation, size_t startVertexLocation, const char* cBlockName)
+    RHI::BufferHandle indexBuffer, RHI::Format indexDataFormat, std::size_t vertexCount, std::size_t instanceCount,
+    std::size_t startIndexLocation, std::size_t startVertexLocation, const char* cBlockName)
 {
     bool bDraw = true;
 
@@ -2815,17 +2815,17 @@ void RENDER::GetCamera(CVECTOR& pos, CVECTOR& ang, float& perspective)
 
 using TGA_H = struct tagTGA_H
 {
-    uint8_t byte1; // = 0
-    uint8_t byte2; // = 0
-    uint8_t type;
-    uint8_t byte4_9[9]; // = 0
-    uint16_t width;
-    uint16_t height;
-    uint8_t bpp; // bit per pixel
-    uint8_t attr : 4;
-    uint8_t rez : 1;
-    uint8_t origin : 1;
-    uint8_t storage : 2;
+    std::uint8_t byte1; // = 0
+    std::uint8_t byte2; // = 0
+    std::uint8_t type;
+    std::uint8_t byte4_9[9]; // = 0
+    std::uint16_t width;
+    std::uint16_t height;
+    std::uint8_t bpp; // bit per pixel
+    std::uint8_t attr : 4;
+    std::uint8_t rez : 1;
+    std::uint8_t origin : 1;
+    std::uint8_t storage : 2;
 };
 
 // WORD Temp[1600*4];
@@ -2868,7 +2868,7 @@ void RENDER::MakeScreenShot()
     const auto screenshot_base_filename = fmt::format("{:%Y-%m-%d_%H-%M-%S}", fmt::localtime(std::time(nullptr)));
     auto screenshot_path = Storm::Filesystem::Constants::Paths::screenshots() / screenshot_base_filename;
     screenshot_path.replace_extension(screenshotExt);
-    for (size_t i = 0; std::filesystem::exists(screenshot_path); ++i)
+    for (std::size_t i = 0; std::filesystem::exists(screenshot_path); ++i)
     {
         screenshot_path.replace_filename(screenshot_base_filename + "_" + std::to_string(i));
         screenshot_path.replace_extension(screenshotExt);
@@ -3094,17 +3094,17 @@ void RENDER::DrawSprites(RS_SPRITE* pRSS, std::uint32_t dwSpritesNum, const char
     if (dwSpritesNum == 0)
         return;
 
-    auto* pIndices = new uint16_t[dwSpritesNum * 6];
-    const std::uint32_t indicesArraySize = dwSpritesNum * 6 * sizeof(uint16_t);
+    auto* pIndices = new std::uint16_t[dwSpritesNum * 6];
+    const std::uint32_t indicesArraySize = dwSpritesNum * 6 * sizeof(std::uint16_t);
 
     for (i = 0; i < dwSpritesNum; i++)
     {
-        pIndices[i * 6 + 0] = static_cast<uint16_t>(i * 4 + 0);
-        pIndices[i * 6 + 1] = static_cast<uint16_t>(i * 4 + 3);
-        pIndices[i * 6 + 2] = static_cast<uint16_t>(i * 4 + 2);
-        pIndices[i * 6 + 3] = static_cast<uint16_t>(i * 4 + 0);
-        pIndices[i * 6 + 4] = static_cast<uint16_t>(i * 4 + 2);
-        pIndices[i * 6 + 5] = static_cast<uint16_t>(i * 4 + 1);
+        pIndices[i * 6 + 0] = static_cast<std::uint16_t>(i * 4 + 0);
+        pIndices[i * 6 + 1] = static_cast<std::uint16_t>(i * 4 + 3);
+        pIndices[i * 6 + 2] = static_cast<std::uint16_t>(i * 4 + 2);
+        pIndices[i * 6 + 3] = static_cast<std::uint16_t>(i * 4 + 0);
+        pIndices[i * 6 + 4] = static_cast<std::uint16_t>(i * 4 + 2);
+        pIndices[i * 6 + 5] = static_cast<std::uint16_t>(i * 4 + 1);
     }
 
     RHI::BufferDesc indexBufferDesc = {};
@@ -3165,7 +3165,7 @@ void RENDER::DrawLines(RS_LINE* pRSL, std::uint32_t dwLinesNum, const char* cBlo
         } while (cBlockName && TechniqueExecuteNext());
 }
 
-void RENDER::DrawLines2D(RS_LINE2D* pRSL2D, size_t dwLinesNum, const char* cBlockName)
+void RENDER::DrawLines2D(RS_LINE2D* pRSL2D, std::size_t dwLinesNum, const char* cBlockName)
 {
     if (!pRSL2D || dwLinesNum == 0)
         return;
@@ -3191,7 +3191,7 @@ void RENDER::DrawLines2D(RS_LINE2D* pRSL2D, size_t dwLinesNum, const char* cBloc
 }
 
 //-----------------------
-RHI::BufferHandle RENDER::CreateVertexBufferAndUpload(size_t vertexBufferSize, const void* pVertexData)
+RHI::BufferHandle RENDER::CreateVertexBufferAndUpload(std::size_t vertexBufferSize, const void* pVertexData)
 {
     RHI::BufferDesc vertexBufferDesc = {};
     vertexBufferDesc
@@ -3910,13 +3910,13 @@ void RENDER::EndProgressView()
 
 void RENDER::SetColorParameters(float fGamma, float fBrightness, float fContrast)
 {
-    uint16_t rgb[256];
+    std::uint16_t rgb[256];
     for (std::uint32_t i = 0; i < 256; i++)
     {
         float fRamp = std::clamp(fContrast * 255.0f * 256.0f * powf(static_cast<float>(i / 255.0f), 1.0f / fGamma) +
             fBrightness * 256.0f,
             0.0f, 65535.0f);
-        rgb[i] = static_cast<uint16_t>(fRamp);
+        rgb[i] = static_cast<std::uint16_t>(fRamp);
     }
     core.GetWindow()->SetGamma(rgb, rgb, rgb);
 }

@@ -14,7 +14,7 @@
 
 #define MAX_STEXTURES 10240
 #define MAX_BUFFERS 10240
-constexpr size_t MAX_FONTS = 256;
+constexpr std::size_t MAX_FONTS = 256;
 
 struct RS_RECT
 {
@@ -191,7 +191,7 @@ struct VideoTextureEntity
     char* name;
     std::uint32_t hash;
     std::int32_t ref;
-    uint64_t videoTexture_id;
+    std::uint64_t videoTexture_id;
     CVideoTexture* VideoTexture;
     VideoTextureEntity* next;
 };
@@ -225,7 +225,7 @@ struct AlphaTestState
     RHI::CompareOp alphaCompareOp = RHI::CompareOp::GREATER;
 };
 
-enum class VertexFVFBits : uint8_t
+enum class VertexFVFBits : std::uint8_t
 {
     XYZ     =   0x00000001,
     Color   =   0x00000002,
@@ -238,7 +238,7 @@ enum class VertexFVFBits : uint8_t
 
 ENUM_CLASS_FLAG_OPERATORS(VertexFVFBits)
 
-enum class ClearBits : uint8_t
+enum class ClearBits : std::uint8_t
 {
     Color = 0x00000001,
     Depth = 0x00000002,
@@ -358,19 +358,19 @@ public:
         std::uint32_t dwSubTexturesY = 1, float fScaleX = 1.0f, float fScaleY = 1.0f) override;
     void DrawSprites(RS_SPRITE* pRSS, std::uint32_t dwSpritesNum, const char* cBlockName = nullptr) override;
     void DrawLines(RS_LINE* pRSL, std::uint32_t dwLinesNum, const char* cBlockName = nullptr) override;
-    void DrawLines2D(RS_LINE2D* pRSL2D, size_t dwLinesNum, const char* cBlockName = nullptr) override;
+    void DrawLines2D(RS_LINE2D* pRSL2D, std::size_t dwLinesNum, const char* cBlockName = nullptr) override;
 
-    void DrawBuffer(RHI::PrimitiveType primitiveType, std::uint32_t vertexBufferIndex, std::int32_t iStride, size_t vertexCount,
-        size_t instanceCount, size_t startVertexLocation, const char* cBlockName = nullptr) override;
-    void DrawIndexedBuffer(RHI::PrimitiveType primitiveType, std::uint32_t vertexBufferIndex, std::uint32_t indexBufferIndex, size_t vertexCount, size_t instanceCount,
-        size_t startIndexLocation, size_t startVertexLocation, const char* cBlockName = nullptr) override;
-    void DrawIndexedBufferNoVShader(RHI::PrimitiveType primitiveType, std::uint32_t vertexBufferIndex, std::uint32_t indexBufferIndex, size_t vertexCount, size_t instanceCount,
-        size_t startIndexLocation, size_t startVertexLocation, const char* cBlockName = nullptr) override;
-    void DrawPrimitive(RHI::PrimitiveType primitiveType, VertexFVFBits vertexBufferFormat, size_t vertexCount, size_t instanceCount,
-        size_t startVertexLocation, RHI::BufferHandle vertexBuffer, std::uint32_t stride, const char* cBlockName = nullptr)
+    void DrawBuffer(RHI::PrimitiveType primitiveType, std::uint32_t vertexBufferIndex, std::int32_t iStride, std::size_t vertexCount,
+        std::size_t instanceCount, std::size_t startVertexLocation, const char* cBlockName = nullptr) override;
+    void DrawIndexedBuffer(RHI::PrimitiveType primitiveType, std::uint32_t vertexBufferIndex, std::uint32_t indexBufferIndex, std::size_t vertexCount, std::size_t instanceCount,
+        std::size_t startIndexLocation, std::size_t startVertexLocation, const char* cBlockName = nullptr) override;
+    void DrawIndexedBufferNoVShader(RHI::PrimitiveType primitiveType, std::uint32_t vertexBufferIndex, std::uint32_t indexBufferIndex, std::size_t vertexCount, std::size_t instanceCount,
+        std::size_t startIndexLocation, std::size_t startVertexLocation, const char* cBlockName = nullptr) override;
+    void DrawPrimitive(RHI::PrimitiveType primitiveType, VertexFVFBits vertexBufferFormat, std::size_t vertexCount, std::size_t instanceCount,
+        std::size_t startVertexLocation, RHI::BufferHandle vertexBuffer, std::uint32_t stride, const char* cBlockName = nullptr)
     void DrawIndexedPrimitive(RHI::PrimitiveType primitiveType, RHI::BufferHandle vertexBuffer, VertexFVFBits vertexDataFormat,
-        RHI::BufferHandle indexBuffer, RHI::Format indexDataFormat, size_t vertexCount, size_t instanceCount,
-        size_t startIndexLocation, size_t startVertexLocation, const char* cBlockName = nullptr) override;
+        RHI::BufferHandle indexBuffer, RHI::Format indexDataFormat, std::size_t vertexCount, std::size_t instanceCount,
+        std::size_t startIndexLocation, std::size_t startVertexLocation, const char* cBlockName = nullptr) override;
 
     // Render: Video Section
     void PlayToTexture() override;
@@ -378,8 +378,8 @@ public:
     void ReleaseVideoTexture(CVideoTexture* pVTexture) override;
 
     // Render: Vertex/Index Buffers Section
-    std::int32_t CreateVertexBuffer(size_t size, std::uint32_t type, RHI::MemoryPropertiesBits memoryProperties = RHI::MemoryPropertiesBits::DEVICE_LOCAL_BIT) override;
-    std::int32_t CreateIndexBuffer(size_t size, std::uint32_t usage) override;
+    std::int32_t CreateVertexBuffer(std::size_t size, std::uint32_t type, RHI::MemoryPropertiesBits memoryProperties = RHI::MemoryPropertiesBits::DEVICE_LOCAL_BIT) override;
+    std::int32_t CreateIndexBuffer(std::size_t size, std::uint32_t usage) override;
 
     RHI::BufferHandle GetVertexBuffer(std::int32_t id);
     std::int32_t GetVertexBufferSize(std::int32_t id) override;
@@ -416,7 +416,7 @@ public:
     std::int32_t Release(IUnknown* pSurface) override;
 
     // Vertex/Index Buffers Section
-    RHI::BufferHandle CreateVertexBufferAndUpload(size_t vertexBufferSize, const void* pVertexData);
+    RHI::BufferHandle CreateVertexBufferAndUpload(std::size_t vertexBufferSize, const void* pVertexData);
 
     // D3D Textures/Surfaces Section
     std::int32_t GetDepthStencilSurface(RHI::TextureHandle pZStencilSurface) override;
@@ -635,7 +635,7 @@ private:
 
     QuadVertex PostProcessQuad[4];
     QuadVertex SeaEffectQuadVertices[32 * 32];
-    uint16_t SeaEffectQuadIndices[31 * 31 * 2 * 3];
+    std::uint16_t SeaEffectQuadIndices[31 * 31 * 2 * 3];
 
     float fSmallWidth;
     float fSmallHeight;
@@ -700,7 +700,7 @@ private:
 
     bool bTrace;
     std::int32_t iSetupPath;
-    uint64_t dwSetupNumber;
+    std::uint64_t dwSetupNumber;
     texpaths_t TexPaths[4]{};
 
     bool bDropVideoConveyor;
