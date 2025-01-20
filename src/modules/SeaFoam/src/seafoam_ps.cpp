@@ -5,10 +5,13 @@
 #include "entity.h"
 #include "object.h"
 
+#include "Filesystem/Config/Config.hpp"
+#include "Filesystem/Constants/ConfigNames.hpp"
+
+using namespace Storm::Filesystem;
+
 SEAFOAM_PS::SEAFOAM_PS() : enableEmit(true)
 {
-    TechniqueName = nullptr;
-
     ParticleColor = 0xffffffff;
 
     bTrackAngle = false;
@@ -72,8 +75,6 @@ SEAFOAM_PS::~SEAFOAM_PS()
     Particle = nullptr;
     delete pFlowTrack;
     pFlowTrack = nullptr;
-    delete TechniqueName;
-    TechniqueName = nullptr;
 }
 
 // node ----------------------------------------------------------------------------
@@ -152,14 +153,9 @@ void SEAFOAM_PS::ProcessOrder(SEAFOAM_PS **Root, SEAFOAM_PS **Top)
 
 //----------------------------------------------------------------------------------
 
-bool SEAFOAM_PS::Init(INIFILE *ini, const char *psname)
+bool SEAFOAM_PS::Init(const std::string_view& section)
 {
     // GUARD(SEAFOAM_PS::Init)
-    if (!ini)
-        return false;
-    int32_t n;
-    bool bRes;
-
     // load render service -----------------------------------------------------
     RenderService = static_cast<VDX9RENDER *>(core.GetService("dx9render"));
     if (!RenderService)
@@ -168,83 +164,52 @@ bool SEAFOAM_PS::Init(INIFILE *ini, const char *psname)
     gs = static_cast<VGEOMETRY *>(core.GetService("geometry"));
     // if(!gs) return false;
 
-    // read textures ------------------------------------------------------------
-    char string[MAX_PATH];
+
+    auto config = Config::Load(Constants::ConfigNames::particles());
+    std::ignore = config.SelectSection(std::string(section));
 
     TexturesNum = 0;
-    for (n = 0; n < MAX_PS_TEXTURES; n++)
-    {
-        if (n == 0)
-            bRes = ini->ReadString(psname, PSKEY_TEXTURE, string, sizeof(string), "");
-        else
-            bRes = ini->ReadStringNext(psname, PSKEY_TEXTURE, string, sizeof(string));
+    auto texture_name_opt = config.Get<std::vector<std::string>>(PSKEY_TEXTURE);
 
-        if (bRes)
-        {
-            TextureID[n] = RenderService->TextureCreate(string);
-            if (TextureID[n] >= 0)
+    if (texture_name_opt.has_value()) {
+        for (int i = 0; i < std::size(texture_name_opt.value()); i++) {
+            TextureID[i] = RenderService->TextureCreate(texture_name_opt.value()[i].c_str());
+            if (TextureID[i] >= 0)
                 TexturesNum++;
         }
-        else
-            break;
     }
 
-    if (!ini->ReadString(psname, PSKEY_TECHNIQUE, string, sizeof(string), ""))
-    {
-        core.Trace("Particle system: %s", psname);
-        throw std::runtime_error("no technique for particle system");
-    }
-    const auto len = strlen(string) + 1;
-    TechniqueName = new char[len];
-    memcpy(TechniqueName, string, len);
+    TechniqueName = config.Get<std::string>(PSKEY_TECHNIQUE, {});
 
     // configure particles
-    ParticlesNum = ini->GetInt(psname, PSKEY_PNUM, 32);
-    EmissionTime = ini->GetFloat(psname, PSKEY_EMISSIONTIME, 0);
-    DeltaTimeSLE = static_cast<int32_t>(EmissionTime);
-    EmissionTimeRand = ini->GetFloat(psname, PSKEY_EMISSIONTIMERAND, 0);
-    CurrentEmissionTimeRand = static_cast<float>(EmissionTimeRand) * rand() / RAND_MAX;
-    fSurfaceOffset = ini->GetFloat(psname, PSKEY_SURFACEOFFSET, 0);
-    ParticleColor = ini->GetInt(psname, "color", 0xffffffff);
+    ParticlesNum = config.Get<std::int64_t>(PSKEY_PNUM, 32);
+    EmissionTime = config.Get<double>(PSKEY_EMISSIONTIME, 0.0);
+    DeltaTimeSLE = static_cast<std::int32_t>(EmissionTime);
+    EmissionTimeRand = config.Get<double>(PSKEY_EMISSIONTIMERAND, 0.0);
+    CurrentEmissionTimeRand = EmissionTimeRand * rand() / RAND_MAX;
+    fSurfaceOffset = config.Get<double>(PSKEY_SURFACEOFFSET, 0);
+    ParticleColor = config.Get<std::int64_t>("color", 0xffffffff);
 
-    fWindEffect = ini->GetFloat(psname, PSKEY_WINDEFFECT, 0.0f);
+    fWindEffect = config.Get<double>(PSKEY_WINDEFFECT, 0.0);
 
-    DirectionDeviation = ini->GetFloat(psname, PSKEY_DDEVIATION, 0.0f);
-    Gravity = ini->GetFloat(psname, PSKEY_GRAVITY, 0.0f);
-    Inispeed = ini->GetFloat(psname, PSKEY_INISPEED, 0.0f);
-    SpeedDeviation = ini->GetFloat(psname, PSKEY_SDEVIATION, 0.0f);
-    Lifetime = ini->GetInt(psname, PSKEY_LIFETIME, 1000);
-    Spin = ini->GetFloat(psname, PSKEY_SPIN, 0.0f);
-    SpinDeviation = ini->GetFloat(psname, PSKEY_SPINDEV, 0.0f);
-    EmitterIniTime = ini->GetInt(psname, PSKEY_EMITTERINITIME, 0);
-    Weight = ini->GetFloat(psname, PSKEY_WEIGHT, 0.0f);
-    WeightDeviation = ini->GetFloat(psname, PSKEY_WEIGHTDEVIATION, 0.0f);
-    Emitdelta = ini->GetInt(psname, PSKEY_EMITDELTA, 0);
-    ESpace = ini->GetFloat(psname, PSKEY_EMITRADIUS, 0);
-    fTrackPointRadius = ini->GetFloat(psname, PSKEY_TRACKPOINTRADIUS, 1.0f);
+    DirectionDeviation = config.Get<double>(PSKEY_DDEVIATION, 0.0);
+    Gravity = config.Get<double>(PSKEY_GRAVITY, 0.0);
+    Inispeed = config.Get<double>(PSKEY_INISPEED, 0.0);
+    SpeedDeviation = config.Get<double>(PSKEY_SDEVIATION, 0.0);
+    Lifetime = config.Get<std::int64_t>(PSKEY_LIFETIME, 1000);
+    Spin = config.Get<double>(PSKEY_SPIN, 0.0);
+    SpinDeviation = config.Get<double>(PSKEY_SPINDEV, 0.0);
+    EmitterIniTime = config.Get<std::int64_t>(PSKEY_EMITTERINITIME, 0);
+    Weight = config.Get<double>(PSKEY_WEIGHT, 0.0);
+    WeightDeviation = config.Get<double>(PSKEY_WEIGHTDEVIATION, 0.0);
+    Emitdelta = config.Get<std::int64_t>(PSKEY_EMITDELTA, 0);
+    ESpace = config.Get<double>(PSKEY_EMITRADIUS, 0.0);
+    fTrackPointRadius = config.Get<double>(PSKEY_TRACKPOINTRADIUS, 1.0);
 
-    if (ini->TestKey(psname, PSKEY_COLORINVERSE, nullptr))
-        bColorInverse = true;
-    else
-        bColorInverse = false;
-
-    if (ini->TestKey(psname, PSKEY_UNIFORMEMIT, nullptr))
-        bUniformEmit = true;
-    else
-        bUniformEmit = false;
-
-    if (ini->TestKey(psname, PSKEY_RANDOMDIRECTION, nullptr))
-        bRandomDirection = true;
-    else
-        bRandomDirection = false;
-
-    if (ini->TestKey(psname, PSKEY_NONSTOPEMIT, nullptr))
-        bRepeat = true;
-    else
-        bRepeat = false;
-
-    float ChaosVal;
-    ChaosVal = 0.0001f;
+    bColorInverse = config.Get<std::int64_t>(PSKEY_COLORINVERSE, 0);
+    bUniformEmit = config.Get<std::int64_t>(PSKEY_UNIFORMEMIT, 0);
+    bRandomDirection = config.Get<std::int64_t>(PSKEY_RANDOMDIRECTION, 0);
+    bRepeat = config.Get<std::int64_t>(PSKEY_NONSTOPEMIT, 0);
 
     Particle = (PARTICLE *)new char[ParticlesNum * sizeof(PARTICLE)];
     if (Particle == nullptr)
@@ -252,7 +217,7 @@ bool SEAFOAM_PS::Init(INIFILE *ini, const char *psname)
 
     memset(Particle, 0, ParticlesNum * sizeof(PARTICLE));
 
-    for (n = 0; n < ParticlesNum; n++)
+    for (int n = 0; n < ParticlesNum; n++)
     {
         Particle[n].pos.x = Emitter.x + ESpace * (0.5f - static_cast<float>(rand()) / RAND_MAX);
         Particle[n].pos.y = Emitter.y + ESpace * (0.5f - static_cast<float>(rand()) / RAND_MAX);
@@ -284,6 +249,7 @@ bool SEAFOAM_PS::Init(INIFILE *ini, const char *psname)
         }
         Particle[n].ang = !Particle[n].ang;
 
+        float ChaosVal = 0.0001f;
         Particle[n].chaos.x = ChaosVal * (0.5f - static_cast<float>(rand()) / RAND_MAX);
         Particle[n].chaos.y = ChaosVal * (0.5f - static_cast<float>(rand()) / RAND_MAX);
         Particle[n].chaos.z = ChaosVal * (0.5f - static_cast<float>(rand()) / RAND_MAX);
@@ -303,12 +269,12 @@ bool SEAFOAM_PS::Init(INIFILE *ini, const char *psname)
     }
 
     // build tracks
-    BuildTrack(ini, Visibility, psname, PSKEY_ALPHAKEY);
-    BuildTrack(ini, ParticleSize, psname, PSKEY_PSIZEKEY);
-    BuildTrack(ini, ParticleSpeed, psname, PSKEY_PSPEEDKEY);
-    BuildTrack(ini, ParticleSpin, psname, PSKEY_PSPINKEY);
-    BuildTrack(ini, WindEffect, psname, PSKEY_WINDEFFECTKEY);
-    if (BuildTrack(ini, ParticleAngle, psname, PSKEY_PANGLEKEY))
+    BuildTrack(Visibility, section, PSKEY_ALPHAKEY);
+    BuildTrack(ParticleSize, section, PSKEY_PSIZEKEY);
+    BuildTrack(ParticleSpeed, section, PSKEY_PSPEEDKEY);
+    BuildTrack(ParticleSpin, section, PSKEY_PSPINKEY);
+    BuildTrack(WindEffect, section, PSKEY_WINDEFFECTKEY);
+    if (BuildTrack(ParticleAngle, section, PSKEY_PANGLEKEY))
         bTrackAngle = true;
     else
         bTrackAngle = false;
@@ -517,7 +483,7 @@ void SEAFOAM_PS::Realize(uint32_t DeltaTime)
     // if(bColorInverse)bDraw = RenderService->TechniqueExecuteStart("particles_inv");
     // else bDraw = RenderService->TechniqueExecuteStart("particles");
 
-    bDraw = RenderService->TechniqueExecuteStart(TechniqueName);
+    bDraw = RenderService->TechniqueExecuteStart(TechniqueName.c_str());
     if (bDraw)
     {
         RenderService->DrawPrimitive(D3DPT_TRIANGLELIST, 0, 2 * ParticlesNum);
@@ -785,48 +751,28 @@ float SEAFOAM_PS::GetTrackValue(TRACK_EVENT *Track, int32_t Time)
     return 0;
 }
 
-bool SEAFOAM_PS::BuildTrack(INIFILE *ini, TRACK_EVENT *Track, const char *psname, const char *key_name)
+bool SEAFOAM_PS::BuildTrack(TRACK_EVENT *Track, const std::string_view& section, const std::string_view& key)
 {
-    int32_t n, i;
-    char buffer[MAX_PATH];
-    bool bRes;
-    bool bFound;
+    bool is_full_config = true;
 
-    bFound = false;
+    auto config = Config::Load(Constants::ConfigNames::particles());
+    std::ignore = config.SelectSection(std::string(section));
 
-    for (n = 0; n < TRACK_EVENT_MAX; n++)
-    {
-        Track[n].value = 0;
-        Track[n].time = -1;
+    auto value_time_vec = config.Get<std::vector<std::vector<double>>>(std::string(key), {});
+    for (int track_idx = 0, confix_size = std::size(value_time_vec); track_idx < TRACK_EVENT_MAX; track_idx++) {
+        Track[track_idx].value = 0;
+        Track[track_idx].time = -1;
 
-        if (n == 0)
-        {
-            bRes = ini->ReadString(psname, key_name, buffer, sizeof(buffer), "0,-1");
-            if (bRes)
-                bFound = true;
-        }
-        else
-        {
-            bRes = ini->ReadStringNext(psname, key_name, buffer, sizeof(buffer));
-        }
-
-        if (!bRes)
-        {
-            Track[n].time = -1;
-            return bFound;
-        }
-        for (i = 0; buffer[i]; i++)
-        {
-            if (buffer[i] == ',')
-            {
-                buffer[i] = 0;
-                Track[n].value = static_cast<float>(atof(buffer));
-                Track[n].time = atol(&buffer[i + 1]);
-                break;
-            }
+        if (track_idx < confix_size && std::size(value_time_vec[track_idx]) >= 2) {
+            Track[track_idx].value = value_time_vec[track_idx][0];
+            Track[track_idx].time = value_time_vec[track_idx][1];
+        } else {
+            is_full_config = false;
+            Track[track_idx].value = 0;
+            Track[track_idx].time = -1;
         }
     }
-    return bFound;
+    return is_full_config;
 }
 
 void SEAFOAM_PS::SetEmitter(CVECTOR p, CVECTOR a)

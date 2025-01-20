@@ -4,16 +4,19 @@
 #include <execution>
 #include <thread>
 
+#include "Filesystem/Config/Config.hpp"
+#include "Filesystem/Constants/ConfigNames.hpp"
+
 #include "core.h"
 #include "math3d.h"
 #include "math_inlines.h"
 #include "shared/sea_ai/script_defines.h"
 #include "sse.h"
 #include "tga.h"
-#include "file_service.h"
 
 #include <imgui.h>
 
+using namespace Storm::Filesystem;
 using storm::Sqr;
 
 //#define OLD_WORLD_POS
@@ -191,8 +194,9 @@ bool SEA::Init()
     rs = static_cast<VDX9RENDER *>(core.GetService("dx9render"));
     CreateVertexDeclaration();
     {
-        auto pEngineIni = fio->OpenIniFile(core.EngineIniFileName());
-        bIniFoamEnable = (pEngineIni) ? pEngineIni->GetInt("Sea", "FoamEnable", 1) != 0 : false;
+        auto config = Config::Load(Constants::ConfigNames::engine());
+        std::ignore = config.SelectSection("sea");
+        bIniFoamEnable = config.Get<std::int64_t>("FoamEnable", 1) != 0;
     }
 
     iFoamTexture = rs->TextureCreate("weather\\sea\\pena\\pena.tga");

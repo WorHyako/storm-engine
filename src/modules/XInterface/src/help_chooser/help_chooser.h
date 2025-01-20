@@ -51,8 +51,8 @@ class HELPCHOOSER : public Entity
 
     float m_fScreenWidth;
     float m_fScreenHeight;
-    FRECT *m_pRectList;
-    char **m_psRectName;
+    std::vector<FRECT> m_pRectList;
+    std::vector<std::string> m_psRectName;
     int32_t m_nRectQ;
     int32_t m_nCurRect;
 

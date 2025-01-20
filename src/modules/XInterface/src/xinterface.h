@@ -33,7 +33,7 @@ class XINTERFACE : public XINTERFACE_BASE
     uint32_t m_dwContHelpColor;
     int32_t m_idHelpTexture;
     FXYRECT m_frectHelpTextureUV;
-    char *m_strDefHelpTextureFile;
+    std::string m_strDefHelpTextureFile;
     FXYRECT m_frectDefHelpTextureUV;
 
     // parameters obtained from INI file //
@@ -103,7 +103,7 @@ class XINTERFACE : public XINTERFACE_BASE
     }
 
     void CreateNode(const char *sFileName, const char *sNodeType, const char *sNodeName, int32_t priority = 80);
-    void SFLB_CreateNode(INIFILE *pOwnerIni, INIFILE *pUserIni, const char *sNodeType, const char *sNodeName,
+    void SFLB_CreateNode(const std::string& def_node_config_name, const std::string& node_config_name, const char *sNodeType, const char *sNodeName,
                          int32_t priority);
     void DeleteNode(const char *pcNodeName);
     CINODE *NewNode(const char *pcNodType);

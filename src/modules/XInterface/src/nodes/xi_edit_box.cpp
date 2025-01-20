@@ -4,6 +4,9 @@
 #define WIDTH_SCALE_USED 0.9f
 #define HEIGHT_SCALE_USED 0.9f
 
+using namespace Storm::Filesystem;
+using namespace Storm::Math;
+
 CXI_EDITBOX::CXI_EDITBOX()
 {
     m_nAlphaQuantity = 0;
@@ -117,13 +120,9 @@ void CXI_EDITBOX::Draw(bool bSelected, uint32_t Delta_Time)
                        (m_rect.left + m_rect.right) / 2, m_nTopStringPos, "%s", tmpstr);
 }
 
-bool CXI_EDITBOX::Init(INIFILE *ini1, const char *name1, INIFILE *ini2, const char *name2, VDX9RENDER *rs,
-                       XYRECT &hostRect, XYPOINT &ScreenSize)
-{
-    if (!CINODE::Init(ini1, name1, ini2, name2, rs, hostRect, ScreenSize))
-        return false;
-    SetGlowCursor(false);
-    return true;
+bool CXI_EDITBOX::Init(const Config& node_config, const Config& def_config,
+    VDX9RENDER *rs, XYRECT &hostRect, XYPOINT &ScreenSize) {
+    return CINODE::Init(node_config, def_config, rs, hostRect, ScreenSize);
 }
 
 void CXI_EDITBOX::ReleaseAll()
@@ -357,39 +356,40 @@ void CXI_EDITBOX::SaveParametersToIni()
     pIni->WriteString(m_nodeName, "position", pcWriteParam);
 }
 
-void CXI_EDITBOX::LoadIni(INIFILE *ini1, const char *name1, INIFILE *ini2, const char *name2)
-{
-    int i, j, idx;
-    char param[512];
+void CXI_EDITBOX::LoadIni(const Config& node_config, const Config& def_config) {
+    int i, j;
+    std::pair<const Config&, const Config> configs{node_config, def_config};
 
-    m_frNormTex = GetIniFloatRect(ini1, name1, ini2, name2, "normTexRect", FXYRECT(0.f, 0.f, 1.f, 1.f));
-    m_frSelTex = GetIniFloatRect(ini1, name1, ini2, name2, "selTexRect", FXYRECT(0.f, 0.f, 1.f, 1.f));
+    m_frNormTex = Config::GetOrGet<Types::Vector4<double>>(configs, "normTexRect", {0.0, 0.0, 1.0, 1.0});
+    m_frSelTex = Config::GetOrGet<Types::Vector4<double>>(configs, "selTexRect", {0.0, 0.0, 1.0, 1.0});
 
-    // get font number
-    if (ReadIniString(ini1, name1, ini2, name2, "chrFont", param, sizeof(param), ""))
-        if ((m_nChrFontNum = m_rs->LoadFont(param)) == -1)
-            core.Trace("can`t load font:'%s'", param);
-    if (ReadIniString(ini1, name1, ini2, name2, "strFont", param, sizeof(param), ""))
-        if ((m_nStrFontNum = m_rs->LoadFont(param)) == -1)
-            core.Trace("can`t load font:'%s'", param);
+    m_nChrFontNum = m_rs->LoadFont(Config::GetOrGet<std::string>(configs, "chrFont", {}));
+    if (m_nChrFontNum == -1) {
+        throw std::runtime_error("Can't find font 'chrFont'");
+    }
+    m_nStrFontNum = m_rs->LoadFont(Config::GetOrGet<std::string>(configs, "strFont", {}));
+    if (m_nStrFontNum == -1) {
+        throw std::runtime_error("Can't find font 'chrFont'");
+    }
 
     // Get font scale
-    m_fChrScale = GetIniFloat(ini1, name1, ini2, name2, "chrScale", 1.f);
-    m_fStrScale = GetIniFloat(ini1, name1, ini2, name2, "strScale", 1.f);
+    m_fChrScale = Config::GetOrGet<double>(configs, "chrScale", 1.0);
+    m_fStrScale = Config::GetOrGet<double>(configs, "strScale", 1.0);
 
-    m_nLeftOffset = GetIniLong(ini1, name1, ini2, name2, "offsLeft");
-    m_nTopOffset = GetIniLong(ini1, name1, ini2, name2, "offsTop");
+    m_nLeftOffset = Config::GetOrGet<std::int64_t>(configs, "offsLeft", 0);
+    m_nTopOffset = Config::GetOrGet<std::int64_t>(configs, "offsTop", 0);
 
-    // get texture
-    if (ReadIniString(ini1, name1, ini2, name2, "chrTexture", param, sizeof(param), ""))
-        if ((m_idBtnTex = m_rs->TextureCreate(param)) == -1)
-            core.Trace("can`t load texture:'%s'", param);
+    auto chr_texture = Config::GetOrGet<std::string>(configs, "chrTexture", {});
+    if (!chr_texture.empty()) {
+        if ((m_idBtnTex = m_rs->TextureCreate(chr_texture.c_str())) == -1)
+            core.Trace("can`t load texture:'%s'", chr_texture.c_str());
+    }
 
-    // Get rectangle color
-    m_dwEditBoxColor = GetIniARGB(ini1, name1, ini2, name2, "argbBoxColor", 0);
+    auto box_color = Config::GetOrGet<Types::Vector4<std::int64_t>>(configs, "argbBoxColor", {});
+    m_dwEditBoxColor = ARGB(box_color.x, box_color.y, box_color.z, box_color.w);
 
-    // Get rectangle bound color
-    m_dwBorderColor = GetIniARGB(ini1, name1, ini2, name2, "argbBoundColor", 0);
+    auto bound_color = Config::GetOrGet<Types::Vector4<std::int64_t>>(configs, "argbBoundColor", {});
+    m_dwBorderColor = ARGB(bound_color.x, bound_color.y, bound_color.z, bound_color.w);
 
     // Get alphabet
     m_nAlphaQuantity = 0;
@@ -397,43 +397,44 @@ void CXI_EDITBOX::LoadIni(INIFILE *ini1, const char *name1, INIFILE *ini2, const
     m_nFirstChar = 0;
     m_bUpChrRegistrOffset = 0;
 
-    if (ReadIniString(ini1, name1, ini2, name2, "alphabet", param, sizeof(param) - 1, ""))
+    auto alphabet = Config::GetOrGet<std::string>(configs, "alphabet", {});
+    if (!alphabet.empty())
     {
-        auto *pTmpStr = pStringService->GetString(pStringService->GetStringNum(param));
+        auto *pTmpStr = pStringService->GetString(pStringService->GetStringNum(alphabet.c_str()));
         if (pTmpStr == nullptr)
-            pTmpStr = param;
+            pTmpStr = alphabet.data();
         int nLen = strlen(pTmpStr);
         if (nLen > sizeof(m_alpha) / 2 - 1)
             nLen = sizeof(m_alpha) / 2 - 1;
         strncpy_s(m_alpha, pTmpStr, nLen);
+
         // m_alpha[nLen] = 0;
         m_nAlphaQuantity = strlen(m_alpha);
     }
-    if (ReadIniString(ini1, name1, ini2, name2, "alphabetUP", param, sizeof(param) - 1, ""))
-    {
-        auto *pTmpStr = pStringService->GetString(pStringService->GetStringNum(param));
+    auto alphabet_up = Config::GetOrGet<std::string>(configs, "alphabetUP", {});
+    if (!alphabet_up.empty()) {
+        auto *pTmpStr = pStringService->GetString(pStringService->GetStringNum(alphabet_up.c_str()));
         if (pTmpStr == nullptr)
-            pTmpStr = param;
+            pTmpStr = alphabet_up.data();
         auto len = strlen(pTmpStr) + 1;
         if (len > sizeof(m_alpha) / 2 - 1)
             len = sizeof(m_alpha) / 2 - 1;
         strcpy_s(&m_alpha[sizeof(m_alpha) / 2], len, pTmpStr);
         // m_alpha[len+sizeof(m_alpha)/2] = 0;
 
-        if (static_cast<size_t>(m_nAlphaQuantity) != strlen(&m_alpha[sizeof(m_alpha) / 2]))
-        {
+        if (static_cast<size_t>(m_nAlphaQuantity) != strlen(&m_alpha[sizeof(m_alpha) / 2])) {
             core.Trace("WARNING!!! parameters alphabet & alphabetUP is different");
         }
     }
 
     // Get symbol buttons grate
-    m_nHorz = GetIniLong(ini1, name1, ini2, name2, "hGrateSize", 1);
+    m_nHorz = Config::GetOrGet<std::int64_t>(configs, "hGrateSize", 1);
     if (m_nHorz <= 0)
         m_nHorz = 1;
     m_nVert = (m_nAlphaQuantity + m_nHorz - 1) / m_nHorz;
 
     // Get max string size for edit string
-    m_nMaxSize = GetIniLong(ini1, name1, ini2, name2, "stringLength", -1);
+    m_nMaxSize = Config::GetOrGet<std::int64_t>(configs, "stringLength", -1);
 
     // Create buffers
     m_idVBRect = m_rs->CreateVertexBuffer(XI_NOTEX_FVF, 8 * sizeof(XI_NOTEX_VERTEX), D3DUSAGE_WRITEONLY);
@@ -458,8 +459,7 @@ void CXI_EDITBOX::LoadIni(INIFILE *ini1, const char *name1, INIFILE *ini2, const
     pv[6].pos.x = pv[7].pos.x = static_cast<float>(m_rect.right) - m_nLeftOffset;
     pv[4].pos.y = pv[6].pos.y = static_cast<float>(m_nTopStringPos);
     m_nTopOffset = static_cast<int32_t>(pv[5].pos.y = pv[7].pos.y = static_cast<float>(m_rect.top) + m_nTopOffset +
-                                                                 m_rs->CharHeight(m_nStrFontNum) * 1.06f) +
-                   4;
+                                                                 m_rs->CharHeight(m_nStrFontNum) * 1.06f) + 4;
     m_rs->UnLockVertexBuffer(m_idVBRect);
 
     // buttons buffers
@@ -471,12 +471,10 @@ void CXI_EDITBOX::LoadIni(INIFILE *ini1, const char *name1, INIFILE *ini2, const
 
     auto *const pvt = static_cast<XI_ONLYONETEX_VERTEX *>(m_rs->LockVertexBuffer(m_idVB));
     auto topButtons = static_cast<float>(m_nTopOffset);
-    idx = 0;
-    for (j = 0; j < m_nVert; j++)
-    {
+    int idx = 0;
+    for (j = 0; j < m_nVert; j++) {
         auto left = static_cast<float>(m_rect.left + m_nLeftOffset);
-        for (i = 0; i < m_nHorz; i++)
-        {
+        for (i = 0; i < m_nHorz; i++) {
             pvt[idx].pos.z = pvt[idx + 1].pos.z = pvt[idx + 2].pos.z = pvt[idx + 3].pos.z = 1.f;
             pvt[idx].pos.x = pvt[idx + 1].pos.x = left;
             pvt[idx + 2].pos.x = pvt[idx + 3].pos.x = left + m_fHAdd * WIDTH_SCALE_USED;
@@ -498,8 +496,7 @@ void CXI_EDITBOX::LoadIni(INIFILE *ini1, const char *name1, INIFILE *ini2, const
     m_rs->UnLockVertexBuffer(m_idVB);
 
     auto *pt = static_cast<uint16_t *>(m_rs->LockIndexBuffer(m_idIB));
-    for (j = i = 0; i < idx; i += 4, j += 6)
-    {
+    for (j = i = 0; i < idx; i += 4, j += 6) {
         pt[j] = i;
         pt[j + 1] = i + 1;
         pt[j + 2] = i + 2;

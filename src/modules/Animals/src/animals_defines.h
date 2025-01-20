@@ -9,7 +9,6 @@ extern char ANIMALS_SHARKS_SECTION[];
 extern const char ANIMALS_FISHSCHOOL_FILENAME[];
 extern char ANIMALS_FISHSCHOOLS_SECTION[];
 extern const char ANIMALS_BUTTERFLY_FILENAME[];
-extern char ANIMALS_BUTTERFLIES_SECTION[];
 
 #define RESPAWN_DISTANCE 70.0f
 // seagull

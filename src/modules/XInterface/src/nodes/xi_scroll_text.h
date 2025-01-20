@@ -31,8 +31,8 @@ class CXI_SCROLLTEXT : public CINODE
     ~CXI_SCROLLTEXT() override;
 
     void Draw(bool bSelected, uint32_t Delta_Time) override;
-    bool Init(INIFILE *ini1, const char *name1, INIFILE *ini2, const char *name2, VDX9RENDER *rs, XYRECT &hostRect,
-              XYPOINT &ScreenSize) override;
+    bool Init(const Storm::Filesystem::Config& node_config, const Storm::Filesystem::Config& def_config,
+        VDX9RENDER *rs, XYRECT &hostRect, XYPOINT &ScreenSize) override;
     void ReleaseAll() override;
     int CommandExecute(int wActCode) override;
     bool IsClick(int buttonID, int32_t xPos, int32_t yPos) override;
@@ -50,7 +50,7 @@ class CXI_SCROLLTEXT : public CINODE
     void ClearText();
     int32_t FillPices(char *pt, size_t beg, size_t size, int32_t &idx, STRING_PICE *spl, int32_t wid);
 
-    void LoadIni(INIFILE *ini1, const char *name1, INIFILE *ini2, const char *name2) override;
+    void LoadIni(const Storm::Filesystem::Config& node_config, const Storm::Filesystem::Config& def_config) override;
 
     void TextDownShift(float);
     void TextUpShift();

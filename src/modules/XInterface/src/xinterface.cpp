@@ -4,14 +4,18 @@
 
 #include "xinterface.h"
 #include "back_scene/back_scene.h"
-#include "help_chooser/help_chooser.h"
-#include "info_handler.h"
 #include "string_compare.hpp"
 #include "nodes/all_xi_node.h"
 #include "string_service/obj_str_service.h"
-#include "string_service/str_service.h"
 #include "xservice.h"
+
 #include <cstdio>
+
+#include "Filesystem/Config/Config.hpp"
+#include "Filesystem/Constants/ConfigNames.hpp"
+
+using namespace Storm::Filesystem;
+using namespace Storm::Math;
 
 #define CHECK_FILE_NAME "PiratesReadme.txt"
 
@@ -131,7 +135,6 @@ XINTERFACE::XINTERFACE()
     m_idHelpTexture = -1;
     m_dwContHelpColor = ARGB(255, 128, 128, 128);
     m_frectDefHelpTextureUV = FXYRECT(0.0, 0.0, 1.0, 1.0);
-    m_strDefHelpTextureFile = nullptr;
     DiskCheck = true; // false;
 
     m_pMouseWeel = nullptr;
@@ -1059,76 +1062,40 @@ uint64_t XINTERFACE::ProcessMessage(MESSAGE &message)
     return 0;
 }
 
-static const char *RESOURCE_FILENAME = "resource\\ini\\interfaces\\interfaces.ini";
-
 void XINTERFACE::LoadIni()
 {
-    // GUARD(XINTERFACE::LoadIni());
-    char section[256];
-
-    auto ini = fio->OpenIniFile(RESOURCE_FILENAME);
-    if (!ini)
-        throw std::runtime_error("ini file not found!");
-
     auto windowSize = core.GetWindow()->GetWindowSize();
 
     fScale = 1.0f;
     const auto screenSize = core.GetScreenSize();
     dwScreenHeight = screenSize.height;
     dwScreenWidth = windowSize.width * dwScreenHeight / windowSize.height;
-    if (dwScreenWidth < screenSize.width)
-        dwScreenWidth = screenSize.width;
+    dwScreenWidth = dwScreenWidth < screenSize.width ? screenSize.width : dwScreenWidth;
     GlobalScreenRect.top = 0;
-    GlobalScreenRect.bottom = screenSize.height;
-    GlobalScreenRect.left = (dwScreenWidth - screenSize.width) / 2;
-    GlobalScreenRect.right = screenSize.width + GlobalScreenRect.left;
+    GlobalScreenRect.bottom = static_cast<std::int32_t>(dwScreenHeight);
+    GlobalScreenRect.left = static_cast<std::int32_t>(dwScreenWidth - screenSize.width) / 2;
+    GlobalScreenRect.right = static_cast<std::int32_t>(screenSize.width) + GlobalScreenRect.left;
 
-    char platform[23];
-    bool sectionFound = false;
-    if (ini->GetSectionName(platform, sizeof(platform) - 1))
-    {
-        float windowRatio = (float)windowSize.width / (float)windowSize.height;
-        float iniRatio;
-        char splitPlatform[23], *platformW, *platformH;
-        do
-        {
-            if(starts_with(platform, "PC_SCREEN_"))
-            {
-                strcpy_s(splitPlatform, platform);
-                platformW = std::strtok(splitPlatform, "_:"); // PC
-                platformW = std::strtok(nullptr, "_:"); // SCREEN
-                platformW = std::strtok(nullptr, "_:"); // Width
-                platformH = std::strtok(nullptr, "_:"); // Height
-                iniRatio = (float)atoi(platformW) / (float)atoi(platformH);
-                // +- 3%
-                if (iniRatio*0.97  <= windowRatio && windowRatio <= iniRatio*1.03)
-                    sectionFound = true;
-            }
-        } while (!sectionFound && ini->GetSectionNameNext(platform, sizeof(platform) - 1));
-    }
-    if (!sectionFound)
-        strcpy_s(platform, "PC_SCREEN");
-    core.Trace("Using %s parameters", platform);
-    sprintf_s(section, "COMMON");
-
+    auto config = Config::Load(Storm::Filesystem::Constants::ConfigNames::interfaces());
+    std::ignore = config.SelectSection("COMMON");
     // set screen parameters
-    if (ini->GetInt(platform, "bDynamicScaling", 0) == 0)
-    {
+    if (config.Get<std::int64_t>("bDynamicScaling", 0) == 0) {
+        std::ignore = config.SelectSection("PC_SCREEN");
         const auto &canvas_size = core.GetScreenSize();
-        fScale = ini->GetFloat(platform, "fScale", 1.f);
+        fScale = static_cast<float>(config.Get<double>("fScale", 1.0));
         if (fScale < MIN_SCALE || fScale > MAX_SCALE)
             fScale = 1.f;
-        dwScreenWidth = ini->GetInt(platform, "wScreenWidth", canvas_size.width);
-        dwScreenHeight = ini->GetInt(platform, "wScreenHeight", canvas_size.height);
-        GlobalScreenRect.left = ini->GetInt(platform, "wScreenLeft", 0);
-        GlobalScreenRect.top = ini->GetInt(platform, "wScreenTop", canvas_size.height);
-        GlobalScreenRect.right = ini->GetInt(platform, "wScreenRight", canvas_size.width);
-        GlobalScreenRect.bottom = ini->GetInt(platform, "wScreenDown", 0);
+        dwScreenWidth = config.Get<std::int64_t>("wScreenWidth", canvas_size.width);
+        dwScreenHeight = config.Get<std::int64_t>("wScreenHeight", canvas_size.height);
+        GlobalScreenRect.left = static_cast<int>(config.Get<std::int64_t>("wScreenLeft", 0));
+        GlobalScreenRect.top = static_cast<int>(config.Get<std::int64_t>("wScreenTop", canvas_size.height));
+        GlobalScreenRect.right = static_cast<int>(config.Get<std::int64_t>("wScreenRight", canvas_size.width));
+        GlobalScreenRect.bottom = static_cast<int>(config.Get<std::int64_t>("wScreenDown", 0));
     }
-
-    m_fpMouseOutZoneOffset.x = ini->GetFloat(section, "mouseOutZoneWidth", 0.f);
-    m_fpMouseOutZoneOffset.y = ini->GetFloat(section, "mouseOutZoneHeight", 0.f);
-    m_nMouseLastClickTimeMax = ini->GetInt(section, "mouseDblClickInterval", 300);
+    std::ignore = config.SelectSection("COMMON");
+    m_fpMouseOutZoneOffset.x = static_cast<float>(config.Get<std::int64_t>("mouseOutZoneWidth", 0));
+    m_fpMouseOutZoneOffset.y = static_cast<float>(config.Get<std::int64_t>("mouseOutZoneHeight", 0));
+    m_nMouseLastClickTimeMax = static_cast<int>(config.Get<std::int64_t>("mouseDblClickInterval", 300));
 
     CMatrix oldmatp;
     pRenderService->GetTransform(D3DTS_PROJECTION, (D3DMATRIX *)&oldmatp);
@@ -1149,23 +1116,25 @@ void XINTERFACE::LoadIni()
     matv.m[3][1] = -(GlobalScreenRect.top + GlobalScreenRect.bottom) / 2.f;
 
     // set key press data
-    m_nMaxPressDelay = ini->GetInt(section, "RepeatDelay", 500);
+    m_nMaxPressDelay = static_cast<int>(config.Get<std::int64_t>("RepeatDelay", 500));
 
     // set mouse cursor
-    char param[256];
-    ini->ReadString(section, "MousePointer", param, sizeof(param) - 1, "");
+    auto mouse_pointer_arr = config.Get<std::vector<std::string>>("MousePointer", {});
+    std::string mouse_pointer_str{};
+    for (auto& each : mouse_pointer_arr) {
+        mouse_pointer_str += each + ",";
+    }
     char param2[256];
-    sscanf(param, "%[^,],%d,size:(%d,%d),pos:(%d,%d)", param2, &m_lMouseSensitive, &MouseSize.x, &MouseSize.y,
-           &m_lXMouse, &m_lYMouse);
-    m_idTex = pRenderService->TextureCreate(param2);
+    sscanf(mouse_pointer_str.c_str(), "%[^,],%d,size:(%d,%d),pos:(%d,%d)", param2,
+        &m_lMouseSensitive, &MouseSize.x, &MouseSize.y, &m_lXMouse, &m_lYMouse);
+    m_idTex = pRenderService->TextureCreate(mouse_pointer_arr[0].c_str());
 
-    if (auto *editor = core.GetEditor(); editor == nullptr || !editor->IsFocused())
-    {
+    if (auto *editor = core.GetEditor(); editor == nullptr || !editor->IsFocused()) {
         core.GetWindow()->WarpMouseInWindow(windowSize.width / 2, windowSize.height / 2);
     }
 
-    fXMousePos = static_cast<float>(dwScreenWidth / 2);
-    fYMousePos = static_cast<float>(dwScreenHeight / 2);
+    fXMousePos = static_cast<float>(dwScreenWidth) / 2;
+    fYMousePos = static_cast<float>(dwScreenHeight) / 2;
     for (int i = 0; i < 4; i++)
         vMouse[i].pos.z = 1.f;
     vMouse[0].tu = vMouse[1].tu = 0.f;
@@ -1174,123 +1143,58 @@ void XINTERFACE::LoadIni()
     vMouse[1].tv = vMouse[3].tv = 1.f;
     core.GetWindow()->ShowCursor(false);
     // set blind parameters
-    m_fBlindSpeed = ini->GetFloat(section, "BlindTime", 1.f);
+    m_fBlindSpeed = static_cast<float>(config.Get<double>("BlindTime", 1.0));
     if (m_fBlindSpeed <= 0.0001f)
         m_fBlindSpeed = 1.f;
     m_fBlindSpeed = 0.002f / m_fBlindSpeed;
 
     // set wave parameters
-    m_nColumnQuantity = ini->GetInt(section, "columnQuantity", m_nColumnQuantity);
-    m_fWaveAmplitude = ini->GetFloat(section, "waveAmplitude", m_fWaveAmplitude);
-    m_fWavePhase = ini->GetFloat(section, "wavePhase", m_fWavePhase);
-    m_fWaveSpeed = ini->GetFloat(section, "waveSpeed", m_fWaveSpeed);
-    m_nBlendStepMax = ini->GetInt(section, "waveStepQuantity", m_nBlendStepMax);
-    m_nBlendSpeed = ini->GetInt(section, "blendSpeed", m_nBlendSpeed);
+    m_nColumnQuantity = static_cast<int>(config.Get<std::int64_t>("columnQuantity", m_nColumnQuantity));
+    m_fWaveAmplitude = static_cast<float>(config.Get<double>("waveAmplitude", m_fWaveAmplitude));
+    m_fWavePhase = static_cast<float>(config.Get<double>("wavePhase", m_fWavePhase));
+    m_fWaveSpeed = static_cast<float>(config.Get<double>("waveSpeed", m_fWaveSpeed));
+    m_nBlendStepMax = static_cast<int>(config.Get<std::int64_t>("waveStepQuantity", m_nBlendStepMax));
+    m_nBlendSpeed = static_cast<int>(config.Get<std::int64_t>("blendSpeed", m_nBlendSpeed));
 
     oldKeyState.dwKeyCode = -1;
     DoControl();
-    // UNGUARD
 }
 
-void XINTERFACE::LoadDialog(const char *sFileName)
-{
-    char section[255];
-    char skey[255];
-    char param[255];
-    int i;
-
+void XINTERFACE::LoadDialog(const char *sFileName) {
     if (m_pEditor)
         m_pEditor->ReCreate();
 
     // initialize ini file
     m_sDialogFileName = sFileName;
-    auto ini = fio->OpenIniFile(sFileName);
-    if (!ini)
-    {
-        core.Trace("ini file %s not found!", sFileName);
-        core.PostEvent("exitCancel", 1, nullptr);
+
+    auto node_config = Config::Load(std::filesystem::path(sFileName).replace_extension(".toml"));
+    std::ignore = node_config.SelectSection("MAIN");
+
+    auto items = node_config.Get<std::vector<std::vector<std::string>>>("item", {});
+    if (items.empty()) {
         return;
     }
-    auto ownerIni = fio->OpenIniFile("RESOURCE\\INI\\INTERFACES\\defaultnode.ini");
-
-    sprintf_s(section, "MAIN");
-
-    // load items
-    CINODE *curnod = m_pNodes;
-    int keyNum = 1;
-    char nodeName[sizeof(param)];
-
-    auto findName = "item";
-    if (ini->ReadString(section, findName, skey, sizeof(skey) - 1, ""))
-        while (true)
-        {
-            int priority;
-            char *tmpStr = skey;
-            tmpStr = XI_ParseStr(tmpStr, param, sizeof(param));
-            if ((priority = atoi(param)) > 0)
-                tmpStr = XI_ParseStr(tmpStr, param, sizeof(param));
-            else
-                priority = 80;
-            if (storm::iEquals(param, "PC") || storm::iEquals(param, "XBOX") || storm::iEquals(param, "LANG"))
-            {
-                const bool bThisXBOX = false;
-                if (storm::iEquals(param, "PC"))
-                {
-                    if (bThisXBOX)
-                        param[0] = 0;
-                    tmpStr = XI_ParseStr(tmpStr, param, sizeof(param));
-                }
-                else if (storm::iEquals(param, "XBOX"))
-                {
-                    if constexpr (!bThisXBOX)
-                        param[0] = 0;
-                    else
-                        tmpStr = XI_ParseStr(tmpStr, param, sizeof(param));
-                }
-                else if (storm::iEquals(param, "LANG"))
-                {
-                    tmpStr = XI_ParseStr(tmpStr, param, sizeof(param));
-                    char *strLangName = pStringService->GetLanguage();
-                    if (strLangName == nullptr || !storm::iEquals(param, strLangName))
-                        param[0] = 0;
-                    else
-                        tmpStr = XI_ParseStr(tmpStr, param, sizeof(param));
-                }
-            }
-            tmpStr = XI_ParseStr(tmpStr, nodeName, sizeof(nodeName));
-            if (param[0])
-                SFLB_CreateNode(ownerIni.get(), ini.get(), param, nodeName, priority);
-
-            i = 0;
-            if (findName && storm::iEquals(findName, "item"))
-            {
-                ini->ReadString(section, findName, skey, sizeof(skey) - 1);
-                for (; i < keyNum; i++)
-                    if (!ini->ReadStringNext(section, findName, skey, sizeof(skey) - 1))
-                        break;
-            }
-
-            if (i < keyNum)
-            {
-                // not more items
-                if (findName && storm::iEquals(findName, "item"))
-                {
-                    findName = "glow";
-                    if (m_pGlowCursorNode == nullptr)
-                    {
-                        if (!ini->ReadString(section, findName, skey, sizeof(skey) - 1, "GLOWCURSOR,GLOWCURSOR"))
-                        {
-                            if (ownerIni && !ownerIni->ReadString("LIST", "glow_cursor", skey, sizeof(skey) - 1,
-                                                                  "GLOWCURSOR,GLOWCURSOR"))
-                                printf(skey, "GLOWCURSOR,GLOWCURSOR");
-                        }
-                        continue;
-                    }
-                }
-                break;
-            }
-            keyNum++;
+    for (auto& item : items) {
+        auto item_it = item.begin();
+        std::int32_t priority{};
+        try {
+            priority = std::stoi(*item_it);
+            ++item_it;
+        } catch (const std::exception& e) {
+            priority = 80;
         }
+
+        if (*item_it == "PC") {
+            ++item_it;
+        }
+
+        std::string node_type{*item_it};
+        ++item_it;
+        std::string node_name{*item_it};
+        SFLB_CreateNode(Constants::ConfigNames::defaultnode().string(),
+            std::filesystem::path(sFileName).replace_extension(".toml").string(),
+            node_type.data(), node_name.data(), priority);
+    }
 
     // set help data
     if (m_pContHelp != nullptr)
@@ -1302,66 +1206,66 @@ void XINTERFACE::LoadDialog(const char *sFileName)
     }
 
     // set active item
-    if (m_pNodes == nullptr)
+    if (m_pNodes == nullptr) {
         m_pCurNode = nullptr;
-    else
-    {
-        if (!ini->ReadString(section, "start", param, sizeof(param) - 1, ""))
+    } else {
+        auto start = node_config.Get<std::string>("start");
+        if (start.has_value()) {
+            m_pCurNode = m_pNodes->FindNode(start->c_str());
+            if (m_pCurNode == nullptr) {
+                m_pCurNode = GetActivingNode(m_pNodes);
+            }
+        } else {
             m_pCurNode = nullptr;
-        else if ((m_pCurNode = m_pNodes->FindNode(param)) == nullptr)
-            m_pCurNode = GetActivingNode(m_pNodes);
+        }
 
-        if (m_pEditor)
-        {
-            if (!ini->ReadString(section, "editnode", param, sizeof(param) - 1, ""))
-                m_pEditor->SetEditNode(nullptr);
-            m_pEditor->SetEditNode(m_pNodes->FindNode(param));
+        auto edit_node = node_config.Get<std::string>("editnode");
+        if (!edit_node.has_value()) {
+            m_pEditor->SetEditNode(nullptr);
+        } else {
+            m_pEditor->SetEditNode(m_pNodes->FindNode(edit_node->c_str()));
         }
     }
-    if (ini->ReadString(section, "DefaultHelp", param, sizeof(param) - 1, ""))
-    {
-        const auto len = strlen(param) + 1;
-        m_strDefHelpTextureFile = new char[len];
-        if (m_strDefHelpTextureFile)
-            memcpy(m_strDefHelpTextureFile, param, len);
-    }
+
+    m_strDefHelpTextureFile = node_config.Get<std::string>("DefaultHelp", "");
     m_frectDefHelpTextureUV = FXYRECT(0.f, 0.f, 1.f, 1.f);
-    if (ini->ReadString(section, "DefaultHelpUV", param, sizeof(param) - 1, ""))
-    {
-        CINODE::GetDataStr(param, "ffff", &m_frectDefHelpTextureUV.left, &m_frectDefHelpTextureUV.top,
-                           &m_frectDefHelpTextureUV.right, &m_frectDefHelpTextureUV.bottom);
+
+    const auto def_help_uv = node_config.Get<Types::Vector4<std::string>>("DefaultHelpUV");
+    if (def_help_uv.has_value()) {
+        m_frectDefHelpTextureUV.left = std::stof(def_help_uv->x);
+        m_frectDefHelpTextureUV.top = std::stof(def_help_uv->y);
+        m_frectDefHelpTextureUV.right = std::stof(def_help_uv->z);
+        m_frectDefHelpTextureUV.bottom = std::stof(def_help_uv->w);
     }
 }
 
-void XINTERFACE::CreateNode(const char *sFileName, const char *sNodeType, const char *sNodeName, int32_t priority)
-{
+void XINTERFACE::CreateNode(const char *sFileName, const char *sNodeType, const char *sNodeName, int32_t priority) {
     // there is already such a node
     if (m_pNodes && m_pNodes->FindNode(sNodeName))
         return;
 
-    std::unique_ptr<INIFILE> ini;
-    if (sFileName && sFileName[0])
-    {
-        ini = fio->OpenIniFile(sFileName);
-        if (!ini)
-        {
-            core.Trace("ini file %s not found!", sFileName);
-            return;
-        }
-    }
-    auto ownerIni = fio->OpenIniFile("RESOURCE\\INI\\INTERFACES\\defaultnode.ini");
-
-    SFLB_CreateNode(ownerIni.get(), ini.get(), sNodeType, sNodeName, priority);
+    SFLB_CreateNode(Constants::ConfigNames::defaultnode().string(),
+        std::filesystem::path(sFileName).replace_extension(".toml").string(),
+        sNodeType, sNodeName, priority);
 }
 
-void XINTERFACE::SFLB_CreateNode(INIFILE *pOwnerIni, INIFILE *pUserIni, const char *sNodeType, const char *sNodeName,
-                                 int32_t priority)
-{
-    if (!sNodeType || !sNodeType[0])
-    {
+void XINTERFACE::SFLB_CreateNode(const std::string& def_node_config_name, const std::string& node_config_name,
+            const char *sNodeType, const char *sNodeName,int32_t priority) {
+    if (!sNodeType || !sNodeType[0]) {
         core.Trace("Warning! Interface: Can`t create node with null type.");
         return;
     }
+
+    auto def_config = Config::Load(def_node_config_name);
+    std::ignore = def_config.SelectSection(sNodeType);
+    auto node_config = Config::Load(node_config_name);
+    std::ignore = node_config.SelectSection(sNodeName);
+    std::pair<const Config&, const Config&> configs{node_config, def_config};
+
+    if (def_config.Empty() || node_config.Empty()) {
+        throw std::runtime_error("Node config does not exist");
+    }
+
     /*if( !pOwnerIni->TestSection( sNodeType ) &&
       !pUserIni->TestSection( sNodeType ) )
     {
@@ -1372,14 +1276,11 @@ void XINTERFACE::SFLB_CreateNode(INIFILE *pOwnerIni, INIFILE *pUserIni, const ch
     if (!sNodeName)
         sNodeName = "?";
 
-    char param[1024];
-    if (!pOwnerIni->ReadString(sNodeType, "class", param, sizeof(param) - 1, ""))
-        sprintf_s(param, "%s", sNodeType);
-
-    CINODE *pNewNod = nullptr;
-    pNewNod = NewNode(param);
-    if (pNewNod)
-    {
+    auto class_str = def_config.Get<std::string>("class", {});
+    CINODE *pNewNod = NewNode(class_str.empty()
+        ? sNodeType
+        : class_str.c_str());
+    if (pNewNod) {
         pNewNod->ptrOwner = this;
         pNewNod->pPictureService = pPictureService;
         pNewNod->pStringService = pStringService;
@@ -1392,95 +1293,89 @@ void XINTERFACE::SFLB_CreateNode(INIFILE *pOwnerIni, INIFILE *pUserIni, const ch
         if (!pNewNod->m_nodeName)
             throw std::runtime_error("allocate memory error");
         memcpy(pNewNod->m_nodeName, sNodeName, len);
-        if (!pNewNod->Init(pUserIni, sNodeName, pOwnerIni, sNodeType, pRenderService, GlobalRect, xypScreenSize))
-        {
+        if (!pNewNod->Init(node_config, def_config, pRenderService, GlobalRect, xypScreenSize)) {
             delete pNewNod;
             pNewNod = nullptr;
-        }
-        else
-        {
+        } else {
             AddNodeToList(pNewNod, priority);
         }
 
-        INIFILE *usedini = pUserIni;
-        pNewNod->m_bBreakPress = pNewNod->GetIniBool(pUserIni, sNodeName, pOwnerIni, sNodeType, "bBreakCommand", false);
-        if (pNewNod->GetIniBool(pUserIni, sNodeName, pOwnerIni, sNodeType, "moveMouseDoSelect", false))
-            pNewNod->m_bMouseSelect = true;
-        // if( pNewNod->ReadIniString(pUserIni,sNodeName, pOwnerIni,sNodeType, "command", param,sizeof(param)-1, "") )
-        // do
-        if (usedini && usedini->ReadString(pNewNod->m_nodeName, "command", param, sizeof(param) - 1, ""))
-            do
-            {
-                // get command name
-                char stmp[sizeof(param)];
-                sscanf(param, "%[^,]", stmp);
-                // search command
-                const int nComNum = FindCommand(stmp);
-                if (nComNum == -1)
+        pNewNod->m_bBreakPress = Config::GetOrGet<std::int64_t>(configs, "bBreakCommand", 0);
+        pNewNod->m_bMouseSelect = Config::GetOrGet<std::int64_t>(configs, "moveMouseDoSelect", 0);
+        auto command_vec = node_config.Get<std::vector<std::vector<std::string>>>("command", {});
+        for (const auto& command : command_vec) {
+            std::stringstream ss;
+            std::ranges::for_each(command,
+                [&ss](const std::string& each) {
+                    ss << each << ',';
+            });
+            std::string command_str{ss.str()};
+            // get command name
+            char stmp[512];
+            sscanf(command_str.c_str(), "%[^,]", stmp);
+            // search command
+            const int nComNum = FindCommand(stmp);
+            if (nComNum == -1)
+                continue;
+
+            pNewNod->m_bSelected = true;
+            pNewNod->m_bClickable = true;
+            pNewNod->m_pCommands[nComNum].bUse = true;
+            // command sequence
+            size_t nFirstChar = strlen(stmp) + 1;
+            while (nFirstChar < std::size(command_str)) {
+                sscanf(&command_str[nFirstChar], "%[^,]", stmp);
+                nFirstChar += strlen(stmp) + 1;
+
+                // redirect control
+                if (!strncmp(stmp, "select:", 7)) {
+                    DublicateString(pNewNod->m_pCommands[nComNum].sRetControl, &stmp[7]);
                     continue;
-
-                pNewNod->m_bSelected = true;
-                pNewNod->m_bClickable = true;
-                pNewNod->m_pCommands[nComNum].bUse = true;
-                // command sequence
-                size_t nFirstChar = strlen(stmp) + 1;
-                while (nFirstChar < strlen(param))
-                {
-                    sscanf(&param[nFirstChar], "%[^,]", stmp);
-                    nFirstChar += strlen(stmp) + 1;
-
-                    // redirect control
-                    if (!strncmp(stmp, "select:", 7))
-                    {
-                        DublicateString(pNewNod->m_pCommands[nComNum].sRetControl, &stmp[7]);
-                        continue;
-                    }
-
-                    // subnodes control
-                    if (!strncmp(stmp, "com:", 4))
-                    {
-                        char sSubNodName[sizeof(param)];
-                        int nSubCommand;
-                        char sSubCommand[sizeof(param)];
-                        sscanf(stmp, "com:%[^:]:%[^,]", sSubCommand, sSubNodName);
-                        if ((nSubCommand = FindCommand(sSubCommand)) == -1)
-                            continue;
-
-                        auto *pHead = new CINODE::COMMAND_REDIRECT{};
-                        if (pHead == nullptr)
-                            throw std::runtime_error("allocate memory error");
-                        pHead->next = pNewNod->m_pCommands[nComNum].pNextControl;
-                        pNewNod->m_pCommands[nComNum].pNextControl = pHead;
-                        DublicateString(pHead->sControlName, sSubNodName);
-                        pHead->command = pCommandsList[nSubCommand].code;
-
-                        continue;
-                    }
-
-                    if (!strncmp(stmp, "event:", 6))
-                    {
-                        char sEventName[sizeof(param)];
-                        sscanf(stmp, "event:%[^,]", sEventName);
-                        DublicateString(pNewNod->m_pCommands[nComNum].sEventName, sEventName);
-                        continue;
-                    }
-
-                    if (!strncmp(stmp, "delay:", 6))
-                    {
-                        sscanf(stmp, "delay:%d", &pNewNod->m_pCommands[nComNum].nActionDelay);
-                        continue;
-                    }
-
-                    if (!strncmp(stmp, "sound:", 6))
-                    {
-                        sscanf(stmp, "sound:%d", &pNewNod->m_pCommands[nComNum].nSound);
-                    }
                 }
-            } while (usedini->ReadStringNext(pNewNod->m_nodeName, "command", param, sizeof(param) - 1));
+
+                // subnodes control
+                if (!strncmp(stmp, "com:", 4)) {
+                    char sSubNodName[512];
+                    char sSubCommand[512];
+                    sscanf(stmp, "com:%[^:]:%[^,]", sSubCommand, sSubNodName);
+                    int nSubCommand = FindCommand(sSubCommand);
+                    if (nSubCommand == -1) {
+                        continue;
+                    }
+
+                    auto *pHead = new CINODE::COMMAND_REDIRECT{};
+                    if (pHead == nullptr)
+                        throw std::runtime_error("allocate memory error");
+                    pHead->next = pNewNod->m_pCommands[nComNum].pNextControl;
+                    pNewNod->m_pCommands[nComNum].pNextControl = pHead;
+                    DublicateString(pHead->sControlName, sSubNodName);
+                    pHead->command = pCommandsList[nSubCommand].code;
+
+                    continue;
+                }
+
+                if (!strncmp(stmp, "event:", 6)) {
+                    char sEventName[512];
+                    sscanf(stmp, "event:%[^,]", sEventName);
+                    DublicateString(pNewNod->m_pCommands[nComNum].sEventName, sEventName);
+                    continue;
+                }
+
+                if (!strncmp(stmp, "delay:", 6)) {
+                    sscanf(stmp, "delay:%d", &pNewNod->m_pCommands[nComNum].nActionDelay);
+                    continue;
+                }
+
+                if (!strncmp(stmp, "sound:", 6)) {
+                    sscanf(stmp, "sound:%d", &pNewNod->m_pCommands[nComNum].nSound);
+                }
+            }
+        }
     }
 
-    if (m_pEditor && pNewNod)
+    if (m_pEditor && pNewNod) {
         m_pEditor->AddNode(pNewNod);
+    }
 }
 
 CINODE *XINTERFACE::NewNode(const char *pcNodType)
@@ -2564,7 +2459,6 @@ void XINTERFACE::ReleaseOld()
         m_pEditor->ReCreate();
 
     ReleaseContextHelpData();
-    STORM_DELETE(m_strDefHelpTextureFile);
 
     oldKeyState.dwKeyCode = 0;
     for (int i = 0; i < m_nStringQuantity; i++)
@@ -3299,7 +3193,7 @@ void XINTERFACE::GetContextHelpData()
 
     if (m_pCurNode)
     {
-        texName = m_pCurNode->m_strHelpTextureFile;
+        texName = m_pCurNode->m_strHelpTextureFile.c_str();
         m_frectHelpTextureUV = m_pCurNode->m_frectHelpTextureUV;
         if (texName == nullptr)
         {
@@ -3312,7 +3206,7 @@ void XINTERFACE::GetContextHelpData()
     }
     if (!texName)
     {
-        texName = m_strDefHelpTextureFile;
+        texName = m_strDefHelpTextureFile.c_str();
         m_frectHelpTextureUV = m_frectDefHelpTextureUV;
     }
 

@@ -1,8 +1,10 @@
 #include "xi_changer.h"
 
 #include "core.h"
-
 #include "file_service.h"
+
+using namespace Storm::Filesystem;
+using namespace Storm::Math;
 
 CXI_CHANGER::CXI_CHANGER()
 {
@@ -69,84 +71,83 @@ void CXI_CHANGER::Draw(bool bSelected, uint32_t Delta_Time)
     }
 }
 
-bool CXI_CHANGER::Init(INIFILE *ini1, const char *name1, INIFILE *ini2, const char *name2, VDX9RENDER *rs,
-                       XYRECT &hostRect, XYPOINT &ScreenSize)
-{
-    if (!CINODE::Init(ini1, name1, ini2, name2, rs, hostRect, ScreenSize))
-        return false;
-    return true;
+bool CXI_CHANGER::Init(const Config& node_config, const Config& def_config,
+    VDX9RENDER *rs, XYRECT &hostRect, XYPOINT &ScreenSize) {
+    return CINODE::Init(node_config, def_config, rs, hostRect, ScreenSize);
 }
 
-void CXI_CHANGER::LoadIni(INIFILE *ini1, const char *name1, INIFILE *ini2, const char *name2)
-{
-    int i;
-    char param[255];
-    FXYPOINT fPnt;
-
-    const auto bRelativeRect = !GetIniLong(ini1, name1, ini2, name2, "bAbsoluteRectangle", 0);
-
+void CXI_CHANGER::LoadIni(const Config& node_config, const Config& def_config) {
+    std::pair<const Config&, const Config&> configs{node_config, def_config};
+    const auto bRelativeRect = Config::GetOrGet<std::int64_t>(configs, "bAbsoluteRectangle", 0) == false;
     // get position quantity
-    m_nPlaceQuantity = 0;
-    if (ini1->ReadString(name1, "place", param, sizeof(param) - 1, ""))
-        do
-        {
-            m_nPlaceQuantity++;
-        } while (ini1->ReadStringNext(name1, "place", param, sizeof(param) - 1));
+
+    auto place_vec = Config::GetOrGet<std::vector<std::vector<std::string>>>(configs, "place", {});
+    m_nPlaceQuantity = std::size(place_vec);
 
     // create position array
-    if (m_nPlaceQuantity > 0)
-    {
+    if (m_nPlaceQuantity > 0) {
         m_pPlace = new XYRECT[m_nPlaceQuantity];
         std::memset(m_pPlace, 0, sizeof(XYRECT) * m_nPlaceQuantity);
     }
 
-    // get rectangle positions
-    ini1->ReadString(name1, "place", param, sizeof(param) - 1, "");
-    for (i = 0; i < m_nPlaceQuantity; i++)
-    {
-        GetDataStr(param, "llll", &m_pPlace[i].left, &m_pPlace[i].top, &m_pPlace[i].right, &m_pPlace[i].bottom);
-        if (bRelativeRect)
+    for (int i = 0; i < m_nPlaceQuantity; i++) {
+        std::stringstream ss;
+        std::ranges::for_each(place_vec[i],
+            [&ss](auto& each) {
+            ss << each << ',';
+        });
+        std::string str {ss.str()};
+        str.erase(std::size(str) - 1);
+        sscanf_s(str.data(), "%d,%d,%d,%d", &m_pPlace[i].left, &m_pPlace[i].top, &m_pPlace[i].right, &m_pPlace[i].bottom);
+        if (bRelativeRect) {
             GetRelativeRect(m_pPlace[i]);
-        ini1->ReadStringNext(name1, "place", param, sizeof(param) - 1);
+        }
     }
 
     // get fone color
-    m_dwFoneColor = GetIniARGB(ini1, name1, ini2, name2, "foneColor", ARGB(255, 255, 255, 255));
+    auto fone_color = Config::GetOrGet<Types::Vector4<std::int64_t>>(configs, "foneColor", {255});
+    m_dwFoneColor = ARGB(fone_color.x, fone_color.y, fone_color.z, fone_color.w);
     m_dwCurColor = m_dwFoneColor;
 
     // get Blind color
-    m_dwBlindColor = GetIniARGB(ini1, name1, ini2, name2, "blindColor", m_dwFoneColor);
+    auto blind_color_opt = Config::GetOrGet<Types::Vector4<std::int64_t>>(configs, "blindColor");
+    m_dwBlindColor = blind_color_opt.has_value()
+        ? ARGB(blind_color_opt->x, blind_color_opt->y, blind_color_opt->z, blind_color_opt->w)
+        : m_dwFoneColor;
     m_bUseBlind = m_dwBlindColor != m_dwFoneColor;
 
     m_bUpBlind = true;
     m_fCurM = 0.f;
-    m_fCurM_UpSpeed = GetIniFloat(ini1, name1, ini2, name2, "blindUpTime", 1.f);
-    m_fCurM_DownSpeed = GetIniFloat(ini1, name1, ini2, name2, "blindDownTime", m_fCurM_UpSpeed);
+    m_fCurM_UpSpeed = Config::GetOrGet<double>(configs, "blindUpTime", 1.0);
+    m_fCurM_UpSpeed = Config::GetOrGet<double>(configs, "blindDownTime", m_fCurM_UpSpeed);
 
-    if (m_fCurM_UpSpeed > 0.1f)
-        m_fCurM_UpSpeed = 0.001f / m_fCurM_UpSpeed;
-    else
-        m_fCurM_UpSpeed = 1.f;
-    if (m_fCurM_DownSpeed > 0.1f)
-        m_fCurM_DownSpeed = 0.001f / m_fCurM_DownSpeed;
-    else
-        m_fCurM_DownSpeed = 1.f;
+    m_fCurM_UpSpeed = m_fCurM_UpSpeed > 0.1f
+        ? m_fCurM_UpSpeed = 0.001f / m_fCurM_UpSpeed
+        : 1.f;
+    m_fCurM_DownSpeed = m_fCurM_DownSpeed > 0.1f
+        ? 0.001f / m_fCurM_DownSpeed
+        : 1.f;
 
     // get outside picture offset
-    fPnt = GetIniFloatPoint(ini1, name1, ini2, name2, "offset", FXYPOINT(0.f, 0.f));
+    FXYPOINT fPnt;
+    fPnt = Config::GetOrGet<Types::Vector2<std::int64_t>>(configs, "offset", {}).to<float>();
     m_xOffset = fPnt.x;
     m_yOffset = fPnt.y;
 
     // get video texture (for inside picture)
     m_pTex = nullptr;
-    if (ReadIniString(ini1, name1, ini2, name2, "videoTexture", param, sizeof(param), ""))
-        m_pTex = m_rs->GetVideoTexture(param);
+    auto video_texture = Config::GetOrGet<std::string>(configs, "videoTexture", {});
+    if (!video_texture.empty()) {
+        m_pTex = m_rs->GetVideoTexture(video_texture.c_str());
+    }
 
-    if (ReadIniString(ini1, name1, ini2, name2, "backTexture", param, sizeof(param), ""))
-        m_idBackTex = m_rs->TextureCreate(param);
+    auto back_texture = Config::GetOrGet<std::string>(configs, "backTexture", {});
+    if (!back_texture.empty()) {
+        m_pTex = m_rs->GetVideoTexture(back_texture.c_str());
+    }
 
     // set constant buffers data
-    for (i = 0; i < 8; i++)
+    for (int i = 0; i < 8; i++)
     {
         m_pTexVert[i].color = m_dwFoneColor;
         m_pTexVert[i].pos.z = 1.f;

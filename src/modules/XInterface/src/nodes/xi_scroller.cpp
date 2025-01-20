@@ -1,11 +1,13 @@
 #include "xi_scroller.h"
 #include "../xinterface.h"
-#include "entity.h"
 #include "xi_formt_text.h"
 #include "xi_quest_texts.h"
 #include "xi_quest_titles.h"
 #include "xi_table.h"
 #include <stdio.h>
+
+using namespace Storm::Filesystem;
+using namespace Storm::Math;
 
 void SetVertexRectangleTex(XI_ONLYONETEX_VERTEX *pv, FXYRECT &texRect)
 {
@@ -73,10 +75,10 @@ void CXI_SCROLLER::Draw(bool bSelected, uint32_t Delta_Time)
     }
 }
 
-bool CXI_SCROLLER::Init(INIFILE *ini1, const char *name1, INIFILE *ini2, const char *name2, VDX9RENDER *rs,
-                        XYRECT &hostRect, XYPOINT &ScreenSize)
+bool CXI_SCROLLER::Init(const Config& node_config, const Config& def_config,
+    VDX9RENDER *rs, XYRECT &hostRect, XYPOINT &ScreenSize)
 {
-    if (!CINODE::Init(ini1, name1, ini2, name2, rs, hostRect, ScreenSize))
+    if (!CINODE::Init(node_config, def_config, rs, hostRect, ScreenSize))
         return false;
     // screen position for that is host screen position
     // memcpy(&m_rect,&m_hostRect,sizeof(m_hostRect));
@@ -128,36 +130,36 @@ int CXI_SCROLLER::CommandExecute(int wActCode)
     return -1;
 }
 
-void CXI_SCROLLER::LoadIni(INIFILE *ini1, const char *name1, INIFILE *ini2, const char *name2)
-{
-    char param[2048];
+void CXI_SCROLLER::LoadIni(const Config& node_config, const Config& def_config) {
+    std::pair<const Config&, const Config&> configs{node_config, def_config};
 
-    if (ReadIniString(ini1, name1, ini2, name2, "OwnedControl", param, sizeof(param), ""))
-    {
-        CXI_UTILS::StringFillStringArray(param, m_asOwnedNodes);
+    auto owned_control = Config::GetOrGet<std::string>(configs, "OwnedControl", {});
+    if (!owned_control.empty()) {
+        CXI_UTILS::StringFillStringArray(owned_control.c_str(), m_asOwnedNodes);
     }
-
     // Get texture name and load that texture
-    m_idBaseTex = -1;
-    if (ReadIniString(ini1, name1, ini2, name2, "baseTexture", param, sizeof(param), ""))
-        m_idBaseTex = m_rs->TextureCreate(param);
+    auto base_texture = Config::GetOrGet<std::string>(configs, "baseTexture", {});
+    m_idBaseTex = !base_texture.empty()
+        ? m_rs->TextureCreate(base_texture.c_str())
+        : -1;
 
-    m_idRollerTex = -1;
-    if (ReadIniString(ini1, name1, ini2, name2, "rollerTexture", param, sizeof(param), ""))
-        m_idRollerTex = m_rs->TextureCreate(param);
+    auto roller_texture = Config::GetOrGet<std::string>(configs, "rollerTexture", {});
+    m_idRollerTex = !roller_texture.empty()
+        ? m_rs->TextureCreate(roller_texture.c_str())
+        : -1;
 
     // Set buffers
-    m_fOffTexHeight = GetIniFloat(ini1, name1, ini2, name2, "begEndTexSize", 0.f);
-    m_fOffHeight = GetIniFloat(ini1, name1, ini2, name2, "begEndBaseSize", 0.f);
-    m_rollerHeight = GetIniFloat(ini1, name1, ini2, name2, "rollerHeight", 0.f);
+    m_fOffTexHeight = Config::GetOrGet<double>(configs, "begEndTexSize", 0.0);
+    m_fOffHeight = Config::GetOrGet<double>(configs, "begEndBaseSize", 0.0);
+    m_rollerHeight = Config::GetOrGet<double>(configs, "rollerHeight", 0.0);
 
     m_rollerPlace.left = static_cast<float>(m_rect.left);
     m_rollerPlace.right = static_cast<float>(m_rect.right);
     m_rollerPlace.top = m_rect.top + m_fOffHeight;
     m_rollerPlace.bottom = m_rect.bottom - m_fOffHeight;
 
-    m_ScrollTexRect = GetIniFloatRect(ini1, name1, ini2, name2, "scrollTexPos", FXYRECT(0.f, 0.f, 1.f, 1.f));
-    m_RollTexRect = GetIniFloatRect(ini1, name1, ini2, name2, "rollTexPos", FXYRECT(0.f, 0.f, 1.f, 1.f));
+    m_ScrollTexRect = Config::GetOrGet<Types::Vector4<double>>(configs, "scrollTexPos", {0.0, 0.0, 1.0, 1.0});
+    m_RollTexRect = Config::GetOrGet<Types::Vector4<double>>(configs, "rollTexPos", {0.0, 0.0, 1.0, 1.0});
 
     m_idVBuf = m_rs->CreateVertexBuffer(XI_ONLYONETEX_FVF, 16 * sizeof(XI_ONLYONETEX_VERTEX), D3DUSAGE_WRITEONLY);
     FillVertexBuffer();

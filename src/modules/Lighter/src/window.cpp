@@ -14,6 +14,11 @@
 #include "shared/messages.h"
 #include <cstdint>
 
+#include "Filesystem/Config/Config.hpp"
+#include "Filesystem/Constants/ConfigNames.hpp"
+
+using namespace Storm::Filesystem;
+
 // ============================================================================================
 // Construction, destruction
 // ============================================================================================
@@ -1136,21 +1141,12 @@ int32_t Window::SelPreset()
         prs = 53;
     if (ins > 0)
     {
-        if (lastPreset != ins)
-        {
+        if (lastPreset != ins) {
             // Load the name
-            auto ini = fio->OpenIniFile("resource\\ini\\loclighter.ini");
-            if (ini)
-            {
-                char sect[32];
-                sprintf_s(sect, "prs%i", ins);
-                prsComment[0] = 0;
-                if (!ini->ReadString(sect, "comment", prsComment, 64, ""))
-                    prsComment[0] = 0;
-                prsComment[63] = 0;
-            }
-            else
-                prsComment[0] = 0;
+            auto config = Config::Load(Constants::ConfigNames::loclighter());
+            std::ignore = config.SelectSection("prs" + std::to_string(ins));
+            auto prsComment_str = config.Get<std::string>("comment", "");
+            std::ranges::move(prsComment_str, prsComment);
         }
         if (prsComment[0])
             Print(textColor, winx, winx + winw, vl + 88.0f, 0.5f, true, "%.35s", prsComment);
@@ -1166,59 +1162,61 @@ void Window::SavePreset(int32_t prs)
     if (prs < 0)
         return;
     // Checking if able to work
-    auto ini = fio->OpenIniFile("resource\\ini\\loclighter.ini");
-    if (!ini)
-        return;
-    char sect[32];
-    sprintf_s(sect, "prs%i", prs);
+    auto config = Config::Load(Constants::ConfigNames::loclighter());
+    std::ignore = config.SelectSection("prs" + std::to_string(prs));
+
     for (int32_t i = 0; i < numElements; i++)
     {
-        switch (list[i].type)
+        const ListElement& element = list[i];
+        const std::string l_name {element.name};
+        switch (element.type)
         {
         case ListElement::t_smooth:
-            ini->WriteLong(sect, "smoothUseNormals", static_cast<int32_t>(smoothNorm));
-            ini->WriteDouble(sect, "smoothRadius", smoothRad);
+            config.Set<int>("smoothUseNormals", smoothNorm);
+            config.Set<double>("smoothRadius", smoothRad);
             break;
         case ListElement::t_blur:
-            ini->WriteLong(sect, "blurTrace", static_cast<int32_t>(isTraceBlur));
-            ini->WriteDouble(sect, "blurRadius", blurRad);
-            ini->WriteDouble(sect, "blurAtt", blurAtt);
-            ini->WriteDouble(sect, "blurCos", blurCos);
-            ini->WriteDouble(sect, "blurKf", kBlur);
+            config.Set<int>("blurTrace", isTraceBlur);
+            config.Set<double>("blurRadius", blurRad);
+            config.Set<double>("blurAtt", blurAtt);
+            config.Set<double>("blurCos", blurCos);
+            config.Set<double>("blurKf", kBlur);
             break;
         case ListElement::t_amb:
-            ini->WriteDouble(sect, "ambient_intens", list[i].st);
-            ini->WriteDouble(sect, "ambient_clrR", list[i].c.x);
-            ini->WriteDouble(sect, "ambient_clrG", list[i].c.y);
-            ini->WriteDouble(sect, "ambient_clrB", list[i].c.z);
+            config.Set<double>("ambient_intens", element.st);
+            config.Set<double>("ambient_clrR", element.c.x);
+            config.Set<double>("ambient_clrG", element.c.y);
+            config.Set<double>("ambient_clrB", element.c.z);
             break;
-        case ListElement::t_light:
-            ini->WriteDouble(sect, GenerateName(list[i].name, "_intens"), list[i].st);
-            ini->WriteDouble(sect, GenerateName(list[i].name, "_clrR"), list[i].c.x);
-            ini->WriteDouble(sect, GenerateName(list[i].name, "_clrG"), list[i].c.y);
-            ini->WriteDouble(sect, GenerateName(list[i].name, "_clrB"), list[i].c.z);
-            ini->WriteDouble(sect, GenerateName(list[i].name, "_cosine"), *list[i].cosine);
-            ini->WriteDouble(sect, GenerateName(list[i].name, "_shadow"), *list[i].shadow);
-            ini->WriteDouble(sect, GenerateName(list[i].name, "_bright"), *list[i].bright);
-            ini->WriteDouble(sect, GenerateName(list[i].name, "_contr"), *list[i].contr);
-            ini->WriteDouble(sect, GenerateName(list[i].name, "_gamma"), *list[i].gamma);
-            ini->WriteLong(sect, GenerateName(list[i].name, "_isOn"), static_cast<int32_t>(*list[i].isOn));
+            case ListElement::t_light:
+            config.Set<double>(l_name + "_intens", element.st);
+            config.Set<double>(l_name + "_clrR", element.c.x);
+            config.Set<double>(l_name + "_clrG", element.c.y);
+            config.Set<double>(l_name + "_clrB", element.c.z);
+            config.Set<double>(l_name + "_cosine", *element.cosine);
+            config.Set<double>(l_name + "_shadow", *element.shadow);
+            config.Set<double>(l_name + "_bright", *element.bright);
+            config.Set<double>(l_name + "_contr", *element.contr);
+            config.Set<double>(l_name + "_gamma", *element.gamma);
+            config.Set<int>(l_name + "_isOn", *element.isOn);
             break;
         case ListElement::t_glight:
-            ini->WriteDouble(sect, GenerateName(list[i].name, "_intens"), list[i].st);
-            ini->WriteDouble(sect, GenerateName(list[i].name, "_clrR"), list[i].c.x);
-            ini->WriteDouble(sect, GenerateName(list[i].name, "_clrG"), list[i].c.y);
-            ini->WriteDouble(sect, GenerateName(list[i].name, "_clrB"), list[i].c.z);
-            ini->WriteDouble(sect, GenerateName(list[i].name, "_cosine"), *list[i].cosine);
-            ini->WriteDouble(sect, GenerateName(list[i].name, "_shadow"), *list[i].shadow);
-            ini->WriteDouble(sect, GenerateName(list[i].name, "_bright"), *list[i].bright);
-            ini->WriteDouble(sect, GenerateName(list[i].name, "_contr"), *list[i].contr);
-            ini->WriteDouble(sect, GenerateName(list[i].name, "_gamma"), *list[i].gamma);
-            ini->WriteDouble(sect, GenerateName(list[i].name, "_att0"), *list[i].att0);
-            ini->WriteDouble(sect, GenerateName(list[i].name, "_att1"), *list[i].att1);
-            ini->WriteDouble(sect, GenerateName(list[i].name, "_att2"), *list[i].att2);
-            ini->WriteDouble(sect, GenerateName(list[i].name, "_range"), *list[i].range);
-            ini->WriteLong(sect, GenerateName(list[i].name, "_isOn"), static_cast<int32_t>(*list[i].isOn));
+            config.Set<double>(l_name + "_intens", element.st);
+            config.Set<double>(l_name + "_clrR", element.c.x);
+            config.Set<double>(l_name + "_clrG", element.c.y);
+            config.Set<double>(l_name + "_clrB", element.c.z);
+            config.Set<double>(l_name + "_cosine", *element.cosine);
+            config.Set<double>(l_name + "_shadow", *element.shadow);
+            config.Set<double>(l_name + "_bright", *element.bright);
+            config.Set<double>(l_name + "_contr", *element.contr);
+            config.Set<double>(l_name + "_gamma", *element.gamma);
+            config.Set<double>(l_name + "_att0", *element.att0);
+            config.Set<double>(l_name + "_att1", *element.att1);
+            config.Set<double>(l_name + "_att2", *element.att2);
+            config.Set<double>(l_name + "_range", *element.range);
+            config.Set<int>(l_name + "_isOn", *element.isOn);
+            break;
+        default:
             break;
         }
     }
@@ -1229,90 +1227,69 @@ void Window::LoadPreset(int32_t prs)
     if (prs < 0)
         return;
     // Checking if able to work
-    auto ini = fio->OpenIniFile("resource\\ini\\loclighter.ini");
-    if (!ini)
-        return;
-    char sect[32];
-    sprintf_s(sect, "prs%i", prs);
+    auto config = Config::Load(Constants::ConfigNames::loclighter());
+    std::ignore = config.SelectSection("prs" + std::to_string(prs));
+
     for (int32_t i = 0; i < numElements; i++)
     {
-        switch (list[i].type)
+        ListElement& element = list[i];
+        const std::string l_name = element.name;
+        std::string t = element.name;
+
+        switch (element.type)
         {
         case ListElement::t_smooth:
-            smoothNorm = ini->GetInt(sect, "smoothUseNormals", static_cast<int32_t>(smoothNorm)) != 0;
-            smoothRad = static_cast<float>(ini->GetDouble(sect, "smoothRadius", smoothRad));
+            smoothNorm = config.Get<std::int64_t>("smoothUseNormals", smoothNorm) != 0;
+            smoothRad = config.Get<double>("smoothRadius", smoothRad);
             break;
         case ListElement::t_blur:
-            isTraceBlur = ini->GetInt(sect, "blurTrace", static_cast<int32_t>(isTraceBlur)) != 0;
-            blurRad = static_cast<float>(ini->GetDouble(sect, "blurRadius", blurRad));
-            blurAtt = static_cast<float>(ini->GetDouble(sect, "blurAtt", blurAtt));
-            blurCos = static_cast<float>(ini->GetDouble(sect, "blurCos", blurCos));
-            kBlur = static_cast<float>(ini->GetDouble(sect, "blurKf", kBlur));
+            isTraceBlur = config.Get<std::int64_t>("blurTrace", isTraceBlur) != 0;
+            blurRad = config.Get<double>("blurRadius", blurRad);
+            blurAtt = config.Get<double>("blurAtt", blurAtt);
+            blurCos = config.Get<double>("blurCos", blurCos);
+            kBlur = config.Get<double>("blurKf", kBlur);
             break;
         case ListElement::t_amb:
-            list[i].st = static_cast<float>(ini->GetDouble(sect, "ambient_intens", list[i].st));
-            list[i].c.x = static_cast<float>(ini->GetDouble(sect, "ambient_clrR", list[i].c.x));
-            list[i].c.y = static_cast<float>(ini->GetDouble(sect, "ambient_clrG", list[i].c.y));
-            list[i].c.z = static_cast<float>(ini->GetDouble(sect, "ambient_clrB", list[i].c.z));
+            element.st = config.Get<double>("ambient_intens", element.st);
+            element.c.x = config.Get<double>("ambient_clrR", element.c.x);
+            element.c.y = config.Get<double>("ambient_clrG", element.c.y);
+            element.c.z = config.Get<double>("ambient_clrB", element.c.z);
             break;
         case ListElement::t_light:
-            list[i].st = static_cast<float>(ini->GetDouble(sect, GenerateName(list[i].name, "_intens"), list[i].st));
-            list[i].c.x = static_cast<float>(ini->GetDouble(sect, GenerateName(list[i].name, "_clrR"), list[i].c.x));
-            list[i].c.y = static_cast<float>(ini->GetDouble(sect, GenerateName(list[i].name, "_clrG"), list[i].c.y));
-            list[i].c.z = static_cast<float>(ini->GetDouble(sect, GenerateName(list[i].name, "_clrB"), list[i].c.z));
-            *list[i].cosine =
-                static_cast<float>(ini->GetDouble(sect, GenerateName(list[i].name, "_cosine"), *list[i].cosine));
-            *list[i].shadow =
-                static_cast<float>(ini->GetDouble(sect, GenerateName(list[i].name, "_shadow"), *list[i].shadow));
-            *list[i].bright =
-                static_cast<float>(ini->GetDouble(sect, GenerateName(list[i].name, "_bright"), *list[i].bright));
-            *list[i].contr =
-                static_cast<float>(ini->GetDouble(sect, GenerateName(list[i].name, "_contr"), *list[i].contr));
-            *list[i].gamma =
-                static_cast<float>(ini->GetDouble(sect, GenerateName(list[i].name, "_gamma"), *list[i].gamma));
-            *list[i].isOn =
-                ini->GetInt(sect, GenerateName(list[i].name, "_isOn"), static_cast<int32_t>(*list[i].isOn)) != 0;
+            element.st = config.Get<double>(l_name + "_intens", element.st);
+            element.c.x = config.Get<double>(l_name + "_clrR", element.c.x);
+            element.c.y = config.Get<double>(l_name + "_clrG", element.c.y);
+            element.c.z = config.Get<double>(l_name + "_clrB", element.c.z);
+            *element.cosine = config.Get<double>(l_name + "_cosine", *element.cosine);
+            *element.shadow = config.Get<double>(l_name + "_shadow", *element.shadow);
+            *element.bright = config.Get<double>(l_name + "_bright", *element.bright);
+            *element.contr = config.Get<double>(l_name + "_contr", *element.contr);
+            *element.gamma = config.Get<double>(l_name + "_gamma", *element.gamma);
+            *element.gamma = config.Get<std::int64_t>(l_name + "_gamma", *element.gamma);
+            *element.isOn = config.Get<std::int64_t>(l_name + "_isOn", *element.isOn) != 0;
             break;
         case ListElement::t_glight:
-            list[i].st = static_cast<float>(ini->GetDouble(sect, GenerateName(list[i].name, "_intens"), list[i].st));
-            list[i].c.x = static_cast<float>(ini->GetDouble(sect, GenerateName(list[i].name, "_clrR"), list[i].c.x));
-            list[i].c.y = static_cast<float>(ini->GetDouble(sect, GenerateName(list[i].name, "_clrG"), list[i].c.y));
-            list[i].c.z = static_cast<float>(ini->GetDouble(sect, GenerateName(list[i].name, "_clrB"), list[i].c.z));
-            *list[i].cosine =
-                static_cast<float>(ini->GetDouble(sect, GenerateName(list[i].name, "_cosine"), *list[i].cosine));
-            *list[i].shadow =
-                static_cast<float>(ini->GetDouble(sect, GenerateName(list[i].name, "_shadow"), *list[i].shadow));
-            *list[i].bright =
-                static_cast<float>(ini->GetDouble(sect, GenerateName(list[i].name, "_bright"), *list[i].bright));
-            *list[i].contr =
-                static_cast<float>(ini->GetDouble(sect, GenerateName(list[i].name, "_contr"), *list[i].contr));
-            *list[i].gamma =
-                static_cast<float>(ini->GetDouble(sect, GenerateName(list[i].name, "_gamma"), *list[i].gamma));
-            *list[i].att0 =
-                static_cast<float>(ini->GetDouble(sect, GenerateName(list[i].name, "_att0"), *list[i].att0));
-            *list[i].att1 =
-                static_cast<float>(ini->GetDouble(sect, GenerateName(list[i].name, "_att1"), *list[i].att1));
-            *list[i].att2 =
-                static_cast<float>(ini->GetDouble(sect, GenerateName(list[i].name, "_att2"), *list[i].att2));
-            *list[i].range =
-                static_cast<float>(ini->GetDouble(sect, GenerateName(list[i].name, "_range"), *list[i].range));
-            *list[i].isOn =
-                ini->GetInt(sect, GenerateName(list[i].name, "_isOn"), static_cast<int32_t>(*list[i].isOn)) != 0;
+            element.st = config.Get<double>(l_name + "_intens", element.st);
+            element.c.x = config.Get<double>(l_name + "_clrR", element.c.x);
+            element.c.y = config.Get<double>(l_name + "_clrG", element.c.y);
+            element.c.z = config.Get<double>(l_name + "_clrB", element.c.z);
+            *element.cosine = config.Get<double>(l_name + "_cosine", *element.cosine);
+            *element.shadow = config.Get<double>(l_name + "_shadow", *element.shadow);
+            *element.bright = config.Get<double>(l_name + "_bright", *element.bright);
+            *element.contr = config.Get<double>(l_name + "_contr", *element.contr);
+            *element.gamma = config.Get<double>(l_name + "_gamma", *element.gamma);
+            *element.att0 = config.Get<double>(l_name + "_att0", *element.att0);
+            *element.att1 = config.Get<double>(l_name + "_att1", *element.att1);
+            *element.att2 = config.Get<double>(l_name + "_att2", *element.att2);
+            *element.range = config.Get<double>(l_name + "_range", *element.range);
+            *element.isOn = config.Get<std::int64_t>(l_name + "_isOn", *element.isOn) != 0;
+            break;
+        default:
             break;
         }
     }
     UpdateColors();
     UpdateLight(-1, true, true, true);
-}
-
-char *Window::GenerateName(const char *f, const char *n)
-{
-    strcpy_s(stringBuffer, f);
-    strcat_s(stringBuffer, n);
-    for (int32_t i = 0; stringBuffer[i]; i++)
-        if (stringBuffer[i] == ' ')
-            stringBuffer[i] = '_';
-    return stringBuffer;
 }
 
 void Window::UpdateColors()

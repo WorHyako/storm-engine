@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Filesystem/Config/Config.hpp"
+
 #include "nodes/xi_tooltips.h"
 #include "video_texture.h"
 #include "core.h"
@@ -171,8 +173,10 @@ class CINODE
     CINODE();
     virtual ~CINODE();
     virtual void Draw(bool bSelected, uint32_t Delta_Time) = 0;
-    virtual bool Init(INIFILE *ini1, const char *name1, INIFILE *ini2, const char *name2, VDX9RENDER *rs,
-                      XYRECT &hostRect, XYPOINT &ScreenSize);
+
+    virtual bool Init(const Storm::Filesystem::Config& node_config, const Storm::Filesystem::Config& def_config,
+            VDX9RENDER *rs, XYRECT &hostRect, XYPOINT &ScreenSize);
+
     virtual void ReleaseAll() = 0;
     CINODE *DoAction(int wActCode, bool &bBreakPress, bool bFirstPress);
     virtual int CommandExecute(int wActCode) = 0;
@@ -252,7 +256,7 @@ class CINODE
         return false;
     }
 
-    virtual void LoadIni(INIFILE *ini1, const char *name1, INIFILE *ini2, const char *name2) = 0;
+    virtual void LoadIni(const Storm::Filesystem::Config& node_config, const Storm::Filesystem::Config& def_config) = 0;
 
     virtual void MakeLClickPreaction()
     {
@@ -296,33 +300,9 @@ class CINODE
         }
     }
 
-    static float GetIniFloat(INIFILE *ini1, const char *name1, INIFILE *ini2, const char *name2, const char *keyName,
-                             float fDefault = 0.f);
-    static int32_t GetIniLong(INIFILE *ini1, const char *name1, INIFILE *ini2, const char *name2, const char *keyName,
-                           int32_t iDefault = 0);
-    static bool ReadIniString(INIFILE *ini1, const char *name1, INIFILE *ini2, const char *name2, const char *keyName,
-                              char *buf, size_t bufSize, const char *strDef = nullptr);
-    static bool GetIniBool(INIFILE *ini1, const char *name1, INIFILE *ini2, const char *name2, const char *keyName,
-                           bool bDefault = false);
-    static XYRECT GetIniLongRect(INIFILE *ini1, const char *name1, INIFILE *ini2, const char *name2,
-                                 const char *keyName, const XYRECT &rectDefault);
-    static FXYRECT GetIniFloatRect(INIFILE *ini1, const char *name1, INIFILE *ini2, const char *name2,
-                                   const char *keyName, const FXYRECT &rectDefault);
-    static XYPOINT GetIniLongPoint(INIFILE *ini1, const char *name1, INIFILE *ini2, const char *name2,
-                                   const char *keyName, const XYPOINT &pntDefault);
-    static FXYPOINT GetIniFloatPoint(INIFILE *ini1, const char *name1, INIFILE *ini2, const char *name2,
-                                     const char *keyName, const FXYPOINT &pntDefault);
-    static uint32_t GetIniARGB(INIFILE *ini1, const char *name1, INIFILE *ini2, const char *name2, const char *keyName,
-                               uint32_t dwDefColor = 0);
-
     void GetRelativeRect(XYRECT &rect) const;
     void GetAbsoluteRect(XYRECT &rect, int at) const;
     void GetAbsoluteRectForSave(XYRECT &rect, int at) const;
-
-    static const char *GetSubStr(const char *inStr, char *buf, size_t bufSize, char devChar = ',');
-    static bool GetMidStr(const char *inStr, char *buf, size_t bufSize, const char *begStr, const char *endStr);
-    static const char *GetDataStr(const char *inStr, const char *strOrder, ...);
-    static uint32_t GetColorFromStr(const char *inStr, uint32_t dwDefColor);
 
     virtual void MoveMouseOutScreen(float fX, float fY)
     {
@@ -365,7 +345,7 @@ class CINODE
     VSTRSERVICE *pStringService;
 
     // context help data
-    char *m_strHelpTextureFile;
+    std::string m_strHelpTextureFile;
     FXYRECT m_frectHelpTextureUV;
 
     bool m_bInProcessingMessageForThisNode;

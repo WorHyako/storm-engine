@@ -15,7 +15,7 @@ TSink::~TSink()
 }
 
 //--------------------------------------------------------------------
-void TSink::Initialize(INIFILE *_ini, IDirect3DDevice9 *_device, SEA_BASE *_sea, VDX9RENDER *_renderer)
+void TSink::Initialize(IDirect3DDevice9 *_device, SEA_BASE *_sea, VDX9RENDER *_renderer)
 {
     sea = _sea;
     renderer = _renderer;
@@ -26,7 +26,7 @@ void TSink::Initialize(INIFILE *_ini, IDirect3DDevice9 *_device, SEA_BASE *_sea,
     texture = renderer->TextureCreate("explos.tga");
     for (auto i = 0; i < sink_effect::MAX_SPLASHES; ++i)
     {
-        splashes[i].Initialize(_ini, sea);
+        splashes[i].Initialize( sea);
         ivIndexes[i] = -1;
     }
 

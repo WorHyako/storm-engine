@@ -4,9 +4,12 @@
 
 #include "matrix.h"
 #include "rands.h"
-#include "file_service.h"
 #include "vma.hpp"
 #include <fmod_errors.h>
+
+#include "Filesystem/Config/Config.hpp"
+#include "Filesystem/Constants/ConfigNames.hpp"
+#include "Filesystem/Constants/Paths.hpp"
 
 // for debugging
 #include "core.h"
@@ -14,6 +17,8 @@
 #include "debug_entity.h"
 #include "math3d/color.h"
 #include "math_inlines.h"
+
+using namespace Storm::Filesystem;
 
 #define DISTANCEFACTOR 1.0f
 #define CHECKFMODERR(expr) ErrorHandler(expr, __FILE__, __LINE__, __func__, #expr)
@@ -95,9 +100,10 @@ bool SoundService::Init()
     CHECKFMODERR(system->init(MAX_SOUNDS_SLOTS, FMOD_INIT_NORMAL, nullptr));
     CHECKFMODERR(system->set3DSettings(1.0, DISTANCEFACTOR, 1.0f));
 
-    if (const auto ini = fio->OpenIniFile(core.EngineIniFileName()))
     {
-        fadeTimeInSeconds = ini->GetFloat("sound", "fade_time", 0.5f);
+        auto config = Config::Load(Constants::ConfigNames::engine());
+        std::ignore = config.SelectSection("sound");
+        fadeTimeInSeconds = config.Get<double>("fade_time", 0.5f);
     }
 
     numActiveSounds = 2; // 0 and 1 are special
@@ -1039,58 +1045,32 @@ void SoundService::AnalyseNameStringAndAddToAlias(tAlias *_alias, const char *in
     _alias->soundFiles.emplace(probability, fileName);
 }
 
-void SoundService::AddAlias(INIFILE &_iniFile, char *_sectionName)
-{
-    static char tempString[COMMON_STRING_LENGTH];
-    if (!_sectionName)
-        return;
-
-    if constexpr (TRACE_INFORMATION)
-        core.Trace("Add sound alias %s", _sectionName);
-    Aliases.push_back(tAlias{});
-    tAlias &alias = Aliases.back();
-    alias.Name = _sectionName;
-    alias.dwNameHash = MakeHashValue(alias.Name.c_str());
-    alias.fMaxDistance = _iniFile.GetFloat(_sectionName, "maxDistance", -1.0f);
-    alias.fMinDistance = _iniFile.GetFloat(_sectionName, "minDistance", -1.0f);
-    alias.fVolume = _iniFile.GetFloat(_sectionName, "volume", -1.0f);
-    alias.iPrior = _iniFile.GetInt(_sectionName, "prior", 128);
-
-    if (_iniFile.ReadString(_sectionName, "name", tempString, COMMON_STRING_LENGTH, ""))
-    {
-        AnalyseNameStringAndAddToAlias(&alias, tempString);
-        while (_iniFile.ReadStringNext(_sectionName, "name", tempString, COMMON_STRING_LENGTH))
-            AnalyseNameStringAndAddToAlias(&alias, tempString);
-    }
-}
-
 void SoundService::LoadAliasFile(const char *_filename)
 {
-    const static int SECTION_NAME_LENGTH = 128;
-    static char sectionName[SECTION_NAME_LENGTH];
+    auto config = Config::Load(Constants::Paths::aliases() / _filename);
 
-    std::string iniName = ALIAS_DIRECTORY;
-    iniName += _filename;
+    const auto sections = config.Sections();
+    for (const auto& section : sections) {
+        std::ignore = config.SelectSection(section);
+        Aliases.emplace_back();
+        tAlias &alias = Aliases.back();
+        alias.Name = section;
+        alias.dwNameHash = MakeHashValue(alias.Name.c_str());
+        alias.fMaxDistance = config.Get<double>("maxDistance", -1.0);
+        alias.fMinDistance = config.Get<double>("minDistance", -1.0);
+        alias.fVolume = config.Get<double>("volume", -1.0);
+        alias.iPrior = config.Get<std::int64_t>("prior", 128);
 
-    if constexpr (TRACE_INFORMATION)
-        core.Trace("Find sound alias file %s", iniName.c_str());
-    auto aliasIni = fio->OpenIniFile(iniName.c_str());
-    if (!aliasIni)
-        return;
-
-    if (aliasIni->GetSectionName(sectionName, SECTION_NAME_LENGTH))
-    {
-        AddAlias(*aliasIni, sectionName);
-        while (aliasIni->GetSectionNameNext(sectionName, SECTION_NAME_LENGTH))
-        {
-            AddAlias(*aliasIni, sectionName);
+        const auto names = config.Get<std::vector<std::string>>("name", {});
+        for (const auto& name : names) {
+            AnalyseNameStringAndAddToAlias(&alias, name.c_str());
         }
     }
 }
 
 void SoundService::InitAliases()
 {
-    const auto vFilenames = fio->_GetPathsOrFilenamesByMask(ALIAS_DIRECTORY, "*.ini", false);
+    const auto vFilenames = fio->_GetPathsOrFilenamesByMask(Constants::Paths::aliases().string().c_str(), "*.toml", false);
     for (std::string curName : vFilenames)
     {
         LoadAliasFile(curName.c_str());
@@ -1469,33 +1449,41 @@ void SoundService::ResetScheme()
 }
 
 //--------------------------------------------------------------------
-bool SoundService::AddScheme(const char *_schemeName)
-{
-    static char tempString[COMMON_STRING_LENGTH];
-    auto ini = fio->OpenIniFile(SCHEME_INI_NAME);
+bool SoundService::AddScheme(const char *_schemeName) {
+    auto config = Config::Load(Constants::ConfigNames::sound_scheme());
+    std::ignore = config.SelectSection(_schemeName);
 
-    if (!ini)
-        return false;
+    if (auto ch_vec = config.Get<std::vector<std::vector<std::string>>>("ch", {}); !ch_vec.empty()) {
+        if (std::size(ch_vec[0]) == 1) {
+            ch_vec = {{ch_vec[0][0], ch_vec[1][0], ch_vec[2][0], ch_vec[3][0]}};
+            ch_vec.erase(std::begin(ch_vec) + 1, std::end(ch_vec));
+        }
 
-    if (ini->ReadString(const_cast<char *>(_schemeName), SCHEME_KEY_NAME, tempString, COMMON_STRING_LENGTH, ""))
-    {
-        AddSoundSchemeChannel(tempString);
-        while (ini->ReadStringNext(const_cast<char *>(_schemeName), SCHEME_KEY_NAME, tempString, COMMON_STRING_LENGTH))
-            AddSoundSchemeChannel(tempString);
+        for (auto & ch : ch_vec) {
+            std::stringstream ss;
+            ss << ch[0] << ',' << ch[1] << ',' << ch[2] << ',' << ch[3];
+
+            AddSoundSchemeChannel(ss.str().data());
+        }
     }
 
-    if (ini->ReadString(const_cast<char *>(_schemeName), SCHEME_KEY_NAME_LOOP, tempString, COMMON_STRING_LENGTH, ""))
-    {
-        AddSoundSchemeChannel(tempString, true);
-        while (ini->ReadStringNext(const_cast<char *>(_schemeName), SCHEME_KEY_NAME_LOOP, tempString,
-                                   COMMON_STRING_LENGTH))
-            AddSoundSchemeChannel(tempString, true);
+    if (auto ch_loop_vec = config.Get<std::vector<std::vector<std::string>>>("ch_loop", {}); !ch_loop_vec.empty()) {
+        if (std::size(ch_loop_vec[0]) == 1) {
+            ch_loop_vec = {{ch_loop_vec[0][0], ch_loop_vec[1][0], ch_loop_vec[2][0], ch_loop_vec[3][0]}};
+            ch_loop_vec.erase(std::begin(ch_loop_vec) + 1, std::end(ch_loop_vec));
+        }
+        for (auto & ch_loop : ch_loop_vec) {
+            std::stringstream ss;
+            ss << ch_loop[0] << ',' << ch_loop[1] << ',' << ch_loop[2] << ',' << ch_loop[3];
+
+            AddSoundSchemeChannel(ss.str().data());
+        }
     }
 
     return true;
 }
 
-bool SoundService::AddSoundSchemeChannel(char *in_string, bool _looped /*= false*/)
+bool SoundService::AddSoundSchemeChannel(char *in_string, bool _looped)
 {
     static char tempString2[COMMON_STRING_LENGTH];
     strncpy_s(tempString2, in_string, COMMON_STRING_LENGTH);

@@ -6,13 +6,14 @@
 #include <spdlog/spdlog.h>
 #include <CLI/CLI.hpp>
 
+#include "Filesystem/Constants/Paths.hpp"
+#include "Filesystem/Constants/ConfigNames.hpp"
+
 #include "core_private.h"
-#include "fs.h"
 #include "lifecycle_diagnostics_service.hpp"
 #include "logging.hpp"
 #include "os_window.hpp"
 #include "steam_api.hpp"
-#include "storm/engine_settings.hpp"
 #include "v_sound_service.h"
 #include "watermark.hpp"
 
@@ -113,6 +114,10 @@
 
 #include <steam_api_script_lib.hpp>
 
+#include "Filesystem/Config/Config.hpp"
+
+using namespace Storm::Filesystem;
+
 namespace
 {
 
@@ -159,7 +164,7 @@ void mimalloc_fun(const char *msg, void *arg)
     static std::filesystem::path mimalloc_log_path;
     if (mimalloc_log_path.empty())
     {
-        mimalloc_log_path =storm::GetEngineSettings().GetEnginePath(storm::EngineSettingsPathType::Logs) / "mimalloc.log";
+        mimalloc_log_path = Storm::Filesystem::Constants::Paths::logs() / "mimalloc.log";
         std::error_code ec;
         remove(mimalloc_log_path, ec);
     }
@@ -380,7 +385,11 @@ int main(int argc, char *argv[])
     mi_option_set(mi_option_verbose, 4);
 #endif
 
-    SDL_InitSubSystem(SDL_INIT_EVENTS | SDL_INIT_VIDEO | SDL_INIT_GAMECONTROLLER);
+    if (SDL_Init(SDL_INIT_EVENTS | SDL_INIT_VIDEO | SDL_INIT_GAMECONTROLLER) != 0) {
+        SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "SDL ERROR", "Init Error", nullptr);
+        SDL_Log("Something went wrong with SDL Init %s", SDL_GetError());
+        return 1;
+    }
 
     // Init diagnostics
     const auto lifecycleDiagnosticsGuard =
@@ -399,7 +408,7 @@ int main(int argc, char *argv[])
     }
 
     // Init stash
-    create_directories(storm::GetEngineSettings().GetEnginePath(storm::EngineSettingsPathType::SaveData));
+    std::filesystem::create_directories(Storm::Filesystem::Constants::Paths::save_data());
 
     // Init logging
     spdlog::set_default_logger(storm::logging::getOrCreateLogger(defaultLoggerName));
@@ -411,8 +420,6 @@ int main(int argc, char *argv[])
     core_private->EnableEditor(enable_editor);
     core_private->Init();
 
-    // Read config
-    auto ini = fio->OpenIniFile(fs::ENGINE_INI_FILE_NAME);
 
     uint32_t dwMaxFPS = 0;
     bool bSteam = false;
@@ -420,36 +427,44 @@ int main(int argc, char *argv[])
     int preferred_display = 0;
     bool fullscreen = false;
     bool show_borders = false;
+    bool bDebugWindow = false;
+    bool bAcceleration = false;
     bool run_in_background = false;
-
-    if (ini)
     {
-        dwMaxFPS = static_cast<uint32_t>(ini->GetInt(nullptr, "max_fps", 0));
-        auto bDebugWindow = ini->GetInt(nullptr, "DebugWindow", 0) == 1;
-        auto bAcceleration = ini->GetInt(nullptr, "Acceleration", 0) == 1;
-        if (ini->GetInt(nullptr, "logs", 1) == 0) // disable logging
-        {
+        /**
+         * TODO: load config for ALL classes in some place of Engine module once
+         */
+        auto config =  Config::Load(Constants::ConfigNames::engine());
+        std::ignore = config.SelectSection("Main");
+        dwMaxFPS = config.Get<std::int64_t>("max_fps", 0);
+        bDebugWindow = config.Get<std::int64_t>("DebugWindow", 0) == 1;
+        bAcceleration = config.Get<std::string>("Acceleration", "0") == "0";
+
+        auto log = config.Get<std::int64_t>("logs", 0);
+        if (log == 0) {
             spdlog::set_level(spdlog::level::off);
         }
-        width = ini->GetInt(nullptr, "screen_x", 1024);
-        height = ini->GetInt(nullptr, "screen_y", 768);
-        preferred_display = ini->GetInt(nullptr, "display", 0);
-        fullscreen = ini->GetInt(nullptr, "full_screen", false);
-        show_borders = ini->GetInt(nullptr, "window_borders", false);
-        run_in_background = ini->GetInt(nullptr, "run_in_background", false);
+
+        width = config.Get<std::int64_t>("screen_x", 1024);
+        height = config.Get<std::int64_t>("screen_y", 768);
+        preferred_display = config.Get<std::int64_t>("display", 0);
+        fullscreen = config.Get<std::int64_t>("full_screen", 0);
+        show_borders = config.Get<std::int64_t>("window_borders", 0);
+        run_in_background = config.Get<std::int64_t>("run_in_background", 0);
+
         if (run_in_background) {
-            bSoundInBackground = ini->GetInt(nullptr, "sound_in_background", true);
-        }
-        else {
+            bSoundInBackground = config.Get<std::int64_t>("sound_in_background", 1);
+        } else {
             bSoundInBackground = false;
         }
-        // bSteam = ini->GetInt(nullptr, "Steam", 1) != 0;
+
+        bSteam = config.Get<std::int64_t>("Steam", 0);
     }
 
     // initialize SteamApi through evaluating its singleton
     try
     {
-        steamapi::SteamApi::getInstance(!bSteam);
+        // steamapi::SteamApi::getInstance(!bSteam);
     }
     catch (const std::exception &e)
     {

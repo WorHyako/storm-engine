@@ -11,8 +11,8 @@ class CXI_QUESTTITLE : public CINODE
     ~CXI_QUESTTITLE() override;
 
     void Draw(bool bSelected, uint32_t Delta_Time) override;
-    bool Init(INIFILE *ini1, const char *name1, INIFILE *ini2, const char *name2, VDX9RENDER *rs, XYRECT &hostRect,
-              XYPOINT &ScreenSize) override;
+    bool Init(const Storm::Filesystem::Config& node_config, const Storm::Filesystem::Config& def_config,
+        VDX9RENDER *rs, XYRECT &hostRect, XYPOINT &ScreenSize) override;
     void ReleaseAll() override;
     int CommandExecute(int wActCode) override;
     bool IsClick(int buttonID, int32_t xPos, int32_t yPos) override;
@@ -27,12 +27,12 @@ class CXI_QUESTTITLE : public CINODE
 
   protected:
     bool GetLineNext(int fontNum, char *&pInStr, char *buf, int bufSize) const;
-    void LoadIni(INIFILE *ini1, const char *name1, INIFILE *ini2, const char *name2) override;
+    void LoadIni(const Storm::Filesystem::Config& node_config, const Storm::Filesystem::Config& def_config) override;
 
     int m_iconWidth;
     int m_iconHeight;
     int m_iconVOffset;
-    char *m_iconGroupName;
+    std::string m_iconGroupName;
     FXYRECT m_texComplete;
     FXYRECT m_texNonComplete;
     int32_t m_texId;

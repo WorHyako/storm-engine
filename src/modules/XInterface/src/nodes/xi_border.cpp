@@ -5,6 +5,9 @@
 #include "file_service.h"
 #include "xi_image.h"
 
+using namespace Storm::Filesystem;
+using namespace Storm::Math;
+
 CXI_BORDER::CXI_BORDER()
 {
     m_rs = nullptr;
@@ -49,12 +52,10 @@ void CXI_BORDER::Draw(bool bSelected, uint32_t Delta_Time)
     }
 }
 
-bool CXI_BORDER::Init(INIFILE *ini1, const char *name1, INIFILE *ini2, const char *name2, VDX9RENDER *rs,
-                      XYRECT &hostRect, XYPOINT &ScreenSize)
+bool CXI_BORDER::Init(const Config& node_config, const Config& def_config,
+    VDX9RENDER *rs, XYRECT &hostRect, XYPOINT &ScreenSize)
 {
-    if (!CINODE::Init(ini1, name1, ini2, name2, rs, hostRect, ScreenSize))
-        return false;
-    return true;
+    return CINODE::Init(node_config, def_config, rs, hostRect, ScreenSize);
 }
 
 void CXI_BORDER::ReleaseAll()
@@ -108,42 +109,47 @@ void CXI_BORDER::SaveParametersToIni()
     pIni->WriteString(m_nodeName, "position", pcWriteParam);
 }
 
-void CXI_BORDER::LoadIni(INIFILE *ini1, const char *name1, INIFILE *ini2, const char *name2)
-{
-    char param[256];
-
+void CXI_BORDER::LoadIni(const Config& node_config, const Config& def_config) {
+    std::pair<const Config&, const Config&> configs{node_config, def_config};
+    auto back_image_vec = Config::GetOrGet<std::vector<std::string>>(configs, "backimage", {});
+    std::stringstream ss;
+    std::ranges::for_each(back_image_vec,
+        [&ss](const std::string &img) {
+            ss << img << ',';
+        });
+    std::string back_image{ss.str()};
     // get back image
-    if (ReadIniString(ini1, name1, ini2, name2, "backimage", param, sizeof(param), ""))
-    {
+    if (!back_image.empty()) {
         m_pBackImage = new CXI_IMAGE;
         if (m_pBackImage)
         {
-            m_pBackImage->LoadAccordingToString(param);
+            m_pBackImage->LoadAccordingToString(back_image.c_str());
             m_pBackImage->SetPosition(m_rect);
         }
     }
 
     // get caption rectangle
-    m_nCaptionHeight = GetIniLong(ini1, name1, ini2, name2, "captionheight", 0);
-    m_mCaptionDividerHeight = GetIniLong(ini1, name1, ini2, name2, "captiondividerheight", 2);
-    if (m_nCaptionHeight > 0 && ReadIniString(ini1, name1, ini2, name2, "captionimage", param, sizeof(param), ""))
-    {
+    m_nCaptionHeight = Config::GetOrGet<std::int64_t>(configs, "captionheight", 0);
+    m_mCaptionDividerHeight = Config::GetOrGet<std::int64_t>(configs, "captiondividerheight", 2);
+    auto caption_image_vec = Config::GetOrGet<std::vector<std::string>>(configs, "captionimage", {});
+    ss.clear();
+    std::ranges::for_each(caption_image_vec, [&ss](const std::string &each) {
+        ss << each << ',';
+    });
+    std::string caption_image{ss.str()};
+    caption_image.erase(std::size(caption_image) - 1);
+    if (m_nCaptionHeight > 0 && !caption_image.empty()) {
         m_pCaptionImage = new CXI_IMAGE;
-        if (m_pCaptionImage)
-        {
-            m_pCaptionImage->LoadAccordingToString(param);
-        }
+        m_pCaptionImage->LoadAccordingToString(caption_image.c_str());
     }
 
     // get show color
-    m_dwColor = GetIniARGB(ini1, name1, ini2, name2, "color", 0xFFFFFFFF);
+    auto color = Config::GetOrGet<Types::Vector4<std::int64_t>>(configs, "color", {255});
+    m_dwColor = ARGB(color.x, color.y, color.z, color.w);
     // Get texture name and load that texture
     m_sGroupName = "";
-    if (ReadIniString(ini1, name1, ini2, name2, "groupName", param, sizeof(param), ""))
-    {
-        m_sGroupName = param;
-        m_idTex = pPictureService->GetTextureID(m_sGroupName.c_str());
-    }
+    m_sGroupName = Config::GetOrGet<std::string>(configs, "groupName", {});
+    m_idTex = pPictureService->GetTextureID(m_sGroupName.c_str());
 
     // create index and vertex buffers
     m_nSquareQ = 4 + 4 + 1; // 4 edge & 4 angle & 1 caption
@@ -155,8 +161,10 @@ void CXI_BORDER::LoadIni(INIFILE *ini1, const char *name1, INIFILE *ini2, const 
     // get pictures
     // left top corner
     m_nLeftTopPicture = -1;
-    if (ReadIniString(ini1, name1, ini2, name2, "lefttop_pic", param, sizeof(param), ""))
-        m_nLeftTopPicture = pPictureService->GetImageNum(m_sGroupName.c_str(), param);
+    auto lefttop_pic = Config::GetOrGet<std::string>(configs, "leftbottom_pic", {});
+    if (!lefttop_pic.empty()) {
+        m_nLeftTopPicture = pPictureService->GetImageNum(m_sGroupName.c_str(), lefttop_pic.c_str());
+    }
     if (m_nLeftTopPicture < 0)
     {
         m_frLeftTopUV.left = m_frLeftTopUV.top = 0.f;
@@ -164,12 +172,14 @@ void CXI_BORDER::LoadIni(INIFILE *ini1, const char *name1, INIFILE *ini2, const 
     }
     else
         pPictureService->GetTexturePos(m_nLeftTopPicture, m_frLeftTopUV);
-    m_pntLeftTopSize = GetIniLongPoint(ini1, name1, ini2, name2, "lefttop_size", XYPOINT(9, 9));
+    m_pntLeftTopSize = Config::GetOrGet<Types::Vector2<std::int64_t>>(configs, "lefttop_size", {9, 9});
 
     // right top corner
     m_nRightTopPicture = -1;
-    if (ReadIniString(ini1, name1, ini2, name2, "righttop_pic", param, sizeof(param), ""))
-        m_nRightTopPicture = pPictureService->GetImageNum(m_sGroupName.c_str(), param);
+    auto righttop_pic = Config::GetOrGet<std::string>(configs, "leftbottom_pic", {});
+    if (!righttop_pic.empty()) {
+        m_nRightTopPicture = pPictureService->GetImageNum(m_sGroupName.c_str(), righttop_pic.c_str());
+    }
     if (m_nRightTopPicture < 0)
     {
         m_frRightTopUV.left = m_frRightTopUV.top = 0.f;
@@ -177,12 +187,14 @@ void CXI_BORDER::LoadIni(INIFILE *ini1, const char *name1, INIFILE *ini2, const 
     }
     else
         pPictureService->GetTexturePos(m_nRightTopPicture, m_frRightTopUV);
-    m_pntRightTopSize = GetIniLongPoint(ini1, name1, ini2, name2, "righttop_size", XYPOINT(9, 9));
+    m_pntRightTopSize = Config::GetOrGet<Types::Vector2<std::int64_t>>(configs, "righttop_size", {9, 9});
 
     // left bottom corner
     m_nLeftBottomPicture = -1;
-    if (ReadIniString(ini1, name1, ini2, name2, "leftbottom_pic", param, sizeof(param), ""))
-        m_nLeftBottomPicture = pPictureService->GetImageNum(m_sGroupName.c_str(), param);
+    auto leftbottom_pic = Config::GetOrGet<std::string>(configs, "leftbottom_pic", {});
+    if (!leftbottom_pic.empty()) {
+        m_nLeftBottomPicture = pPictureService->GetImageNum(m_sGroupName.c_str(), leftbottom_pic.c_str());
+    }
     if (m_nLeftBottomPicture < 0)
     {
         m_frLeftBottomUV.left = m_frLeftBottomUV.top = 0.f;
@@ -190,12 +202,14 @@ void CXI_BORDER::LoadIni(INIFILE *ini1, const char *name1, INIFILE *ini2, const 
     }
     else
         pPictureService->GetTexturePos(m_nLeftBottomPicture, m_frLeftBottomUV);
-    m_pntLeftBottomSize = GetIniLongPoint(ini1, name1, ini2, name2, "leftbottom_size", XYPOINT(9, 9));
+    m_pntLeftBottomSize = Config::GetOrGet<Types::Vector2<std::int64_t>>(configs, "leftbottom_size", {9, 9});
 
     // left bottom corner
     m_nRightBottomPicture = -1;
-    if (ReadIniString(ini1, name1, ini2, name2, "rightbottom_pic", param, sizeof(param), ""))
-        m_nRightBottomPicture = pPictureService->GetImageNum(m_sGroupName.c_str(), param);
+    auto rightbottom_pic = Config::GetOrGet<std::string>(configs, "rightbottom_pic", {});
+    if (!rightbottom_pic.empty()) {
+        m_nRightBottomPicture = pPictureService->GetImageNum(m_sGroupName.c_str(), rightbottom_pic.c_str());
+    }
     if (m_nRightBottomPicture < 0)
     {
         m_frRightBottomUV.left = m_frRightBottomUV.top = 0.f;
@@ -203,64 +217,67 @@ void CXI_BORDER::LoadIni(INIFILE *ini1, const char *name1, INIFILE *ini2, const 
     }
     else
         pPictureService->GetTexturePos(m_nRightBottomPicture, m_frRightBottomUV);
-    m_pntRightBottomSize = GetIniLongPoint(ini1, name1, ini2, name2, "rightbottom_size", XYPOINT(9, 9));
+    m_pntRightBottomSize = Config::GetOrGet<Types::Vector2<std::int64_t>>(configs, "rightbottom_size", {9, 9});
 
     // top edge
     m_nTopLinePicture = -1;
-    if (ReadIniString(ini1, name1, ini2, name2, "topline_pic", param, sizeof(param), ""))
-        m_nTopLinePicture = pPictureService->GetImageNum(m_sGroupName.c_str(), param);
-    if (m_nTopLinePicture < 0)
-    {
+    auto topline_pic = Config::GetOrGet<std::string>(configs, "topline_pic", {});
+    if (!topline_pic.empty()) {
+        m_nTopLinePicture = pPictureService->GetImageNum(m_sGroupName.c_str(), topline_pic.c_str());
+    }
+    if (m_nTopLinePicture < 0) {
         m_frTopLineUV.left = m_frTopLineUV.top = 0.f;
         m_frTopLineUV.right = m_frTopLineUV.bottom = 1.f;
     }
     else
         pPictureService->GetTexturePos(m_nTopLinePicture, m_frTopLineUV);
-    m_nTopLineHeight = GetIniLong(ini1, name1, ini2, name2, "topline_height", 5);
+    m_nTopLineHeight = Config::GetOrGet<std::int64_t>(configs, "topline_height", 5);
 
     // bottom edge
     m_nBottomLinePicture = -1;
-    if (ReadIniString(ini1, name1, ini2, name2, "bottomline_pic", param, sizeof(param), ""))
-        m_nBottomLinePicture = pPictureService->GetImageNum(m_sGroupName.c_str(), param);
-    if (m_nBottomLinePicture < 0)
-    {
+    auto bottomline_pic = Config::GetOrGet<std::string>(configs, "bottomline_pic", {});
+    if (!bottomline_pic.empty()) {
+        m_nBottomLinePicture = pPictureService->GetImageNum(m_sGroupName.c_str(), bottomline_pic.c_str());
+    }
+    if (m_nBottomLinePicture < 0) {
         m_frBottomLineUV.left = m_frBottomLineUV.top = 0.f;
         m_frBottomLineUV.right = m_frBottomLineUV.bottom = 1.f;
     }
     else
         pPictureService->GetTexturePos(m_nBottomLinePicture, m_frBottomLineUV);
-    m_nBottomLineHeight = GetIniLong(ini1, name1, ini2, name2, "bottomline_height", 5);
+    m_nBottomLineHeight = Config::GetOrGet<std::int64_t>(configs, "bottomline_height", 5);
 
     // left edge
     m_nLeftLinePicture = -1;
-    if (ReadIniString(ini1, name1, ini2, name2, "leftline_pic", param, sizeof(param), ""))
-        m_nLeftLinePicture = pPictureService->GetImageNum(m_sGroupName.c_str(), param);
-    if (m_nLeftLinePicture < 0)
-    {
+    auto leftline_pic = Config::GetOrGet<std::string>(configs, "leftline_pic", {});
+    if (!leftline_pic.empty()) {
+        m_nLeftLinePicture = pPictureService->GetImageNum(m_sGroupName.c_str(), leftline_pic.c_str());
+    }
+    if (m_nLeftLinePicture < 0) {
         m_frLeftLineUV.left = m_frLeftLineUV.top = 0.f;
         m_frLeftLineUV.right = m_frLeftLineUV.bottom = 1.f;
     }
     else
         pPictureService->GetTexturePos(m_nLeftLinePicture, m_frLeftLineUV);
-    m_nLeftLineWidth = GetIniLong(ini1, name1, ini2, name2, "leftline_width", 5);
+    m_nLeftLineWidth = Config::GetOrGet<std::int64_t>(configs, "leftline_width", 5);
 
     // right edge
     m_nRightLinePicture = -1;
-    if (ReadIniString(ini1, name1, ini2, name2, "rightline_pic", param, sizeof(param), ""))
-        m_nRightLinePicture = pPictureService->GetImageNum(m_sGroupName.c_str(), param);
-    if (m_nRightLinePicture < 0)
-    {
+    auto rightline_pic = Config::GetOrGet<std::string>(configs, "rightline_pic", {});
+    if (!rightline_pic.empty()) {
+        m_nRightLinePicture = pPictureService->GetImageNum(m_sGroupName.c_str(), rightline_pic.c_str());
+    }
+    if (m_nRightLinePicture < 0) {
         m_frRightLineUV.left = m_frRightLineUV.top = 0.f;
         m_frRightLineUV.right = m_frRightLineUV.bottom = 1.f;
     }
     else
         pPictureService->GetTexturePos(m_nRightLinePicture, m_frRightLineUV);
-    m_nRightLineWidth = GetIniLong(ini1, name1, ini2, name2, "rightline_width", 5);
+    m_nRightLineWidth = Config::GetOrGet<std::int64_t>(configs, "rightline_width", 5);
 
-    if (m_pCaptionImage && m_nCaptionHeight > 0)
-    {
+    if (m_pCaptionImage && m_nCaptionHeight > 0) {
         XYRECT rCapRect{};
-        m_rCapRect = GetIniLongRect(ini1, name1, ini2, name2, "captionoffset", rCapRect);
+        m_rCapRect = Config::GetOrGet<Types::Vector4<std::int64_t>>(configs, "captionoffset", {});
         rCapRect = m_rCapRect;
         rCapRect.top += m_rect.top;
         rCapRect.bottom = rCapRect.top + m_nCaptionHeight - rCapRect.bottom;

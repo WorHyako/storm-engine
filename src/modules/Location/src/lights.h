@@ -21,7 +21,7 @@ class Lights : public Entity
     // Light source description
     struct LightType
     {
-        char *name;
+        std::string name;
         D3DLIGHT9 dxLight;
         D3DCOLORVALUE color;
         float flicker;
@@ -133,6 +133,8 @@ class Lights : public Entity
     // Encapsulation
     // --------------------------------------------------------------------------------------------
   private:
+
+    void fill_light_by_config(LightType& light) const;
 
     auto GetLightsAt(const CVECTOR &pos)
     {

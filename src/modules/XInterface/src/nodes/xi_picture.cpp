@@ -4,13 +4,15 @@
 #include "string_compare.hpp"
 #include "file_service.h"
 
+using namespace Storm::Filesystem;
+using namespace Storm::Math;
+
 CXI_PICTURE::CXI_PICTURE()
 {
     m_rs = nullptr;
     m_idTex = -1;
     m_pTex = nullptr;
     m_nNodeType = NODETYPE_PICTURE;
-    m_pcGroupName = nullptr;
     m_bMakeBlind = false;
     m_fCurBlindTime = 0.f;
     m_bBlindUp = true;
@@ -25,104 +27,95 @@ CXI_PICTURE::~CXI_PICTURE()
     ReleaseAll();
 }
 
-void CXI_PICTURE::Draw(bool bSelected, uint32_t Delta_Time)
-{
-    if (m_bUse)
-    {
-        if (m_bMakeBlind)
-        {
-            if (m_bBlindUp)
-            {
-                m_fCurBlindTime += m_fBlindUpSpeed * Delta_Time;
-                if (m_fCurBlindTime >= 1.f)
-                {
-                    m_fCurBlindTime = 1.f;
-                    m_bBlindUp = false;
-                }
+void CXI_PICTURE::Draw(bool bSelected, uint32_t Delta_Time) {
+    if (!m_bUse) {
+        return;
+    }
+    if (m_bMakeBlind) {
+        if (m_bBlindUp) {
+            m_fCurBlindTime += m_fBlindUpSpeed * Delta_Time;
+            if (m_fCurBlindTime >= 1.f) {
+                m_fCurBlindTime = 1.f;
+                m_bBlindUp = false;
             }
-            else
-            {
-                m_fCurBlindTime -= m_fBlindDownSpeed * Delta_Time;
-                if (m_fCurBlindTime <= 0.f)
-                {
-                    m_fCurBlindTime = 0.f;
-                    m_bBlindUp = true;
-                }
+        } else {
+            m_fCurBlindTime -= m_fBlindDownSpeed * Delta_Time;
+            if (m_fCurBlindTime <= 0.f) {
+                m_fCurBlindTime = 0.f;
+                m_bBlindUp = true;
             }
-            ChangeColor(ptrOwner->GetBlendColor(m_dwBlindMin, m_dwBlindMax, m_fCurBlindTime));
         }
+        ChangeColor(ptrOwner->GetBlendColor(m_dwBlindMin, m_dwBlindMax, m_fCurBlindTime));
+    }
 
-        if (m_idTex != -1 || m_pTex)
-        {
-            if (m_idTex != -1)
-                m_rs->TextureSet(0, m_idTex);
-            else
-                m_rs->SetTexture(0, m_pTex ? m_pTex->m_pTexture : nullptr);
-            m_rs->DrawPrimitiveUP(D3DPT_TRIANGLESTRIP, XI_ONETEX_FVF, 2, m_v, sizeof(XI_ONETEX_VERTEX), "iVideo");
-        }
+    if (m_idTex != -1 || m_pTex) {
+        if (m_idTex != -1)
+            m_rs->TextureSet(0, m_idTex);
+        else
+            m_rs->SetTexture(0, m_pTex ? m_pTex->m_pTexture : nullptr);
+        m_rs->DrawPrimitiveUP(D3DPT_TRIANGLESTRIP, XI_ONETEX_FVF, 2, m_v, sizeof(XI_ONETEX_VERTEX), "iVideo");
     }
 }
 
-bool CXI_PICTURE::Init(INIFILE *ini1, const char *name1, INIFILE *ini2, const char *name2, VDX9RENDER *rs,
-                       XYRECT &hostRect, XYPOINT &ScreenSize)
-{
-    if (!CINODE::Init(ini1, name1, ini2, name2, rs, hostRect, ScreenSize))
-        return false;
-    return true;
+bool CXI_PICTURE::Init(const Config& node_config, const Config& def_config, VDX9RENDER *rs,
+                       XYRECT &hostRect, XYPOINT &ScreenSize) {
+    return CINODE::Init(node_config, def_config, rs, hostRect, ScreenSize);
 }
 
-void CXI_PICTURE::LoadIni(INIFILE *ini1, const char *name1, INIFILE *ini2, const char *name2)
-{
-    char param[255];
-
-    m_idTex = -1;
+void CXI_PICTURE::LoadIni(const Config& node_config, const Config& def_config) {
+    std::pair<const Config&, const Config&> configs{node_config, def_config};
 
     auto texRect = FXYRECT(0.f, 0.f, 1.f, 1.f);
 
-    if (ReadIniString(ini1, name1, ini2, name2, "groupName", param, sizeof(param), ""))
-    {
-        m_idTex = pPictureService->GetTextureID(param);
-        const auto len = strlen(param) + 1;
-        m_pcGroupName = new char[len];
-        Assert(m_pcGroupName);
-        memcpy(m_pcGroupName, param, len);
-
-        if (ReadIniString(ini1, name1, ini2, name2, "picName", param, sizeof(param), ""))
-            pPictureService->GetTexturePos(m_pcGroupName, param, texRect);
+    auto group_name = Config::GetOrGet<std::string>(configs, "groupName", {});
+    if (!group_name.empty()) {
+        m_idTex = pPictureService->GetTextureID(group_name.c_str());
+        auto pic_name = Config::GetOrGet<std::string>(configs, "picName", {});
+        if (!pic_name.empty()) {
+            pPictureService->GetTexturePos(m_pcGroupName.c_str(), pic_name.c_str(), texRect);
+        }
+    } else {
+        auto texture_name = Config::GetOrGet<std::string>(configs, "textureName", {});
+        m_idTex = texture_name.empty()
+            ? -1
+            : m_rs->TextureCreate(texture_name.c_str());
+        auto texture_rect_opt = Config::GetOrGet<Types::Vector4<double>>(configs, "textureRect");
+        if (texture_rect_opt) {
+            texRect = *texture_rect_opt;
+        }
     }
-    else
-    {
-        if (ReadIniString(ini1, name1, ini2, name2, "textureName", param, sizeof(param), ""))
-            m_idTex = m_rs->TextureCreate(param);
-        texRect = GetIniFloatRect(ini1, name1, ini2, name2, "textureRect", texRect);
-    }
 
-    m_pTex = nullptr;
-    if (ReadIniString(ini1, name1, ini2, name2, "videoName", param, sizeof(param), ""))
-        m_pTex = m_rs->GetVideoTexture(param);
+    auto video_name = Config::GetOrGet<std::string>(configs, "videoName", {});
+    m_pTex = video_name.empty()
+        ? nullptr
+        : m_rs->GetVideoTexture(video_name.c_str());
 
-    const auto color = GetIniARGB(ini1, name1, ini2, name2, "color", ARGB(255, 128, 128, 128));
+    auto color_vec = Config::GetOrGet<Types::Vector4<std::int64_t>>(configs, "color", {255, 128, 128, 128});
+    auto color = ARGB(color_vec.x, color_vec.y, color_vec.z, color_vec.w);
 
     // Create rectangle
     ChangePosition(m_rect);
     ChangeUV(texRect);
-    for (auto i = 0; i < 4; i++)
-    {
+    for (auto i = 0; i < 4; i++) {
         m_v[i].color = color;
         m_v[i].pos.z = 1.f;
     }
 
-    m_bMakeBlind = GetIniBool(ini1, name1, ini2, name2, "blind", false);
+    m_bMakeBlind = Config::GetOrGet<std::int64_t>(configs, "blind", false);
     m_fCurBlindTime = 0.f;
     m_bBlindUp = true;
-    auto fTmp = GetIniFloat(ini1, name1, ini2, name2, "blindUpTime", 1.f);
-    if (fTmp > 0.f)
+    auto fTmp = Config::GetOrGet<double>(configs, "blindUpTime", 1.0);
+    if (fTmp > 0.f) {
         m_fBlindUpSpeed = 0.001f / fTmp;
-    fTmp = GetIniFloat(ini1, name1, ini2, name2, "blindDownTime", 1.f);
+    }
+    fTmp = Config::GetOrGet<double>(configs, "blindDownTime", 1.0);
     if (fTmp > 0.f)
         m_fBlindDownSpeed = 0.001f / fTmp;
-    m_dwBlindMin = GetIniARGB(ini1, name1, ini2, name2, "blindMinColor", ARGB(255, 128, 128, 128));
-    m_dwBlindMax = GetIniARGB(ini1, name1, ini2, name2, "blindMaxColor", ARGB(255, 255, 255, 255));
+    auto blind_min = Config::GetOrGet<Types::Vector4<std::int64_t>>(configs, "blindMinColor", {255, 128, 128, 128});
+    m_dwBlindMin = ARGB(blind_min.x, blind_min.y, blind_min.z, blind_min.w);
+
+    auto blind_max = Config::GetOrGet<Types::Vector4<std::int64_t>>(configs, "blindMaxColor", {255});
+    m_dwBlindMin = ARGB(blind_max.x, blind_max.y, blind_max.z, blind_max.w);
 }
 
 void CXI_PICTURE::ReleaseAll()
@@ -207,25 +200,18 @@ void CXI_PICTURE::SetNewPictureFromDir(const char *dirName)
     }
 }
 
-void CXI_PICTURE::SetNewPictureByGroup(const char *groupName, const char *picName)
-{
-    if (!m_pcGroupName || !storm::iEquals(m_pcGroupName, groupName))
-    {
+void CXI_PICTURE::SetNewPictureByGroup(const char *groupName, const char *picName) {
+    if (m_pcGroupName.empty() || !storm::iEquals(m_pcGroupName, groupName)) {
         ReleasePicture();
-        if (groupName)
-        {
-            const auto len = strlen(groupName) + 1;
-            m_pcGroupName = new char[strlen(groupName) + 1];
-            Assert(m_pcGroupName);
-            memcpy(m_pcGroupName, groupName, len);
+        if (groupName) {
+            m_pcGroupName = std::string(groupName);
             m_idTex = pPictureService->GetTextureID(groupName);
         }
     }
 
-    if (m_pcGroupName && picName)
-    {
+    if (!m_pcGroupName.empty() && picName) {
         FXYRECT texRect;
-        pPictureService->GetTexturePos(m_pcGroupName, picName, texRect);
+        pPictureService->GetTexturePos(m_pcGroupName.c_str(), picName, texRect);
         ChangeUV(texRect);
     }
 }
@@ -330,10 +316,9 @@ uint32_t CXI_PICTURE::MessageProc(int32_t msgcode, MESSAGE &message)
         {
             ReleasePicture();
             auto *pOtherPic = static_cast<CXI_PICTURE *>(pNod);
-            if (pOtherPic->m_pcGroupName)
+            if (!pOtherPic->m_pcGroupName.empty())
             {
                 m_pcGroupName = pOtherPic->m_pcGroupName;
-                pOtherPic->m_pcGroupName = nullptr;
             }
             if (pOtherPic->m_idTex != -1)
             {
@@ -429,9 +414,8 @@ void CXI_PICTURE::SetNewPictureByPointer(int32_t textureId)
 
 void CXI_PICTURE::ReleasePicture()
 {
-    PICTURE_TEXTURE_RELEASE(pPictureService, m_pcGroupName, m_idTex);
+    PICTURE_TEXTURE_RELEASE(pPictureService, m_pcGroupName.c_str(), m_idTex);
 
-    STORM_DELETE(m_pcGroupName);
     TEXTURE_RELEASE(m_rs, m_idTex);
     VIDEOTEXTURE_RELEASE(m_rs, m_pTex);
 }

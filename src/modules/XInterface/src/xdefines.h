@@ -44,6 +44,12 @@ struct XYPOINT
         y = iy;
     }
 
+    XYPOINT& operator=(const Storm::Math::Types::Vector2<std::int64_t>& vec) noexcept {
+        x = vec.x;
+        y = vec.y;
+        return *this;
+    }
+
     void operator=(const XYPOINT &lp)
     {
         this->x = lp.x;
@@ -58,6 +64,14 @@ struct XYRECT
     XYRECT()
     {
         left = top = right = bottom = 0;
+    }
+
+    XYRECT& operator=(const Storm::Math::Types::Vector4<std::int64_t>& vec) noexcept {
+        left = vec.x;
+        top = vec.y;
+        right = vec.z;
+        bottom = vec.w;
+        return *this;
     }
 
     XYRECT(int32_t ileft, int32_t itop, int32_t iright, int32_t ibottom)
@@ -98,11 +112,23 @@ struct FXYPOINT
         this->y = fy;
     }
 
+    FXYPOINT& operator=(const Storm::Math::Types::Vector2<double>& vec) noexcept {
+        x = static_cast<float>(vec.x);
+        y = static_cast<float>(vec.y);
+        return *this;
+    }
+
+    FXYPOINT& operator=(const Storm::Math::Types::Vector2<float>& vec) noexcept {
+        x = vec.x;
+        y = vec.y;
+        return *this;
+    }
+
     FXYPOINT &operator=(const FXYPOINT &fp)
     {
         this->x = fp.x;
         this->y = fp.y;
-        return (*this);
+        return *this;
     }
 
     FXYPOINT operator+(FXYPOINT &fp)
@@ -137,6 +163,14 @@ struct FXYRECT
         top = ftop;
         right = fright;
         bottom = fbottom;
+    }
+
+    FXYRECT& operator=(const Storm::Math::Types::Vector4<double>& vec) noexcept {
+        left = vec.x;
+        top = vec.y;
+        right = vec.z;
+        bottom = vec.w;
+        return *this;
     }
 
     void operator=(const FXYRECT &fr)

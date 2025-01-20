@@ -1,7 +1,12 @@
 #include "core.h"
 
+#include "Filesystem/Config/Config.hpp"
+#include "Filesystem/Constants/ConfigNames.hpp"
+
 #include "geometry_r.h"
 #include "string_compare.hpp"
+
+using namespace Storm::Filesystem;
 
 IDirect3DVertexDeclaration9 *GEOM_SERVICE_R::vertexDecl_ = nullptr;
 
@@ -51,8 +56,7 @@ void GEOMETRY::SetVBConvertFunc(VERTEX_TRANSFORM _transform_func)
 
 static bool geoLog = false;
 
-bool GEOMETRY::Init()
-{
+bool GEOMETRY::Init() {
     RenderService = static_cast<VDX9RENDER *>(core.GetService(RenderServiceName));
     if (!RenderService)
     {
@@ -60,12 +64,9 @@ bool GEOMETRY::Init()
     }
     GSR.SetRenderService(RenderService);
 
-    auto ini = fio->OpenIniFile(core.EngineIniFileName());
-    if (ini)
-    {
-        geoLog = ini->GetInt(nullptr, "geometry_log", 0) == 1;
-    }
-
+    auto config = Config::Load(Constants::ConfigNames::engine());
+    std::ignore = config.SelectSection("Main");
+    geoLog = config.Get<std::int64_t>("geometry_log", 0) == 1;
     return true;
 }
 

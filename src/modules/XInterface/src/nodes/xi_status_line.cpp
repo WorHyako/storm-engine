@@ -3,11 +3,12 @@
 
 #include "core.h"
 
+using namespace Storm::Filesystem;
+
 CXI_STATUSLINE::CXI_STATUSLINE()
     : m_fLineOffset(0)
 {
     m_rs = nullptr;
-    m_sGroupName = nullptr;
     m_idTex = -1L;
     m_vBuf = -1L;
     m_iBuf = -1L;
@@ -30,10 +31,9 @@ void CXI_STATUSLINE::Draw(bool bSelected, uint32_t Delta_Time)
     }
 }
 
-bool CXI_STATUSLINE::Init(INIFILE *ini1, const char *name1, INIFILE *ini2, const char *name2, VDX9RENDER *rs,
-                          XYRECT &hostRect, XYPOINT &ScreenSize)
-{
-    if (!CINODE::Init(ini1, name1, ini2, name2, rs, hostRect, ScreenSize))
+bool CXI_STATUSLINE::Init(const Config& node_config, const Config& def_config,
+    VDX9RENDER *rs, XYRECT &hostRect, XYPOINT &ScreenSize) {
+    if (!CINODE::Init(node_config, def_config, rs, hostRect, ScreenSize))
         return false;
     SetGlowCursor(false);
     return true;
@@ -41,10 +41,9 @@ bool CXI_STATUSLINE::Init(INIFILE *ini1, const char *name1, INIFILE *ini2, const
 
 void CXI_STATUSLINE::ReleaseAll()
 {
-    PICTURE_TEXTURE_RELEASE(pPictureService, m_sGroupName, m_idTex);
+    PICTURE_TEXTURE_RELEASE(pPictureService, m_sGroupName.c_str(), m_idTex);
     VERTEX_BUFFER_RELEASE(m_rs, m_vBuf);
     INDEX_BUFFER_RELEASE(m_rs, m_iBuf);
-    STORM_DELETE(m_sGroupName);
 }
 
 int CXI_STATUSLINE::CommandExecute(int wActCode)
@@ -52,17 +51,12 @@ int CXI_STATUSLINE::CommandExecute(int wActCode)
     return -1;
 }
 
-void CXI_STATUSLINE::LoadIni(INIFILE *ini1, const char *name1, INIFILE *ini2, const char *name2)
-{
-    char param[256];
-
+void CXI_STATUSLINE::LoadIni(const Config& node_config, const Config& def_config) {
     // Get texture name and load that texture
-    if (ReadIniString(ini1, name1, ini2, name2, "groupName", param, sizeof(param), ""))
-    {
-        const auto len = strlen(param) + 1;
-        m_sGroupName = new char[len];
-        memcpy(m_sGroupName, param, len);
-        m_idTex = pPictureService->GetTextureID(m_sGroupName);
+    std::pair<const Config&, const Config&> configs{node_config, def_config};
+    m_sGroupName = Config::GetOrGet<std::string>(configs, "groupName", {});
+    if (!m_sGroupName.empty()) {
+        m_idTex = pPictureService->GetTextureID(m_sGroupName.c_str());
     }
 
     // Calculate vertex and index quantity
@@ -82,7 +76,7 @@ void CXI_STATUSLINE::LoadIni(INIFILE *ini1, const char *name1, INIFILE *ini2, co
         FXYRECT scrRect1, scrRect2;
 
         // get lenght of filled status line
-        m_fLineOffset = GetIniFloat(ini1, name1, ini2, name2, "lineOffset", 0.f);
+        m_fLineOffset = Config::GetOrGet<double>(configs, "lineOffset", 0.0);
         auto fMediumX = static_cast<float>(m_rect.right - m_rect.left) - m_fLineOffset * 2.f;
         auto *pAttr = core.Entity_GetAttributeClass(g_idInterface, "StatusLine");
         if (pAttr != nullptr)
@@ -107,14 +101,18 @@ void CXI_STATUSLINE::LoadIni(INIFILE *ini1, const char *name1, INIFILE *ini2, co
 
         // get texture coordinates
         fMediumX /= (m_rect.right - m_rect.left);
-        if (ReadIniString(ini1, name1, ini2, name2, "filledPicture", param, sizeof(param), ""))
-            pPictureService->GetTexturePos(m_sGroupName, param, m_texRect1);
+        auto filled_picture = Config::GetOrGet<std::string>(configs, "filledPicture", {});
+        if (!filled_picture.empty()) {
+            pPictureService->GetTexturePos(m_sGroupName.c_str(), filled_picture.c_str(), m_texRect1);
+        }
         FXYRECT texRect1;
         memcpy(&texRect1, &m_texRect1, sizeof(FRECT));
         texRect1.right = m_texRect1.left + (m_texRect1.right - m_texRect1.left) * fMediumX;
         // .. other ..
-        if (ReadIniString(ini1, name1, ini2, name2, "emptyPicture", param, sizeof(param), ""))
-            pPictureService->GetTexturePos(m_sGroupName, param, m_texRect2);
+        auto empty_picture = Config::GetOrGet<std::string>(configs, "emptyPicture", {});
+        if (!empty_picture.empty()) {
+            pPictureService->GetTexturePos(m_sGroupName.c_str(), empty_picture.c_str(), m_texRect2);
+        }
         FXYRECT texRect2;
         memcpy(&texRect2, &m_texRect2, sizeof(FRECT));
         texRect2.left = m_texRect2.left + (m_texRect2.right - m_texRect2.left) * fMediumX;

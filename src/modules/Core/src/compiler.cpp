@@ -1,24 +1,26 @@
 #include "compiler.h"
 
-#include <chrono>
-#include <cstdio>
+#include "Filesystem/Config/Config.hpp"
+#include "Filesystem/Constants/ConfigNames.hpp"
+#include "Filesystem/Constants/Paths.hpp"
 
-#include <zlib.h>
+using namespace Storm::Filesystem;
 
-#ifdef _WIN32 // S_DEBUG
-#include "s_debug.h"
-#else
+#include "core.h"
 #include "core_impl.h"
-#endif
+#include "file_service.h"
 #include "debug-trap.h"
-#include "fs.h"
 #include "logging.hpp"
 #include "script_cache.h"
-#include "storm/engine_settings.hpp"
 #include "storm_assert.h"
 
 #include <SDL_timer.h>
+
+#include <zlib.h>
+
 #include <unordered_map>
+#include <chrono>
+#include <cstdio>
 
 #define SKIP_COMMENT_TRACING
 #define TRACE_OFF
@@ -31,13 +33,6 @@
 #define SBUPDATE 4
 #define DEF_COMPILE_EXPRESSIONS
 
-#ifdef _WIN32 // S_DEBUG
-namespace
-{
-S_DEBUG s_debug;
-}
-#endif
-
 namespace
 {
 enum CacheMode : int
@@ -48,9 +43,9 @@ enum CacheMode : int
                                     // changes(e.g. in the interface scripts) are expected during the session
 };
 
-auto GetCacheFolder()
+std::filesystem::path GetCacheFolder()
 {
-    static std::filesystem::path cache_folder = storm::GetEngineSettings().GetEnginePath(storm::EngineSettingsPathType::ScriptCache);
+    static const std::filesystem::path cache_folder{ Constants::Paths::script_cache() };
     return cache_folder;
 }
 constexpr auto kCacheStateFile = "state";
@@ -93,9 +88,6 @@ void WipeCache(const uint64_t fingerprint)
 
 // extern char * FuncNameTable[];
 extern INTFUNCDESC IntFuncTable[];
-#ifdef _WIN32 // S_DEBUG
-extern S_DEBUG *CDebug = &s_debug;
-#endif
 extern uint32_t dwNumberScriptCommandsExecuted;
 
 using std::chrono::duration_cast;
@@ -205,7 +197,7 @@ void COMPILER::SetProgramDirectory(const char *dir_name)
         strcat_s(ProgramDirectory, len, "\\");
     }
 #ifdef _WIN32 // S_DEBUG
-    CDebug->SetProgramDirectory(dir_name);
+    // CDebug->SetProgramDirectory(dir_name);
 #endif
 }
 
@@ -401,8 +393,8 @@ void COMPILER::SetError(const char *data_PTR, ...)
     logError_->error(ErrorBuffer);
 
 #ifdef _WIN32 // S_DEBUG
-    if (bBreakOnError)
-        CDebug->SetTraceMode(TMODE_MAKESTEP);
+    // if (bBreakOnError)
+        // CDebug->SetTraceMode(TMODE_MAKESTEP);
 #endif
 }
 
@@ -429,53 +421,26 @@ void COMPILER::SetWarning(const char *data_PTR, ...)
     logTrace_->warn(ErrorBuffer);
 }
 
-void COMPILER::LoadPreprocess()
-{
-    auto engine_ini = fio->OpenIniFile(core_internal.EngineIniFileName());
-    if (engine_ini)
-    {
-        if (engine_ini->GetInt("script", "debuginfo", 0) == 0)
-        {
-            bDebugInfo = false;
-            // FuncTab.KeepNameMode(false);
-            // VarTab.KeepNameMode(false);
-            // DefTab.KeepNameMode(false);
-            // EventTab.KeepNameMode(false);
-        }
-        else
-        {
-            bDebugInfo = true;
-            // FuncTab.KeepNameMode(true);
-            // VarTab.KeepNameMode(true);
-            // DefTab.KeepNameMode(true);
-            // EventTab.KeepNameMode(true);
-        }
-        if (engine_ini->GetInt("script", "codefiles", 0) == 0)
-            bWriteCodeFile = false;
-        else
-            bWriteCodeFile = true;
+void COMPILER::LoadPreprocess() {
+    auto config = Config::Load(Constants::ConfigNames::engine());
+    std::ignore = config.SelectSection("script");
+    bDebugInfo = config.Get<std::int64_t>("debuginfo", 0) == 0;
+    bWriteCodeFile = config.Get<std::int64_t>("codefiles", 0) == 0;
+    bRuntimeLog = config.Get<std::int64_t>("runtimelog", 0) == 0;
+    script_cache_mode_ = config.Get<std::int64_t>("cache_mode", kCacheDisabled);
 
-        if (engine_ini->GetInt("script", "runtimelog", 0) == 0)
-            bRuntimeLog = false;
-        else
-            bRuntimeLog = true;
-
-        script_cache_mode_ = engine_ini->GetInt("script", "cache_mode", kCacheDisabled);
-        if (script_cache_mode_ < kCacheDisabled || script_cache_mode_ > kCacheEnabledNoRuntimeCheck)
-        {
-            script_cache_mode_ = kCacheDisabled;
-        }
-
-        // if(engine_ini->GetInt("script","tracefiles",0) == 0) bScriptTrace = false;
-        // else bScriptTrace = true;
+    if (script_cache_mode_ < kCacheDisabled || script_cache_mode_ > kCacheEnabledNoRuntimeCheck) {
+        script_cache_mode_ = kCacheDisabled;
     }
 
+    // if(engine_ini->GetInt("script","tracefiles",0) == 0) bScriptTrace = false;
+    // else bScriptTrace = true;
 #ifdef _WIN32 // S_DEBUG
-    auto ini = fio->OpenIniFile(PROJECT_NAME);
-    if (ini)
-    {
-        bBreakOnError = (ini->GetInt("options", "break_on_error", 0) == 1);
-    }
+    // auto ini = fio->OpenIniFile(PROJECT_NAME);
+    // if (ini)
+    // {
+    // bBreakOnError = (ini->GetInt("options", "break_on_error", 0) == 1);
+    // }
 #endif
 }
 
@@ -700,7 +665,7 @@ VDATA *COMPILER::ProcessEvent(const char *event_name)
 
     uint32_t nTimeOnEvent = SDL_GetTicks();
 #ifdef _WIN32 // S_DEBUG
-    current_debug_mode = CDebug->GetTraceMode();
+    // current_debug_mode = CDebug->GetTraceMode();
 #endif
 
     pVD = nullptr;
@@ -775,8 +740,8 @@ VDATA *COMPILER::ProcessEvent(const char *event_name)
     pRun_fi = nullptr;
 
 #ifdef _WIN32 // S_DEBUG
-    if (current_debug_mode == TMODE_CONTINUE)
-        CDebug->SetTraceMode(TMODE_CONTINUE);
+    // if (current_debug_mode == TMODE_CONTINUE)
+        // CDebug->SetTraceMode(TMODE_CONTINUE);
 #endif
     // SetFocus(core_internal.App_Hwnd);        // VANO CHANGES
 
@@ -3728,7 +3693,7 @@ bool COMPILER::BC_CallFunction(uint32_t func_code, uint32_t &ip, DATA *&pVResult
     mem_codebase = pRunCodeBase;
 
 #ifdef _WIN32 // S_DEBUG
-    nDebugEnterMode = CDebug->GetTraceMode();
+    // nDebugEnterMode = CDebug->GetTraceMode();
 #endif
     uint64_t nTicks;
     if (call_fi.segment_id == INTERNAL_SEGMENT_ID)
@@ -3781,10 +3746,10 @@ bool COMPILER::BC_CallFunction(uint32_t func_code, uint32_t &ip, DATA *&pVResult
         }
     }
 #ifdef _WIN32 // S_DEBUG
-    if (nDebugEnterMode == TMODE_MAKESTEP)
-    {
-        CDebug->SetTraceMode(TMODE_MAKESTEP);
-    }
+    // if (nDebugEnterMode == TMODE_MAKESTEP)
+    // {
+    //     CDebug->SetTraceMode(TMODE_MAKESTEP);
+    // }
 #endif
 
     if (pVResult)
@@ -4343,55 +4308,55 @@ bool COMPILER::BC_Execute(uint32_t function_code, DATA *&pVReturnResult, const c
             if (bDebugExpressionRun)
                 break;
 #ifdef _WIN32 // S_DEBUG
-            memcpy(&nDebugTraceLineCode, &pCodeBase[ip], sizeof(uint32_t));
-            if (bTraceMode)
-            {
-                if (CDebug->GetTraceMode() == TMODE_MAKESTEP || CDebug->GetTraceMode() == TMODE_MAKESTEP_OVER)
-                {
-                    if (CDebug->GetTraceMode() == TMODE_MAKESTEP_OVER && bDebugWaitForThisFunc == false)
-                        break;
-
-                    if (!CDebug->IsDebug())
-                        CDebug->OpenDebugWindow(core_internal.GetAppInstance());
-                    // else
-                    ShowWindow(CDebug->GetWindowHandle(), SW_NORMAL);
-
-                    CDebug->SetTraceLine(nDebugTraceLineCode);
-                    CDebug->BreakOn(fi.decl_file_name.c_str(), nDebugTraceLineCode);
-                    CDebug->SetTraceMode(TMODE_WAIT);
-                    while (CDebug->GetTraceMode() == TMODE_WAIT)
-                    {
-                        std::this_thread::sleep_for(std::chrono::milliseconds(40));
-                    }
-                    if (CDebug->GetTraceMode() == TMODE_MAKESTEP_OVER)
-                        bDebugWaitForThisFunc = true;
-                    else
-                        bDebugWaitForThisFunc = false;
-                }
-                else if (CDebug->Breaks.CanBreak())
-                {
-                    // check for breakpoint
-                    if (CDebug->Breaks.Find(fi.decl_file_name.c_str(), nDebugTraceLineCode))
-                    {
-                        if (!CDebug->IsDebug())
-                            CDebug->OpenDebugWindow(core_internal.GetAppInstance());
-
-                        ShowWindow(CDebug->GetWindowHandle(), SW_NORMAL);
-                        // CDebug->OpenDebugWindow(core_impl.hInstance);
-                        CDebug->SetTraceMode(TMODE_WAIT);
-                        CDebug->BreakOn(fi.decl_file_name.c_str(), nDebugTraceLineCode);
-
-                        while (CDebug->GetTraceMode() == TMODE_WAIT)
-                        {
-                            std::this_thread::sleep_for(std::chrono::milliseconds(40));
-                        } // wait for debug thread decision
-                        if (CDebug->GetTraceMode() == TMODE_MAKESTEP_OVER)
-                            bDebugWaitForThisFunc = true;
-                        else
-                            bDebugWaitForThisFunc = false;
-                    }
-                }
-            }
+            // memcpy(&nDebugTraceLineCode, &pCodeBase[ip], sizeof(uint32_t));
+            // if (bTraceMode)
+            // {
+            //     if (CDebug->GetTraceMode() == TMODE_MAKESTEP || CDebug->GetTraceMode() == TMODE_MAKESTEP_OVER)
+            //     {
+            //         if (CDebug->GetTraceMode() == TMODE_MAKESTEP_OVER && bDebugWaitForThisFunc == false)
+            //             break;
+            //
+            //         if (!CDebug->IsDebug())
+            //             CDebug->OpenDebugWindow(core_internal.GetAppInstance());
+            //         // else
+            //         ShowWindow(CDebug->GetWindowHandle(), SW_NORMAL);
+            //
+            //         CDebug->SetTraceLine(nDebugTraceLineCode);
+            //         CDebug->BreakOn(fi.decl_file_name.c_str(), nDebugTraceLineCode);
+            //         CDebug->SetTraceMode(TMODE_WAIT);
+            //         while (CDebug->GetTraceMode() == TMODE_WAIT)
+            //         {
+            //             std::this_thread::sleep_for(std::chrono::milliseconds(40));
+            //         }
+            //         if (CDebug->GetTraceMode() == TMODE_MAKESTEP_OVER)
+            //             bDebugWaitForThisFunc = true;
+            //         else
+            //             bDebugWaitForThisFunc = false;
+            //     }
+            //     else if (CDebug->Breaks.CanBreak())
+            //     {
+            //         // check for breakpoint
+            //         if (CDebug->Breaks.Find(fi.decl_file_name.c_str(), nDebugTraceLineCode))
+            //         {
+            //             if (!CDebug->IsDebug())
+            //                 CDebug->OpenDebugWindow(core_internal.GetAppInstance());
+            //
+            //             ShowWindow(CDebug->GetWindowHandle(), SW_NORMAL);
+            //             // CDebug->OpenDebugWindow(core_impl.hInstance);
+            //             CDebug->SetTraceMode(TMODE_WAIT);
+            //             CDebug->BreakOn(fi.decl_file_name.c_str(), nDebugTraceLineCode);
+            //
+            //             while (CDebug->GetTraceMode() == TMODE_WAIT)
+            //             {
+            //                 std::this_thread::sleep_for(std::chrono::milliseconds(40));
+            //             } // wait for debug thread decision
+            //             if (CDebug->GetTraceMode() == TMODE_MAKESTEP_OVER)
+            //                 bDebugWaitForThisFunc = true;
+            //             else
+            //                 bDebugWaitForThisFunc = false;
+            //         }
+            //     }
+            // }
 #endif
             break;
         case DEBUG_FILE_NAME:
@@ -8025,6 +7990,6 @@ void COMPILER::FormatDialog(const char *file_name)
 void STRING_CODEC::VariableChanged()
 {
 #ifdef _WIN32 // S_DEBUG
-    CDebug->SetTraceMode(TMODE_MAKESTEP);
+    // CDebug->SetTraceMode(TMODE_MAKESTEP);
 #endif
 }

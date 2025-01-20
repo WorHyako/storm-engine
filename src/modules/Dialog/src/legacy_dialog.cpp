@@ -1,8 +1,10 @@
 #include "legacy_dialog.hpp"
 
 #include "dialog.hpp"
-#include "storm/config/config.hpp"
 #include <dialog/dialog_utils.hpp>
+
+#include "Filesystem/Config/Config.hpp"
+#include "Filesystem/Constants/ConfigNames.hpp"
 
 #include <animation.h>
 #include <core.h>
@@ -11,15 +13,15 @@
 #include <model.h>
 #include <shared/messages.h>
 #include <string_compare.hpp>
-#include <vma.hpp>
 
 #include <array>
+
+using namespace Storm::Filesystem;
+using namespace Storm::Math;
 
 namespace
 {
 
-constexpr std::string_view DIALOG_INI_FILE_PATH = "Resource/Ini/dialog";
-constexpr std::string_view DEFAULT_FONT = "DIALOG0";
 const char *DEFAULT_INTERFACE_TEXTURE = "dialog/dialog.tga";
 
 constexpr const uint32_t COLOR_NORMAL = 0xFFFFFFFF;
@@ -42,7 +44,7 @@ void FillIndexBuffer(VDX9RENDER &renderService, int32_t indexBuffer, size_t spri
     renderService.UnLockIndexBuffer(indexBuffer);
 }
 
-constexpr FRECT ScaleUv(FRECT uv)
+FRECT ScaleUv(FRECT uv)
 {
     constexpr float hScale = 1.f / 1024.f;
     constexpr float vScale = 1.f / 256.f;
@@ -61,11 +63,11 @@ struct SpriteInfo
     FRECT uv{};
 };
 
-constexpr const size_t DIALOG_MAX_LINES = 8;
-constexpr const float DIVIDER_HEIGHT = 10;
-constexpr const int32_t DIALOG_LINE_HEIGHT = 26;
+constexpr std::size_t DIALOG_MAX_LINES = 8;
+constexpr float DIVIDER_HEIGHT = 10;
+constexpr std::int32_t DIALOG_LINE_HEIGHT = 26;
 
-constexpr std::array SPRITE_DATA = {
+std::array SPRITE_DATA = {
     // Head overlay
     SpriteInfo{
         {29, 25, 147, 37},
@@ -305,28 +307,17 @@ uint64_t LegacyDialog::ProcessMessage(MESSAGE &msg)
     return 0;
 }
 
-void LegacyDialog::LoadIni()
-{
-    const auto opt_config = storm::LoadConfig(DIALOG_INI_FILE_PATH);
-
-    if (opt_config) {
-        const auto &config = *opt_config;
-
-        const auto &dialog = config["dialog"];
-        if (dialog.is_object()) {
-            mainFont_ = RenderService->LoadFont(dialog.value<std::string>("mainfont", std::string(DEFAULT_FONT)));
-            nameFont_ = RenderService->LoadFont(dialog.value<std::string>("namefont", std::string(DEFAULT_FONT)));
-            if (dialog.contains("name")) {
-                nameColor_ = storm::config::GetColor(dialog["name"]["color"]).value_or(COLOR_NORMAL);
-            }
-            subFont_ = RenderService->LoadFont(dialog.value<std::string>("subfont", std::string(DEFAULT_FONT)));
-        }
-    }
-    else {
-        mainFont_ = RenderService->LoadFont(DEFAULT_FONT);
-        nameFont_ = mainFont_;
-        subFont_ = mainFont_;
-    }
+void LegacyDialog::LoadIni() {
+    auto config = Config::Load(Constants::ConfigNames::dialog());
+    std::ignore = config.SelectSection("dialog");
+    mainFont_ = RenderService->LoadFont(config.Get<std::string>("mainfont", {"DIALOG0"}));
+    nameFont_ = RenderService->LoadFont(config.Get<std::string>("namefont", {"DIALOG0"}));
+    subFont_ = RenderService->LoadFont(config.Get<std::string>("subfont", {"DIALOG0"}));
+    /**
+     * Useless ?
+     */
+    // auto color = config.Get<Types::Vector4<std::int64_t>>("color", {255});
+    // nameColor_ = ARGB(color.x, color.y, color.z, color.w);
 }
 
 void LegacyDialog::UpdateScreenSize()

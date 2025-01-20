@@ -12,9 +12,6 @@
 
 #include "animation.h"
 #include "animation_info.h"
-#include "vma.hpp"
-
-//============================================================================================
 
 class INIFILE;
 class AnimationImp;
@@ -50,16 +47,9 @@ class AnimationServiceImp final : public AnimationService
   private:
     // load animation
     int32_t LoadAnimation(const char *animationName);
-    // Load user data from the current section
-    void LoadUserData(INIFILE *ani, const char *sectionName, std::unordered_map<std::string, std::string> &data,
-                      const char *animationName);
     // load AN
     bool LoadAN(const char *fname, AnimationInfo *info);
 
     std::vector<AnimationInfo *> ainfo;
     std::vector<AnimationImp *> animations;
-
-    static char key[1024];
 };
-
-//============================================================================================

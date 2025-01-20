@@ -2,13 +2,17 @@
 
 #include "compiler.h"
 #include "controls.h"
-#include "fs.h"
 #include "steam_api.hpp"
 
 #include <fstream>
 
 #include "string_compare.hpp"
 #include <SDL.h>
+
+#include "Filesystem/Constants/ConfigNames.hpp"
+#include "Filesystem/Config/Config.hpp"
+
+using namespace Storm::Filesystem;
 
 Core &core = core_internal;
 
@@ -267,44 +271,52 @@ bool CoreImpl::Initialize()
     return true;
 }
 
-void CoreImpl::ProcessEngineIniFile()
-{
-    char String[MAX_PATH];
-
+void CoreImpl::ProcessEngineIniFile() {
     bEngineIniProcessed = true;
 
-    auto engine_ini = fio->OpenIniFile(fs::ENGINE_INI_FILE_NAME);
-    if (!engine_ini)
-        throw std::runtime_error("no 'engine.ini' file");
+    auto config = Config::Load(Constants::ConfigNames::engine());
+    std::ignore = config.SelectSection("Main");
 
-    auto res = engine_ini->ReadString(nullptr, "program_directory", String, sizeof(String), "");
-    if (res)
-    {
-        Compiler->SetProgramDirectory(String);
-    }
+    const auto program_dir = config.Get<std::string>("program_directory", {});
+    const auto run = config.Get<std::string>("run");
 
-    res = engine_ini->ReadString(nullptr, "controls", String, sizeof(String), "");
-    if (res)
-    {
-        core_internal.Controls = static_cast<CONTROLS *>(MakeClass(String));
+    Compiler->SetProgramDirectory(program_dir.c_str());
+
+    const auto controls_opt = config.Get<std::string>("controls");
+    if (controls_opt.has_value()) {
+        core_internal.Controls = static_cast<CONTROLS *>(MakeClass(controls_opt->c_str()));
         if (core_internal.Controls == nullptr)
             core_internal.Controls = static_cast<CONTROLS *>(MakeClass("controls"));
-    }
-    else
-    {
+    } else {
         delete Controls;
         Controls = nullptr;
 
         core_internal.Controls = new CONTROLS;
     }
 
-    loadCompatibilitySettings(*engine_ini);
-    determineScreenSize(*engine_ini);
+    std::ignore = config.SelectSection("compatibility");
+    const auto target_engine_version = config.Get<std::string>("target_version", "latest");
+    targetVersion_ = storm::getTargetEngineVersion(target_engine_version);
 
-    res = engine_ini->ReadString(nullptr, "run", String, sizeof(String), "");
-    if (res)
+    // if (targetVersion_ == ENGINE_VERSION::UNKNOWN)
+    // {
+    // spdlog::warn("Unknown target version '{}' in engine compatibility settings", target_engine_version);
+    targetVersion_ = storm::ENGINE_VERSION::TO_EACH_HIS_OWN;
+    // }
+    if (targetVersion_ <= storm::ENGINE_VERSION::PIRATES_OF_THE_CARIBBEAN) {
+        screenSize_ = {640, 480};
+    }
+    else {
+        screenSize_ = {800, 600};
+    }
+
+    std::ignore = config.SelectSection("interface");
+    screenSize_.width = config.Get<std::int64_t>("screen_width", screenSize_.width);
+    screenSize_.height = config.Get<std::int64_t>("screen_height", screenSize_.height);
+
+    if (run.has_value())
     {
-        if (!Compiler->CreateProgram(String))
+        if (!Compiler->CreateProgram(run.value().c_str()))
             throw std::runtime_error("fail to create program");
         if (!Compiler->Run())
             throw std::runtime_error("fail to run program");
@@ -910,11 +922,6 @@ uint32_t CoreImpl::SetScriptFunction(IFUNCINFO *pFuncInfo)
     return Compiler->SetScriptFunction(pFuncInfo);
 }
 
-const char *CoreImpl::EngineIniFileName()
-{
-    return fs::ENGINE_INI_FILE_NAME;
-}
-
 void *CoreImpl::GetScriptVariable(const char *pVariableName, uint32_t *pdwVarIndex)
 {
     const VarInfo *real_var;
@@ -1040,33 +1047,4 @@ storm::editor::EngineEditor *CoreImpl::GetEditor()
 void CoreImpl::collectCrashInfo() const
 {
     Compiler->CollectCallStack();
-}
-
-void CoreImpl::loadCompatibilitySettings(INIFILE &inifile)
-{
-    using namespace storm;
-
-    std::array<char, 128> strBuffer{};
-    inifile.ReadString("compatibility", "target_version", strBuffer.data(), strBuffer.size(), "latest");
-    const std::string_view target_engine_version = strBuffer.data();
-
-    targetVersion_ = getTargetEngineVersion(target_engine_version);
-    // if (targetVersion_ == ENGINE_VERSION::UNKNOWN)
-    // {
-        // spdlog::warn("Unknown target version '{}' in engine compatibility settings", target_engine_version);
-        targetVersion_ = ENGINE_VERSION::TO_EACH_HIS_OWN;
-    // }
-}
-
-void CoreImpl::determineScreenSize(INIFILE &inifile)
-{
-    if (targetVersion_ <= storm::ENGINE_VERSION::PIRATES_OF_THE_CARIBBEAN) {
-        screenSize_ = {640, 480};
-    }
-    else {
-        screenSize_ = {800, 600};
-    }
-
-    screenSize_.width = inifile.GetInt("interface", "screen_width", screenSize_.width);
-    screenSize_.height = inifile.GetInt("interface", "screen_height", screenSize_.height);
 }

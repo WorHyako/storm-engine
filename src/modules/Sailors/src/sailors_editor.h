@@ -50,5 +50,5 @@ class SailorsEditor : public Entity
     std::string _shipName;
 
     void SetCamera(uint32_t &dltTime);
-    void LoadFromIni(std::string fileName);
+    void LoadFromIni();
 };

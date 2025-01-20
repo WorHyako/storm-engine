@@ -18,7 +18,7 @@ TSinkSplash::~TSinkSplash()
 }
 
 //--------------------------------------------------------------------
-void TSinkSplash::Initialize(INIFILE *_ini, SEA_BASE *_sea)
+void TSinkSplash::Initialize(SEA_BASE *_sea)
 {
     // ps = new SEPS_PS();
     // ps->Init(_ini, "sink");

@@ -1,5 +1,8 @@
 #include "xi_slide_line.h"
 
+using namespace Storm::Filesystem;
+using namespace Storm::Math;
+
 CXI_SLIDELINE::CXI_SLIDELINE()
 {
     m_idTexLine = -1;
@@ -54,12 +57,9 @@ void CXI_SLIDELINE::Draw(bool bSelected, uint32_t Delta_Time)
     }
 }
 
-bool CXI_SLIDELINE::Init(INIFILE *ini1, const char *name1, INIFILE *ini2, const char *name2, VDX9RENDER *rs,
-                         XYRECT &hostRect, XYPOINT &ScreenSize)
-{
-    if (!CINODE::Init(ini1, name1, ini2, name2, rs, hostRect, ScreenSize))
-        return false;
-    return true;
+bool CXI_SLIDELINE::Init(const Config& node_config, const Config& def_config,
+    VDX9RENDER *rs, XYRECT &hostRect, XYPOINT &ScreenSize) {
+    return CINODE::Init(node_config, def_config, rs, hostRect, ScreenSize);
 }
 
 void CXI_SLIDELINE::ReleaseAll()
@@ -233,35 +233,36 @@ uint32_t CXI_SLIDELINE::MessageProc(int32_t msgcode, MESSAGE &message)
     return 0;
 }
 
-void CXI_SLIDELINE::LoadIni(INIFILE *ini1, const char *name1, INIFILE *ini2, const char *name2)
-{
-    int i;
-    char param[255];
+void CXI_SLIDELINE::LoadIni(const Config& node_config, const Config& def_config) {
+    std::pair<const Config&, const Config&> configs{node_config, def_config};
 
-    m_idTexLine = -1;
-    if (ReadIniString(ini1, name1, ini2, name2, "baseTexture", param, sizeof(param), ""))
-        m_idTexLine = m_rs->TextureCreate(param);
+    auto base_texture = Config::GetOrGet<std::string>(configs, "baseTexture", {});
+    m_idTexLine = !base_texture.empty()
+        ? m_rs->TextureCreate(base_texture.c_str())
+        : -1;
 
-    m_idTexSelLine = -1;
-    if (ReadIniString(ini1, name1, ini2, name2, "selectTexture", param, sizeof(param), ""))
-        m_idTexSelLine = m_rs->TextureCreate(param);
+    auto select_texture = Config::GetOrGet<std::string>(configs, "selectTexture", {});
+    m_idTexSelLine = !select_texture.empty()
+        ? m_rs->TextureCreate(select_texture.c_str())
+        : -1;
 
-    m_idTexPointer = -1;
-    if (ReadIniString(ini1, name1, ini2, name2, "pointerTexture", param, sizeof(param), ""))
-        m_idTexPointer = m_rs->TextureCreate(param);
+    auto pointer_texture = Config::GetOrGet<std::string>(configs, "pointerTexture", {});
+    m_idTexPointer = !pointer_texture.empty()
+        ? m_rs->TextureCreate(pointer_texture.c_str())
+        : -1;
 
     m_idVBuf = m_rs->CreateVertexBuffer(XI_ONLYONETEX_FVF, 8 * sizeof(XI_ONLYONETEX_VERTEX), D3DUSAGE_WRITEONLY);
     if (m_idVBuf == -1)
         throw std::runtime_error("can not create the vertex buffers");
 
-    m_nPointerWidth = GetIniLong(ini1, name1, ini2, name2, "pointerWidth", 8);
-    m_nPointerHeight = GetIniLong(ini1, name1, ini2, name2, "pointerHeight", m_rect.bottom - m_rect.top);
+    m_nPointerWidth = Config::GetOrGet<std::int64_t>(configs, "pointerWidth", 8);
+    m_nPointerHeight = Config::GetOrGet<std::int64_t>(configs, "pointerHeight", m_rect.bottom - m_rect.top);
 
-    m_nBaseLeft = GetIniLong(ini1, name1, ini2, name2, "baseLeft", 0);
-    m_nPointerLeft = GetIniLong(ini1, name1, ini2, name2, "pointerLeft", 0);
+    m_nBaseLeft = Config::GetOrGet<std::int64_t>(configs, "baseLeft", 0);
+    m_nPointerLeft = Config::GetOrGet<std::int64_t>(configs, "pointerLeft", 0);
 
-    m_nGrateQuantity = GetIniLong(ini1, name1, ini2, name2, "pitchCounter", m_rect.right - m_rect.left);
-    m_nSpeedSlide = GetIniLong(ini1, name1, ini2, name2, "speedSlide", 1);
+    m_nGrateQuantity = Config::GetOrGet<std::int64_t>(configs, "pitchCounter", m_rect.right - m_rect.left);
+    m_nSpeedSlide = Config::GetOrGet<std::int64_t>(configs, "speedSlide", 1);
 
     m_nCurValue = 0;
     auto *pA = core.Entity_GetAttributeClass(g_idInterface, "nodes");
@@ -270,19 +271,19 @@ void CXI_SLIDELINE::LoadIni(INIFILE *ini1, const char *name1, INIFILE *ini2, con
     if (pA != nullptr)
         m_nCurValue = static_cast<int32_t>(pA->GetAttributeAsFloat("value", 0.f) * m_nGrateQuantity);
     m_nMinValue = m_nMaxValue = -1;
-    if (pA)
-    {
+    if (pA) {
         m_nMinValue = pA->GetAttributeAsDword("minLimit", m_nMinValue);
         m_nMaxValue = pA->GetAttributeAsDword("maxLimit", m_nMaxValue);
     }
 
-    m_dwDisableColor = GetIniARGB(ini1, name1, ini2, name2, "disablecolor", 0xA04C4C4C);
+    auto disable_color = Config::GetOrGet<Types::Vector4<std::int64_t>>(configs, "disablecolor", {160, 76, 76, 76});
+    m_dwDisableColor = ARGB(disable_color.x, disable_color.y, disable_color.z, disable_color.w);
 
     auto *pv = static_cast<XI_ONLYONETEX_VERTEX *>(m_rs->LockVertexBuffer(m_idVBuf));
-    if (pv)
-    {
-        for (i = 0; i < 8; i++)
+    if (pv) {
+        for (int i = 0; i < 8; i++) {
             pv[i].pos.z = 1.f;
+        }
 
         pv[0].tu = pv[1].tu = pv[4].tu = pv[5].tu = 0.f;
         pv[2].tu = pv[3].tu = pv[6].tu = pv[7].tu = 1.f;

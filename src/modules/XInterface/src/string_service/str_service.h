@@ -55,13 +55,12 @@ class STRSERVICE : public VSTRSERVICE
     bool GetNextUsersString(char *src, int32_t &idx, char **strName, char **strData) const;
 
   protected:
-    char *m_sLanguage;
-    char *m_sIniFileName;
-    char *m_sLanguageDir;
+    std::string m_sLanguage{};
+    std::string m_sIniFileName{};
+    std::string m_sLanguageDir{};
 
-    int32_t m_nStringQuantity;
-    char **m_psStrName;
-    char **m_psString;
+    std::vector<std::string> m_psStrName;
+    std::vector<std::string> m_psString;
 
     UsersStringBlock *m_pUsersBlocks;
 

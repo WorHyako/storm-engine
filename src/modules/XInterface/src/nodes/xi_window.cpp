@@ -1,6 +1,8 @@
 #include "xi_window.h"
 #include <stdio.h>
 
+using namespace Storm::Filesystem;
+
 CXI_WINDOW::CXI_WINDOW()
 {
     m_nNodeType = NODETYPE_WINDOW;
@@ -13,10 +15,9 @@ CXI_WINDOW::~CXI_WINDOW()
 {
 }
 
-bool CXI_WINDOW::Init(INIFILE *ini1, const char *name1, INIFILE *ini2, const char *name2, VDX9RENDER *rs,
-                      XYRECT &hostRect, XYPOINT &ScreenSize)
-{
-    if (!CINODE::Init(ini1, name1, ini2, name2, rs, hostRect, ScreenSize))
+bool CXI_WINDOW::Init(const Config& node_config, const Config& def_config,
+    VDX9RENDER *rs, XYRECT &hostRect, XYPOINT &ScreenSize) {
+    if (!CINODE::Init(node_config, def_config, rs, hostRect, ScreenSize))
         return false;
     SetGlowCursor(false);
     return true;
@@ -133,27 +134,17 @@ void CXI_WINDOW::AddNode(const char *pcNodeName)
     pNod->ChangePosition(r);
 }
 
-void CXI_WINDOW::LoadIni(INIFILE *ini1, const char *name1, INIFILE *ini2, const char *name2)
-{
-    char param[1024];
+void CXI_WINDOW::LoadIni(const Config& node_config, const Config& def_config) {
+    std::pair<const Config&, const Config&> configs{node_config, def_config};
 
-    // get nodes list
-    // if( ReadIniString(ini1,name1, ini2,name2, "nodelist", param, sizeof(param),"") )
-    if (ini1 && ini1->ReadString(name1, "nodelist", param, sizeof(param), ""))
-        do
-        {
-            const char *pcStr = param;
-            char subparam[256];
-            while (pcStr && pcStr[0])
-            {
-                pcStr = GetSubStr(pcStr, subparam, sizeof(subparam));
-                m_aNodeNameList.push_back(subparam);
-            }
-        } while (ini1->ReadStringNext(name1, "nodelist", param, sizeof(param)));
+    auto node_list_vec = node_config.Get<std::vector<std::vector<std::string>>>("nodelist", {});
+    for (const auto &node : node_list_vec) {
+        for (const auto& each : node) {
+            m_aNodeNameList.emplace_back(std::move(each));
+        }
+    }
 
-    // get active value
-    SetActive(GetIniBool(ini1, name1, ini2, name2, "active", true));
+    SetActive(Config::GetOrGet<std::int64_t>(configs, "active", 1));
 
-    // get show value
-    SetShow(GetIniBool(ini1, name1, ini2, name2, "show", true));
+    SetShow(Config::GetOrGet<std::int64_t>(configs, "show", 1));
 }

@@ -4,6 +4,8 @@
 
 #include <stdio.h>
 
+using namespace Storm::Filesystem;
+
 CXI_STRCOLLECTION::CXI_STRCOLLECTION()
 {
     m_rs = nullptr;
@@ -43,10 +45,9 @@ void CXI_STRCOLLECTION::Draw(bool bSelected, uint32_t Delta_Time)
     }
 }
 
-bool CXI_STRCOLLECTION::Init(INIFILE *ini1, const char *name1, INIFILE *ini2, const char *name2, VDX9RENDER *rs,
-                             XYRECT &hostRect, XYPOINT &ScreenSize)
-{
-    if (!CINODE::Init(ini1, name1, ini2, name2, rs, hostRect, ScreenSize))
+bool CXI_STRCOLLECTION::Init(const Config& node_config, const Config& def_config,
+    VDX9RENDER *rs, XYRECT &hostRect, XYPOINT &ScreenSize) {
+    if (!CINODE::Init(node_config, def_config, rs, hostRect, ScreenSize))
         return false;
     // screen position for that is host screen position
     memcpy(&m_rect, &m_hostRect, sizeof(m_hostRect));
@@ -54,82 +55,58 @@ bool CXI_STRCOLLECTION::Init(INIFILE *ini1, const char *name1, INIFILE *ini2, co
     return true;
 }
 
-void CXI_STRCOLLECTION::LoadIni(INIFILE *ini1, const char *name1, INIFILE *ini2, const char *name2)
-{
-    int i;
-    char param[256];
+void CXI_STRCOLLECTION::LoadIni(const Config& node_config, const Config& def_config) {
+    std::pair<const Config&, const Config&> configs{node_config, def_config};
+    auto str_vec = Config::GetOrGet<std::vector<std::vector<std::string>>>(configs, "string", {});
+    m_nStr = std::size(str_vec);
 
-    const auto bRelativeRect = !GetIniLong(ini1, name1, ini2, name2, "bAbsoluteRectangle", 0);
-
-    auto *ini = ini1;
-    const auto *name = name1;
-    if (!ini1)
-    {
-        ini = ini2;
-        name = name2;
+    if (!m_nStr) {
+        return;
     }
+    m_pStrDescr = new STRINGDESCR[m_nStr];
 
-    // get string quantity
-    m_nStr = 0;
-    if (ini && ini->ReadString(name, "string", param, sizeof(param) - 1, ""))
-        do
-        {
-            m_nStr++;
-        } while (ini->ReadStringNext(name, "string", param, sizeof(param) - 1));
+    for (int i = 0; i < m_nStr; i++) {
+        std::stringstream ss;
+        std::ranges::for_each(str_vec[i], [&ss](const auto& s) {
+            ss << s << ',';
+        });
+        std::string str;
+        m_pStrDescr[i] = {};
+        m_pStrDescr[i].nFontNum = -1;
 
-    if (m_nStr)
-    {
-        m_pStrDescr = new STRINGDESCR[m_nStr];
-
-        // Set strings
         int a_fc, r_fc, g_fc, b_fc;
         int a_bc, r_bc, g_bc, b_bc;
-        char strName[sizeof(param)];
-        char strState[sizeof(param)];
-        char fontName[sizeof(param)];
-        ini->ReadString(name, "string", param, sizeof(param) - 1, "");
-        for (i = 0; i < m_nStr; i++)
-        {
-            // set all parameters to zero
-            m_pStrDescr[i] = {};
-            m_pStrDescr[i].nFontNum = -1;
-
-            // read same parameters
-            strState[0] = '\0';
-            sscanf(param, "%[^,],font:%[^,],pos:{%d,%d},fc:{%d,%d,%d,%d},bc:{%d,%d,%d,%d},scale:%f,state:{%[^}]}",
-                   strName, fontName, &m_pStrDescr[i].scrPos.x, &m_pStrDescr[i].scrPos.y, &a_fc, &r_fc, &g_fc, &b_fc,
-                   &a_bc, &r_bc, &g_bc, &b_bc, &m_pStrDescr[i].fScale, strState);
-            DublicateString(m_pStrDescr[i].sFontName, fontName);
-            m_pStrDescr[i].nFontNum = m_rs->LoadFont(fontName);
-            if (bRelativeRect)
-            {
-                m_pStrDescr[i].scrPos.x += m_hostRect.left;
-                m_pStrDescr[i].scrPos.y += m_hostRect.top;
-            }
-
-            // set foreground & background colors
-            m_pStrDescr[i].foreColor = ARGB(a_fc, r_fc, g_fc, b_fc);
-            m_pStrDescr[i].backColor = ARGB(a_bc, r_bc, g_bc, b_bc);
-
-            // set states
-            for (int k = strlen(strState); k >= 0; k--)
-            {
-                if (strState[k] == 'C' || strState[k] == 'c')
-                    m_pStrDescr[i].wAlignment = PR_ALIGN_CENTER;
-                if (strState[k] == 'R' || strState[k] == 'r')
-                    m_pStrDescr[i].wAlignment = PR_ALIGN_RIGHT;
-                if (strState[k] == 'S' || strState[k] == 's')
-                    m_pStrDescr[i].bShadow = true;
-            }
-
-            m_pStrDescr[i].strNum = -1;
-            if (strName[0] == '#')
-                DublicateString(m_pStrDescr[i].strStr, &strName[1]);
-            else
-                m_pStrDescr[i].strNum = pStringService->GetStringNum(strName);
-
-            ini->ReadStringNext(name, "string", param, sizeof(param) - 1);
+        char strState[256];
+        char fontName[256];
+        char strName[256];
+        sscanf(str.data(), "%[^,],font:%[^,],pos:{%d,%d},fc:{%d,%d,%d,%d},bc:{%d,%d,%d,%d},scale:%f,state:{%[^}]}",
+               strName, fontName, &m_pStrDescr[i].scrPos.x, &m_pStrDescr[i].scrPos.y, &a_fc, &r_fc, &g_fc, &b_fc,
+               &a_bc, &r_bc, &g_bc, &b_bc, &m_pStrDescr[i].fScale, strState);
+        DublicateString(m_pStrDescr[i].sFontName, fontName);
+        m_pStrDescr[i].nFontNum = m_rs->LoadFont(fontName);
+        auto bRelativeRect = Config::GetOrGet<std::int64_t>(configs, "bAbsoluteRectangle", 0) == false;
+        if (bRelativeRect) {
+            m_pStrDescr[i].scrPos.x += m_hostRect.left;
+            m_pStrDescr[i].scrPos.y += m_hostRect.top;
         }
+        m_pStrDescr[i].foreColor = ARGB(a_fc, r_fc, g_fc, b_fc);
+        m_pStrDescr[i].backColor = ARGB(a_bc, r_bc, g_bc, b_bc);
+
+        // set states
+        for (int k = strlen(strState); k >= 0; k--)
+        {
+            if (strState[k] == 'C' || strState[k] == 'c')
+                m_pStrDescr[i].wAlignment = PR_ALIGN_CENTER;
+            if (strState[k] == 'R' || strState[k] == 'r')
+                m_pStrDescr[i].wAlignment = PR_ALIGN_RIGHT;
+            if (strState[k] == 'S' || strState[k] == 's')
+                m_pStrDescr[i].bShadow = true;
+        }
+        m_pStrDescr[i].strNum = -1;
+        if (strName[0] == '#')
+            DublicateString(m_pStrDescr[i].strStr, &strName[1]);
+        else
+            m_pStrDescr[i].strNum = pStringService->GetStringNum(strName);
     }
 }
 
@@ -156,13 +133,13 @@ bool CXI_STRCOLLECTION::GetInternalNameList(std::vector<std::string> &aStr)
     aStr.clear();
     // aStr.Add();
     // aStr[0] = "All";
-    aStr.push_back("All");
+    aStr.emplace_back("All");
     for (int32_t n = 0; n < m_nStr; n++)
     {
         if (m_pStrDescr[n].strID)
             continue;
         // aStr.Add();
-        aStr.push_back(std::string{});
+        aStr.emplace_back();
         char param[512];
         sprintf_s(param, sizeof(param), "%d - %s", n + 1, pStringService->GetStringName(m_pStrDescr[n].strNum));
         aStr[n + 1] = param;

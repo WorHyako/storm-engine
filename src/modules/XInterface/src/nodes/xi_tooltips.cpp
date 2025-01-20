@@ -2,6 +2,11 @@
 #include "../xinterface.h"
 #include "../str_utils.h"
 
+#include "Filesystem/Config/Config.hpp"
+
+using namespace Storm::Filesystem;
+using namespace Storm::Math;
+
 CXI_ToolTip::CXI_ToolTip(VXSERVICE *pPicService, VSTRSERVICE *pStrService, XYPOINT &pntScrSize)
     : m_pntScreenSize(pntScrSize)
 {
@@ -58,14 +63,13 @@ void CXI_ToolTip::Draw()
     }
 }
 
-void CXI_ToolTip::SetByFormatString(XYRECT &rectOwner, INIFILE *pDefIni, const char *pFmtStr)
+void CXI_ToolTip::SetByFormatString(XYRECT &rectOwner, const std::string& pDefIni, const char *pFmtStr)
 {
     if (!pFmtStr)
         return;
     char tokenID[256];
     char tokenString[2048];
     char pcToolTipType[128];
-    char param[512];
     int32_t n;
 
     m_rActiveZone = rectOwner;
@@ -113,46 +117,63 @@ void CXI_ToolTip::SetByFormatString(XYRECT &rectOwner, INIFILE *pDefIni, const c
     m_pntTextOffset.y = 4;
     m_sGroupName = "";
     m_nPicIndex_Left = m_nPicIndex_Right = m_nPicIndex_Middle = -1;
-    //
-    if (pDefIni)
-    {
-        if (pDefIni->ReadString(pcToolTipType, "font_id", param, sizeof(param), ""))
-            m_nFontID = m_rs->LoadFont(param);
-        m_fFontScale = pDefIni->GetFloat(pcToolTipType, "font_scale", m_fFontScale);
-        m_dwFontColor = CINODE::GetIniARGB(pDefIni, pcToolTipType, nullptr, nullptr, "font_color", m_dwFontColor);
-        if (m_nMaxStrWidth <= 0)
-            m_nMaxStrWidth = pDefIni->GetInt(pcToolTipType, "str_width", m_pntScreenSize.x);
-        m_pntTextOffset =
-            CINODE::GetIniLongPoint(pDefIni, pcToolTipType, nullptr, nullptr, "str_offset", m_pntTextOffset);
 
-        // read back info
-        m_dwBackColor = CINODE::GetIniARGB(pDefIni, pcToolTipType, nullptr, nullptr, "back_color", m_dwBackColor);
-        m_nLeftSideWidth = pDefIni->GetInt(pcToolTipType, "back_leftwidth", m_nLeftSideWidth);
-        m_nRightSideWidth = pDefIni->GetInt(pcToolTipType, "back_rightwidth", m_nRightSideWidth);
-        if (pDefIni->ReadString(pcToolTipType, "back_imagegroup", param, sizeof(param), ""))
+    if (pDefIni.empty())
+    {
+        auto config = Config::Load(pDefIni);
+        std::ignore = config.SelectSection(pcToolTipType);
+
+        auto font_id = config.Get<std::string>("font_id", {});
+        if (!font_id.empty()) {
+            m_nFontID = m_rs->LoadFont(font_id);
+        }
+        m_fFontScale = static_cast<float>(config.Get<double>("font_scale", m_fFontScale));
+
+        auto font_color_opt = config.Get<Types::Vector4<std::int64_t>>("font_color");
+        if (font_color_opt.has_value()) {
+            m_dwFontColor = ARGB(font_color_opt->x, font_color_opt->y, font_color_opt->z, font_color_opt->w);
+        }
+
+        if (m_nMaxStrWidth <= 0) {
+            m_nMaxStrWidth = static_cast<int>(config.Get<std::int64_t>("str_width", m_pntScreenSize.x));
+        }
+        auto text_offset_opt = config.Get<Types::Vector2<std::int64_t>>("str_offset");
+        if (text_offset_opt) {
+            m_pntTextOffset = *text_offset_opt;
+        }
+
+        auto back_color_opt = config.Get<Types::Vector4<std::int64_t>>("back_color");
+        if (back_color_opt.has_value()) {
+            m_dwBackColor = ARGB(back_color_opt->x, back_color_opt->y, back_color_opt->z, back_color_opt->w);
+        }
+
+        m_nLeftSideWidth = static_cast<int>(config.Get<std::int64_t>("back_leftwidth", m_nLeftSideWidth));
+        m_nRightSideWidth = static_cast<int>(config.Get<std::int64_t>("back_rightwidth", m_nRightSideWidth));
+        auto group_name = config.Get<std::string>("back_imagegroup", {});
+        if (!group_name.empty())
         {
-            m_sGroupName = param;
+            m_sGroupName = group_name;
             m_nTextureID = m_pPicService->GetTextureID(m_sGroupName.c_str());
-            if (pDefIni->ReadString(pcToolTipType, "back_imageleft", param, sizeof(param), ""))
-            {
-                m_nPicIndex_Left = m_pPicService->GetImageNum(m_sGroupName.c_str(), param);
+            const auto back_image_left_opt = config.Get<std::string>("back_imageleft");
+            if (back_image_left_opt.has_value()) {
+                m_nPicIndex_Left = m_pPicService->GetImageNum(m_sGroupName.c_str(), back_image_left_opt->c_str());
                 m_pPicService->GetTexturePos(m_nPicIndex_Left, m_uvBackLeft);
             }
-            if (pDefIni->ReadString(pcToolTipType, "back_imageright", param, sizeof(param), ""))
-            {
-                m_nPicIndex_Right = m_pPicService->GetImageNum(m_sGroupName.c_str(), param);
+            const auto back_image_right_opt = config.Get<std::string>("back_imageright");
+            if (back_image_right_opt.has_value()) {
+                m_nPicIndex_Right = m_pPicService->GetImageNum(m_sGroupName.c_str(), back_image_right_opt->c_str());
                 m_pPicService->GetTexturePos(m_nPicIndex_Right, m_uvBackRight);
             }
-            if (pDefIni->ReadString(pcToolTipType, "back_imagemiddle", param, sizeof(param), ""))
-            {
-                m_nPicIndex_Middle = m_pPicService->GetImageNum(m_sGroupName.c_str(), param);
+            const auto back_image_middle_opt = config.Get<std::string>("back_imagemiddle");
+            if (back_image_middle_opt.has_value()) {
+                m_nPicIndex_Middle = m_pPicService->GetImageNum(m_sGroupName.c_str(), back_image_middle_opt->c_str());
                 m_pPicService->GetTexturePos(m_nPicIndex_Middle, m_uvBackMiddle);
             }
         }
-        m_fTurnOnDelay = pDefIni->GetFloat(pcToolTipType, "turnondelay", m_fTurnOnDelay);
-        m_nXRectangleOffset = pDefIni->GetInt(pcToolTipType, "horzcursoroffset", 0);
-        m_nYRectangleOffsetUp = pDefIni->GetInt(pcToolTipType, "vertupcursoroffset", 0);
-        m_nYRectangleOffsetDown = pDefIni->GetInt(pcToolTipType, "vertdowncursoroffset", 0);
+        m_fTurnOnDelay = static_cast<float>(config.Get<double>("turnondelay", m_fTurnOnDelay));
+        m_nXRectangleOffset = static_cast<int>(config.Get<std::int64_t>("horzcursoroffset", 0));
+        m_nYRectangleOffsetUp = static_cast<int>(config.Get<std::int64_t>("vertupcursoroffset", 0));
+        m_nYRectangleOffsetDown = static_cast<int>(config.Get<std::int64_t>("vertdowncursoroffset", 0));
     }
     if (m_nMaxStrWidth <= 0)
         m_nMaxStrWidth = m_pntScreenSize.x;

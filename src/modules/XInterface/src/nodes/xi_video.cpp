@@ -1,5 +1,9 @@
 #include "xi_video.h"
+
 #include <stdio.h>
+
+using namespace Storm::Filesystem;
+using namespace Storm::Math;
 
 CXI_VIDEO::CXI_VIDEO()
     : m_dwColor(0)
@@ -49,27 +53,28 @@ void CXI_VIDEO::Draw(bool bSelected, uint32_t Delta_Time)
     }
 }
 
-bool CXI_VIDEO::Init(INIFILE *ini1, const char *name1, INIFILE *ini2, const char *name2, VDX9RENDER *rs,
-                     XYRECT &hostRect, XYPOINT &ScreenSize)
+bool CXI_VIDEO::Init(const Config& node_config, const Config& def_config,
+    VDX9RENDER *rs, XYRECT &hostRect, XYPOINT &ScreenSize)
 {
-    if (!CINODE::Init(ini1, name1, ini2, name2, rs, hostRect, ScreenSize))
+    if (!CINODE::Init(node_config, def_config, rs, hostRect, ScreenSize))
         return false;
     SetGlowCursor(false);
     return true;
 }
 
-void CXI_VIDEO::LoadIni(INIFILE *ini1, const char *name1, INIFILE *ini2, const char *name2)
-{
-    char param[255];
-
-    if (pTex)
+void CXI_VIDEO::LoadIni(const Config& node_config, const Config& def_config) {
+    if (pTex) {
         m_rs->ReleaseVideoTexture(pTex);
-    if (ReadIniString(ini1, name1, ini2, name2, "sTexture", param, sizeof(param), ""))
-        pTex = m_rs->GetVideoTexture(param);
+    }
+    std::pair<const Config&, const Config&> configs{node_config, def_config};
+    auto g_texture = Config::GetOrGet<std::string>(configs, "sTexture", {});
+    if (!g_texture.empty()) {
+        pTex = m_rs->GetVideoTexture(g_texture.c_str());
+    }
+    m_rectTex = Config::GetOrGet<Types::Vector4<double>>(configs, "textureRect", {0.0, 0.0, 1.0, 1.0});
 
-    m_rectTex = GetIniFloatRect(ini1, name1, ini2, name2, "textureRect", FXYRECT(0.f, 0.f, 1.f, 1.f));
-
-    m_dwColor = GetIniARGB(ini1, name1, ini2, name2, "color", 0xFFFFFFFF);
+    auto color = Config::GetOrGet<Types::Vector4<std::int64_t>>(configs, "color", {255});
+    m_dwColor = ARGB(color.x, color.y, color.z, color.w);
 }
 
 void CXI_VIDEO::ReleaseAll()

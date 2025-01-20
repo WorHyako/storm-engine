@@ -7,10 +7,13 @@
 #include "shared/sail_msg.h"
 #include "ship_base.h"
 
+#include "Filesystem/Config/Config.hpp"
+#include "Filesystem/Constants/ConfigNames.hpp"
+
+using namespace Storm::Filesystem;
+
 #define DELTA_TIME(x) ((x)*0.001f)
 #define DELTA_TIME_ROTATE(x) ((x)*0.01f)
-
-static const char *MAST_INI_FILE = "resource\\ini\\mast.ini";
 
 float MAST_MOVE_STEP = 0.2f;
 float MAST_FALL_STEP = .05f;
@@ -103,9 +106,9 @@ void MAST::Execute(uint32_t Delta_Time)
     {
         // ====================================================
         // If the ini-file has been changed, read the info from it
-        if (fio->_FileOrDirectoryExists(MAST_INI_FILE))
+        if (fio->_FileOrDirectoryExists(Constants::ConfigNames::mast().string().c_str()))
         {
-            auto ft_new = fio->_GetLastWriteTime(MAST_INI_FILE);
+            auto ft_new = fio->_GetLastWriteTime(Constants::ConfigNames::mast().string().c_str());
             if (ft_old != ft_new)
             {
                 LoadIni();
@@ -423,64 +426,56 @@ void MAST::LoadIni()
     // GUARD(MAST::LoadIni());
     char section[256];
 
-    if (fio->_FileOrDirectoryExists(MAST_INI_FILE))
+    if (fio->_FileOrDirectoryExists(Constants::ConfigNames::mast().string().c_str()))
     {
-        ft_old = fio->_GetLastWriteTime(MAST_INI_FILE);
-    }
-    auto ini = fio->OpenIniFile(MAST_INI_FILE);
-    if (!ini)
-    {
-        throw std::runtime_error("mast.ini file not found!");
+        ft_old = fio->_GetLastWriteTime(Constants::ConfigNames::mast().string().c_str());
     }
 
-    sprintf_s(section, "MAST");
+    auto config = Config::Load(Constants::ConfigNames::mast());
+    std::ignore = config.SelectSection("MAST");
 
-    /*=========================================================================
-     =============================================================================
-    ======= LOADING PARAMETERS ======================================== ======
-    ==============================================================================*/
     // step of movement of the mast when lowering one end into the water
-    MAST_MOVE_STEP = ini->GetFloat(section, "water_slide_step", MAST_MOVE_STEP);
+    MAST_MOVE_STEP = config.Get<double>("water_slide_step", MAST_MOVE_STEP);
     // acceleration of the step of free fall of the entire mast down
-    MAST_FALL_STEP = ini->GetFloat(section, "downfall_acceleration", MAST_FALL_STEP);
+    MAST_FALL_STEP = config.Get<double>("downfall_acceleration", MAST_FALL_STEP);
     // maximum step of the mast falling down
-    MAST_MAX_FALL_SPEED = ini->GetFloat(section, "downfall_maxspeed", MAST_MAX_FALL_SPEED);
+    MAST_MAX_FALL_SPEED = config.Get<double>("downfall_maxspeed", MAST_MAX_FALL_SPEED);
     // maximum mast swing angle
-    MAX_FALL_ANGLE = ini->GetFloat(section, "fMaxAngle", MAX_FALL_ANGLE);
+    MAX_FALL_ANGLE = config.Get<double>("fMaxAngle", MAX_FALL_ANGLE);
     // step of rotation of the mast around the Y-axis (when the yard collides with an object)
-    YROTATE_STEP = ini->GetFloat(section, "fYRotateStep", YROTATE_STEP);
+    YROTATE_STEP = config.Get<double>( "fYRotateStep", YROTATE_STEP);
     // the height of the tracing ray on collision
-    TRACE_HEIGHT = ini->GetFloat(section, "fTraceHeight", TRACE_HEIGHT);
+    TRACE_HEIGHT = config.Get<double>( "fTraceHeight", TRACE_HEIGHT);
     // extra addition in height to the point of collision to avoid repeated collisions
-    TRACE_ADDING = ini->GetFloat(section, "fTraceHeightAdding", TRACE_ADDING);
+    TRACE_ADDING = config.Get<double>("fTraceHeightAdding", TRACE_ADDING);
     // horizontal mast shift
-    TRACE_SLIDING = ini->GetFloat(section, "fTraceSliding", TRACE_SLIDING);
+    TRACE_SLIDING = config.Get<double>("fTraceSliding", TRACE_SLIDING);
     // maximum coordinate change to switch the mast position shift algorithm
-    MAX_CHANGE_LENGTH = ini->GetFloat(section, "fMaxPosChange", MAX_CHANGE_LENGTH);
+    MAX_CHANGE_LENGTH = config.Get<double>("fMaxPosChange", MAX_CHANGE_LENGTH);
     // maximum coordinate change when the mast slides
-    MAX_SLIDING_LENGHT = ini->GetFloat(section, "fMaxSlideLenght", MAX_SLIDING_LENGHT);
+    MAX_SLIDING_LENGHT = config.Get<double>("fMaxSlideLenght", MAX_SLIDING_LENGHT);
     // the collision line goes below the thickness of the mast
-    MAST_WIDTH = ini->GetFloat(section, "fMastWidth", MAST_WIDTH);
+    MAST_WIDTH = config.Get<double>("fMastWidth", MAST_WIDTH);
     // the minimum Z-value in the NODE size to account for at the endpoints of the tracing lines
-    MINZ_COMPARE = ini->GetFloat(section, "fMinZCompare", MINZ_COMPARE);
+    MINZ_COMPARE = config.Get<double>("fMinZCompare", MINZ_COMPARE);
     // the depth at which the mast turns off
-    DESTRUCT_MAST_DEEP = ini->GetFloat(section, "fMaxDeep", DESTRUCT_MAST_DEEP);
+    DESTRUCT_MAST_DEEP = config.Get<double>("fMaxDeep", DESTRUCT_MAST_DEEP);
     // the step of lowering the mast in depth
-    DEEP_FALL_STEP = ini->GetFloat(section, "fDeepStep", DEEP_FALL_STEP);
+    DEEP_FALL_STEP = config.Get<double>("fDeepStep", DEEP_FALL_STEP);
     // number of motion frames after which collision with objects is disabled
-    MAX_MOVE_CICLES = ini->GetInt(section, "maxMoveCicles", MAX_MOVE_CICLES);
+    MAX_MOVE_CICLES = config.Get<double>("maxMoveCicles", MAX_MOVE_CICLES);
     // the number of motion frames after which the fall of the mast is switched on
-    MIN_MOV_COUNTER = ini->GetInt(section, "minMoveCicles", MIN_MOV_COUNTER);
+    MIN_MOV_COUNTER = config.Get<double>("minMoveCicles", MIN_MOV_COUNTER);
     // minimum angle of rotation of the mast in X
-    MIN_X_DANG = ini->GetFloat(section, "fMinXdang", MIN_X_DANG);
+    MIN_X_DANG = config.Get<double>("fMinXdang", MIN_X_DANG);
     // limit of change of the angle of rotation of the mast in X
-    VAR_X_DANG = ini->GetFloat(section, "fVarXdang", VAR_X_DANG);
+    VAR_X_DANG = config.Get<double>("fVarXdang", VAR_X_DANG);
     // minimum angle of rotation of the mast in Z
-    MIN_Z_DANG = ini->GetFloat(section, "fMinZdang", MIN_Z_DANG);
+    MIN_Z_DANG = config.Get<double>("fMinZdang", MIN_Z_DANG);
     // limit of variation of the angle of rotation of the mast in Z
-    VAR_Z_DANG = ini->GetFloat(section, "fVarZdang", VAR_Z_DANG);
+    VAR_Z_DANG = config.Get<double>("fVarZdang", VAR_Z_DANG);
     // the angle of the ship position starting from which the mast falls along this angle
-    MIN_SIGNIFICANT = ini->GetFloat(section, "fAngSignificant", MIN_SIGNIFICANT);
+    MIN_SIGNIFICANT = config.Get<double>("fAngSignificant", MIN_SIGNIFICANT);
     // UNGUARD
 }
 

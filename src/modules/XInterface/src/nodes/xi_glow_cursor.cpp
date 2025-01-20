@@ -1,5 +1,8 @@
 #include "xi_glow_cursor.h"
 
+using namespace Storm::Filesystem;
+using namespace Storm::Math;
+
 CXI_GLOWCURSOR::CXI_GLOWCURSOR()
 {
     m_nNodeType = NODETYPE_GLOWCURSOR;
@@ -116,10 +119,10 @@ void CXI_GLOWCURSOR::Draw(bool bSelected, uint32_t Delta_Time)
     }
 }
 
-bool CXI_GLOWCURSOR::Init(INIFILE *ini1, const char *name1, INIFILE *ini2, const char *name2, VDX9RENDER *rs,
-                          XYRECT &hostRect, XYPOINT &ScreenSize)
+bool CXI_GLOWCURSOR::Init(const Config& node_config, const Config& def_config,
+    VDX9RENDER *rs, XYRECT &hostRect, XYPOINT &ScreenSize)
 {
-    if (!CINODE::Init(ini1, name1, ini2, name2, rs, hostRect, ScreenSize))
+    if (!CINODE::Init(node_config, def_config, rs, hostRect, ScreenSize))
         return false;
     return true;
 }
@@ -151,26 +154,25 @@ void CXI_GLOWCURSOR::SaveParametersToIni()
     pIni->WriteString(m_nodeName, "position", pcWriteParam);
 }
 
-void CXI_GLOWCURSOR::LoadIni(INIFILE *ini1, const char *name1, INIFILE *ini2, const char *name2)
-{
-    int i;
-    char param[255];
-    FXYPOINT fPnt;
-
+void CXI_GLOWCURSOR::LoadIni(const Config& node_config, const Config& def_config) {
+    std::pair<const Config&, const Config&> configs{node_config, def_config};
     m_rect.left = m_rect.top = m_rect.right = m_rect.bottom = 0;
 
-    // get fone color
-    m_dwFoneColor = GetIniARGB(ini1, name1, ini2, name2, "foneColor", ARGB(255, 128, 128, 128));
+    auto fone_color = Config::GetOrGet<Types::Vector4<std::int64_t>>(configs, "foneColor", {255, 128, 128, 128});
+    m_dwFoneColor = ARGB(fone_color.x, fone_color.y, fone_color.z, fone_color.w);
     m_dwCurColor = m_dwFoneColor;
 
-    // get Blind color
-    m_dwBlindColor = GetIniARGB(ini1, name1, ini2, name2, "blindColor", m_dwFoneColor);
+    auto blind_color_opt = Config::GetOrGet<Types::Vector4<std::int64_t>>(configs, "blindColor");
+    m_dwFoneColor = blind_color_opt.has_value()
+        ? ARGB(blind_color_opt->x, blind_color_opt->y, blind_color_opt->z, blind_color_opt->w)
+        : m_dwFoneColor;
+
     m_bUseBlind = m_dwBlindColor != m_dwFoneColor;
 
     m_bUpBlind = true;
     m_fCurM = 0.f;
-    m_fCurM_UpSpeed = GetIniFloat(ini1, name1, ini2, name2, "blindUpTime", 1.f);
-    m_fCurM_DownSpeed = GetIniFloat(ini1, name1, ini2, name2, "blindDownTime", 0.5f);
+    m_fCurM_UpSpeed = Config::GetOrGet<double>(configs, "blindUpTime", 1.0);
+    m_fCurM_DownSpeed = Config::GetOrGet<double>(configs, "blindDownTime", 0.5);
 
     if (m_fCurM_UpSpeed > 0.1f)
         m_fCurM_UpSpeed = 0.001f / m_fCurM_UpSpeed;
@@ -182,20 +184,23 @@ void CXI_GLOWCURSOR::LoadIni(INIFILE *ini1, const char *name1, INIFILE *ini2, co
         m_fCurM_DownSpeed = 1.f;
 
     // get outside picture offset
-    fPnt = GetIniFloatPoint(ini1, name1, ini2, name2, "offset", FXYPOINT(40.f, 30.f));
-    m_xOffset = fPnt.x;
-    m_yOffset = fPnt.y;
+    auto offset{Config::GetOrGet<Types::Vector2<double>>(configs, "offset", {40.0, 30.0})};
+    m_xOffset = offset.x;
+    m_yOffset = offset.y;
 
     // get video texture (for inside picture)
     m_pBackTex = nullptr;
-    if (ReadIniString(ini1, name1, ini2, name2, "videoTexture", param, sizeof(param), ""))
-        m_pBackTex = m_rs->GetVideoTexture(param);
+    auto video_texture = Config::GetOrGet<std::string>(configs, "videoTexture", {});
+    if (!video_texture.empty()) {
+        m_pBackTex = m_rs->GetVideoTexture(video_texture.c_str());
+    }
 
-    if (ReadIniString(ini1, name1, ini2, name2, "backTexture", param, sizeof(param), ""))
-        m_idBackTex = m_rs->TextureCreate(param);
-
+    auto back_texture = Config::GetOrGet<std::string>(configs, "backTexture", {});
+    if (!back_texture.empty()) {
+        m_idBackTex = m_rs->TextureCreate(back_texture.c_str());
+    }
     // set constant buffers data
-    for (i = 0; i < 14; i++)
+    for (int i = 0; i < 14; i++)
     {
         m_pTexVert[i].color = m_dwFoneColor;
         m_pTexVert[i].pos.z = 1.f;
@@ -206,8 +211,7 @@ void CXI_GLOWCURSOR::LoadIni(INIFILE *ini1, const char *name1, INIFILE *ini2, co
     m_pTexVert[4].tv = m_pTexVert[6].tv = m_pTexVert[12].tv = 0.f;
     m_pTexVert[8].tv = m_pTexVert[10].tv = 1.f;
 
-    XYRECT rectXY{};
-    SetRectanglesToPosition(rectXY);
+    SetRectanglesToPosition({});
 }
 
 void CXI_GLOWCURSOR::SetRectanglesToPosition(const XYRECT &rectXY)

@@ -67,3 +67,7 @@
 	path = ThirdParty/mimalloc
 	url = https://github.com/microsoft/mimalloc.git
 	branch = v2.1.7
+
+[submodule "sd-teho-public"]
+	path = sd-teho-public
+	url = https://github.com/WorHyako/sd-teho-public.git

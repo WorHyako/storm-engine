@@ -7,12 +7,15 @@
 #include "s_import_func.h"
 #include "v_s_stack.h"
 
-#include <filesystem>
+#include "Filesystem/Config/Config.hpp"
+#include "Filesystem/Constants/ConfigNames.hpp"
+#include "Filesystem/Constants/Paths.hpp"
+
+using namespace Storm::Filesystem;
+using namespace Storm::Math;
 
 #define USER_BLOCK_BEGINER '{'
 #define USER_BLOCK_ENDING '}'
-
-static const char *sLanguageFile = "resource\\ini\\TEXTS\\language.ini";
 
 static VSTRSERVICE *g_StringServicePointer = nullptr;
 static int32_t g_idGlobLanguageFileID = -1;
@@ -85,14 +88,6 @@ bool GetStringDescribe(char *inStr, char *strName, char *outStr)
 
 STRSERVICE::STRSERVICE()
 {
-    m_sLanguage = nullptr;
-    m_sIniFileName = nullptr;
-    m_sLanguageDir = nullptr;
-
-    m_nStringQuantity = 0;
-    m_psStrName = nullptr;
-    m_psString = nullptr;
-
     m_pUsersBlocks = nullptr;
 
     g_StringServicePointer = this;
@@ -105,26 +100,6 @@ STRSERVICE::~STRSERVICE()
 
     CloseUsersStringFile(m_nDialogSourceFile);
     m_nDialogSourceFile = -1;
-
-    if (m_psStrName != nullptr)
-    {
-        for (i = 0; i < m_nStringQuantity; i++)
-            if (m_psStrName[i] != nullptr)
-                delete m_psStrName[i];
-        delete m_psStrName;
-        m_psStrName = nullptr;
-    }
-    if (m_psString != nullptr)
-    {
-        for (i = 0; i < m_nStringQuantity; i++)
-            if (m_psString[i] != nullptr)
-                delete m_psString[i];
-        delete m_psString;
-        m_psString = nullptr;
-    }
-    STORM_DELETE(m_sIniFileName);
-    STORM_DELETE(m_sLanguage);
-    STORM_DELETE(m_sLanguageDir);
 
     while (m_pUsersBlocks != nullptr)
     {
@@ -181,11 +156,6 @@ void STRSERVICE::RunEnd()
 
 void STRSERVICE::SetLanguage(const char *sLanguage)
 {
-    // GUARD(void STRSERVICE::SetLanguage(const char* sLanguage))
-
-    int i;
-    char param[2048];
-
     if (sLanguage == nullptr)
     {
         core.Trace("WARNING! Attempt set empty language");
@@ -193,193 +163,47 @@ void STRSERVICE::SetLanguage(const char *sLanguage)
     }
 
     // This language is already set
-    if (m_sLanguage != nullptr && storm::iEquals(sLanguage, m_sLanguage))
+    if (!m_sLanguage.empty())
         return;
-
-    // initialize ini file
-    auto langIni = fio->OpenIniFile(sLanguageFile);
-    if (!langIni)
-    {
-        core.Trace("ini file %s not found!", sLanguageFile);
-        return;
-    }
 
     // set a new name for the language
-    STORM_DELETE(m_sLanguage);
-    const auto len = strlen(sLanguage) + 1;
-    if ((m_sLanguage = new char[len]) == nullptr)
-    {
-        throw std::runtime_error("Allocate memory error");
+    m_sLanguage = std::string(sLanguage);
+
+    m_sLanguageDir = {};
+    m_sIniFileName = {};
+
+    auto lang_config = Config::Load(Constants::ConfigNames::language());
+
+    std::ignore = lang_config.SelectSection("DIRECTORY");
+    m_sLanguageDir = lang_config.Get<std::string>(m_sLanguage, {});
+
+    std::ignore = lang_config.SelectSection("COMMON");
+    m_sIniFileName = lang_config.Get<std::string>("strings", {});
+
+    if (m_sLanguageDir.empty() && m_sIniFileName.empty()) {
+        m_sLanguageDir = lang_config.Get<std::string>("defaultLanguage", {});
     }
-    memcpy(m_sLanguage, sLanguage, len);
 
-    while (true)
-    {
-        // delete old data
-        STORM_DELETE(m_sIniFileName);
-        STORM_DELETE(m_sLanguageDir);
-
-        // get a directory for text files of a given language
-        if (langIni->ReadString("DIRECTORY", m_sLanguage, param, sizeof(param) - 1, ""))
-        {
-            const auto len = strlen(param) + 1;
-            if ((m_sLanguageDir = new char[len]) == nullptr)
-            {
-                throw std::runtime_error("Allocate memory error");
-            }
-            memcpy(m_sLanguageDir, param, len);
-        }
-        else
-            core.Trace("WARNING! Not found directory record for language %s", sLanguage);
-
-        // get the name of the ini file with common strings for this language
-        if (langIni->ReadString("COMMON", "strings", param, sizeof(param) - 1, ""))
-        {
-            const auto len = strlen(param) + 1;
-            if ((m_sIniFileName = new char[len]) == nullptr)
-            {
-                throw std::runtime_error("Allocate memory error");
-            }
-            memcpy(m_sIniFileName, param, len);
-        }
-        else
-            core.Trace("WARNING! Not found common strings file record");
-
-        if (m_sLanguageDir != nullptr && m_sIniFileName != nullptr)
-            break;
-
-        // compare the current language with the default
-        if (langIni->ReadString("COMMON", "defaultLanguage", param, sizeof(param) - 1, ""))
-        {
-            if (storm::iEquals(m_sLanguage, param))
-                break;
-            core.Trace("WARNING! Language %s not exist some ini parameters. Language set to default %s", m_sLanguage,
-                       param);
-            STORM_DELETE(m_sLanguage);
-            const auto len = strlen(param) + 1;
-            m_sLanguage = new char[len];
-            if (m_sLanguage == nullptr)
-            {
-                throw std::runtime_error("Allocate memory error");
-            }
-            memcpy(m_sLanguage, param, len);
-        }
-        else
-            break;
-    }
-    //==========================================================================
-    // reread fonts
-    //==========================================================================
     auto *RenderService = static_cast<VDX9RENDER *>(core.GetService("dx9render"));
-    if (RenderService)
-    {
-        char fullIniPath[512];
-        if (langIni->ReadString("FONTS", m_sLanguage, param, sizeof(param) - 1, ""))
-        {
-            sprintf_s(fullIniPath, "resource\\ini\\%s", param);
-        }
-        else
-        {
-            core.Trace("Warning: Not found font record for language %s", m_sLanguage);
-            sprintf_s(fullIniPath, "resource\\ini\\fonts.ini");
-        }
-        RenderService->SetFontIniFileName(fullIniPath);
-    }
-    //==========================================================================
-
-    //====================================================================
-    // Set language data
-    //====================================================================
-
-    // delete old stringes
-    if (m_psString != nullptr)
-    {
-        for (i = 0; i < m_nStringQuantity; i++)
-            delete m_psString[i];
-        delete m_psString;
-        m_psString = nullptr;
-    }
-    if (m_psStrName != nullptr)
-    {
-        for (i = 0; i < m_nStringQuantity; i++)
-            delete m_psStrName[i];
-        delete m_psStrName;
-        m_psStrName = nullptr;
+    if (RenderService) {
+        std::ignore = lang_config.SelectSection("FONTS");
+        const std::string font_file_name = lang_config.Get<std::string>(m_sLanguage, "fonts.toml").c_str();
+        RenderService->SetFontIniFileName((Constants::Paths::ini() / font_file_name).string().c_str());
     }
 
-    // initialize ini file
-    sprintf_s(param, "resource\\ini\\texts\\%s\\%s", m_sLanguageDir, m_sIniFileName);
-    auto ini = fio->OpenIniFile(param);
-    if (!ini)
-    {
-        core.Trace("WARNING! ini file \"%s\" not found!", param);
+    std::filesystem::path iniDir{Constants::Paths::texts() / m_sLanguageDir / m_sIniFileName};
+    auto config = Config::Load(iniDir.replace_extension("toml"));
+    std::ignore = config.SelectSection("Main");
+
+    const auto texts = config.Get<std::vector<Types::Vector2<std::string>>>("string",{});
+    if (texts.empty()) {
         return;
     }
 
-    // get string quantity
-    auto newSize = 0;
-    if (ini->ReadString(nullptr, "string", param, sizeof(param) - 1, ""))
-        do
-        {
-            newSize++;
-        } while (ini->ReadStringNext(nullptr, "string", param, sizeof(param) - 1));
-
-    // check to right of ini files
-    if (newSize != m_nStringQuantity && m_nStringQuantity != 0)
-        core.Trace("WARNING: language %s ini file has different size", sLanguage);
-    m_nStringQuantity = newSize;
-
-    // create strings & string names arreys
-    if (newSize > 0)
-    {
-        m_psString = new char *[newSize];
-        m_psStrName = new char *[newSize];
-        if (m_psStrName == nullptr || m_psString == nullptr)
-            throw std::runtime_error("Allocate memory error");
+    for (const auto& string : texts) {
+        m_psStrName.emplace_back(string.x);
+        m_psString.emplace_back(string.y);
     }
-    else
-    {
-        m_psString = nullptr;
-        m_psStrName = nullptr;
-    }
-
-    // fill stringes
-    char strName[sizeof(param)];
-    char string[sizeof(param)];
-    ini->ReadString(nullptr, "string", param, sizeof(param) - 1, "");
-    for (i = 0; i < m_nStringQuantity; i++)
-    {
-        if (GetStringDescribe(param, strName, string))
-        {
-            // fill string name
-            auto len = strlen(param) + 1;
-            m_psStrName[i] = new char[len];
-            if (m_psStrName[i] == nullptr)
-                throw std::runtime_error("allocate memory error");
-            strcpy_s(m_psStrName[i], len, strName);
-
-            // fill string self
-            len = strlen(string) + 1;
-            m_psString[i] = new char[len];
-            if (m_psString[i] == nullptr)
-            {
-                delete m_psStrName[i];
-                throw std::runtime_error("allocate memory error");
-            }
-            memcpy(m_psString[i], string, len);
-        }
-        else
-        {
-            // invalid string
-            m_psStrName[i] = nullptr;
-            m_psString[i] = nullptr;
-        }
-
-        // next string
-        ini->ReadStringNext(nullptr, "string", param, sizeof(param) - 1);
-    }
-
-    // end of search
 
     // =======================================================================
     // Re-reading user files
@@ -406,7 +230,7 @@ void STRSERVICE::SetLanguage(const char *sLanguage)
         if (pUTmp->nStringsQuantity != pUSB->nStringsQuantity)
         {
             core.Trace("Warning: user strings file %s have different size for new language %s", pUTmp->fileName,
-                       m_sLanguage);
+                       m_sLanguage.c_str());
             int itmp1, itmp2;
             for (itmp1 = 0; itmp1 < pUTmp->nStringsQuantity; itmp1++)
             {
@@ -448,40 +272,32 @@ void STRSERVICE::SetLanguage(const char *sLanguage)
         CloseUsersStringFile(m_pUsersBlocks->blockID);
     }
     m_pUsersBlocks = pNewURoot;
-    //=======================================================================
-
-    // UNGUARD
 }
 
 char *STRSERVICE::GetLanguage()
 {
-    if (m_sLanguage != nullptr)
-        return m_sLanguage;
-    return nullptr;
+    return m_sLanguage.data();
 }
 
-char *STRSERVICE::GetString(const char *stringName, char *sBuffer, size_t bufferSize)
-{
-    // GUARD(char* STRSERVICE::GetString(const char* stringName, char* sBuffer, size_t bufferSize))
+char *STRSERVICE::GetString(const char *stringName, char *sBuffer, size_t bufferSize) {
+    if (stringName == nullptr) {
+        return nullptr;
+    }
+    for (int i = 0; i < std::size(m_psStrName); i++)
+        if (storm::iEquals(m_psStrName[i], stringName)) {
+            auto len = std::size(m_psString[i]);
+            if (sBuffer == nullptr)
+                bufferSize = 0;
+            if (bufferSize < len)
+                len = bufferSize;
 
-    if (stringName != nullptr)
-        for (int i = 0; i < m_nStringQuantity; i++)
-            if (storm::iEquals(m_psStrName[i], stringName))
-            {
-                auto len = strlen(m_psString[i]) + 1;
-                if (sBuffer == nullptr)
-                    bufferSize = 0;
-                if (bufferSize < len)
-                    len = bufferSize;
+            if (len > 0)
+                strcpy_s(sBuffer, bufferSize, m_psString[i].data());
 
-                if (len > 0)
-                    strcpy_s(sBuffer, bufferSize, m_psString[i]);
-
-                return m_psString[i];
-            }
+            return m_psString[i].data();
+        }
 
     return nullptr;
-    // UNGUARD
 }
 
 void STRSERVICE::SetDialogSourceFile(const char *fileName)
@@ -492,41 +308,14 @@ void STRSERVICE::SetDialogSourceFile(const char *fileName)
 
 void STRSERVICE::LoadIni()
 {
-    // GUARD(void STRSERVICE::LoadIni())
+    auto config = Config::Load(Constants::ConfigNames::language());
+    std::ignore = config.SelectSection("COMMON");
 
-    char param[256];
+    SetLanguage(config.Get<std::string>("defaultLanguage", {}).c_str());
 
-    // initialize ini file
-    auto ini = fio->OpenIniFile(sLanguageFile);
-    if (!ini)
-    {
-        core.Trace("Error: Language ini file not found!");
-        return;
-    }
-
-    char sGlobalUserFileName[256];
-    if (!ini->ReadString("COMMON", "GlobalFile", sGlobalUserFileName, sizeof(sGlobalUserFileName) - 1, ""))
-    {
-        sGlobalUserFileName[0] = 0;
-        core.Trace("WARNING! Language ini file have not global file name");
-    }
-
-    // Get default language name
-    if (!ini->ReadString("COMMON", "defaultLanguage", param, sizeof(param) - 1, ""))
-    {
-        core.Trace("WARNING! Language ini file have not default language.");
-        strcpy_s(param, "English");
-    }
-
-    if (param[0] != 0)
-        SetLanguage(param);
-
-    if (sGlobalUserFileName[0])
-        g_idGlobLanguageFileID = OpenUsersStringFile(sGlobalUserFileName);
+    g_idGlobLanguageFileID = OpenUsersStringFile(config.Get<std::string>("GlobalFile", {}).c_str());
 
     SetDialogSourceFile("dialogsource.txt");
-
-    // UNGUARD
 }
 
 int32_t STRSERVICE::GetStringNum(const char *stringName)
@@ -534,7 +323,7 @@ int32_t STRSERVICE::GetStringNum(const char *stringName)
     // GUARD(int32_t STRSERVICE::GetStringNum(const char* stringName))
 
     if (stringName != nullptr)
-        for (int32_t i = 0; i < m_nStringQuantity; i++)
+        for (int32_t i = 0; i < std::size(m_psStrName); i++)
             if (storm::iEquals(m_psStrName[i], stringName))
                 return i;
     return -1L;
@@ -542,26 +331,17 @@ int32_t STRSERVICE::GetStringNum(const char *stringName)
     // UNGUARD
 }
 
-char *STRSERVICE::GetString(int32_t strNum)
-{
+char *STRSERVICE::GetString(int32_t strNum) {
     // GUARD(char* STRSERVICE::GetString(int32_t strNum))
-
-    if (strNum < 0 || strNum >= m_nStringQuantity)
-        return nullptr;
-    return m_psString[strNum];
-
-    // UNGUARD
+    return strNum >= 0 || strNum < std::size(m_psStrName)
+        ? m_psString[strNum].data()
+        : nullptr;
 }
 
-char *STRSERVICE::GetStringName(int32_t strNum)
-{
-    // GUARD(char* STRSERVICE::GetStringName(int32_t strNum))
-
-    if (strNum < 0 || strNum >= m_nStringQuantity)
-        return nullptr;
-    return m_psStrName[strNum];
-
-    // UNGUARD
+char *STRSERVICE::GetStringName(int32_t strNum) {
+    return strNum >= 0 || strNum < std::size(m_psStrName)
+        ? m_psStrName[strNum].data()
+        : nullptr;
 }
 
 int32_t STRSERVICE::OpenUsersStringFile(const char *fileName)
@@ -592,7 +372,7 @@ int32_t STRSERVICE::OpenUsersStringFile(const char *fileName)
 
     // strings reading
     char param[512];
-    sprintf_s(param, "resource\\ini\\TEXTS\\%s\\%s", m_sLanguageDir, fileName);
+    sprintf_s(param, "resource\\ini\\TEXTS\\%s\\%s", m_sLanguageDir.c_str(), fileName);
     auto fileS = fio->_CreateFile(param, std::ios::binary | std::ios::in);
     if (!fileS.is_open())
     {

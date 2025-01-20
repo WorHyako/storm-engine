@@ -14,6 +14,12 @@
 
 #include "entity.h"
 #include "string_compare.hpp"
+
+#include "Filesystem/Config/Config.hpp"
+#include "Filesystem/Constants/ConfigNames.hpp"
+
+using namespace Storm::Filesystem;
+
 // ============================================================================================
 // Construction, destruction
 // ============================================================================================
@@ -34,14 +40,14 @@ Lighter::~Lighter()
 bool Lighter::Init()
 {
     // Checking if ini file exists
-    auto ini = fio->OpenIniFile("resource\\ini\\loclighter.ini");
-    if (!ini)
-        return false;
-    const auto isLoading = ini->GetInt(nullptr, "loading", 0);
-    autoTrace = ini->GetInt(nullptr, "autotrace", 0) != 0;
-    autoSmooth = ini->GetInt(nullptr, "autosmooth", 0) != 0;
-    window.isSmallSlider = ini->GetInt(nullptr, "smallslider", 0) != 0;
-    geometry.useColor = ini->GetInt(nullptr, "usecolor", 0) != 0;
+    auto config = Config::Load(Constants::ConfigNames::loclighter());
+    std::ignore = config.SelectSection("Main");
+    auto isLoading = config.Get<std::int64_t>("loading", 0);
+    autoTrace = config.Get<std::int64_t>("autotrace", 0) != 0;
+    autoSmooth = config.Get<std::int64_t>("autosmooth", 0) != 0;
+    window.isSmallSlider = config.Get<std::int64_t>("smallslider", 0) != 0;
+    geometry.useColor = config.Get<std::int64_t>("usecolor", 0) != 0;
+
     if (isLoading)
         return false;
     // DX9 render

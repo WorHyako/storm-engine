@@ -26,15 +26,6 @@ extern int32_t lg[100];
 
 #define LOOP_DISABLED -54321
 
-#define ALIAS_DIRECTORY "resource\\ini\\aliases\\"
-#define DEFAULT_SOUND_DIRECTORY "resource\\sounds\\"
-#define SOUND_SECTION_NAME "sound"
-#define SOUND_PATH_NAME "sound path"
-#define ALIAS_INI "resource\\ini\\sound_alias.ini"
-#define SCHEME_INI_NAME "resource\\ini\\sound_scheme.ini"
-#define SCHEME_KEY_NAME "ch"
-#define SCHEME_KEY_NAME_LOOP "ch_loop"
-
 #define DEFAULT_PROBABILITY 1.f
 #define SCHEME_MAX_CHANNELS 100
 #define SCHEME_MIN_DELAY 0

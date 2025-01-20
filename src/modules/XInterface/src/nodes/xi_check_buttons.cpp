@@ -4,6 +4,9 @@
 #include "xi_util.h"
 #include <stdio.h>
 
+using namespace Storm::Filesystem;
+using namespace Storm::Math;
+
 #define PicName(bDisable, bSelect)                                                                                     \
     ((bDisable && !m_sDisablePicture.empty()) ? m_sDisablePicture : ((bSelect) ? m_sSelectPicture : m_sNormalPicture))
 #define PicColor(bDisable, bSelect)                                                                                    \
@@ -70,113 +73,112 @@ void CXI_CHECKBUTTONS::Draw(bool bSelected, uint32_t Delta_Time)
     }
 }
 
-bool CXI_CHECKBUTTONS::Init(INIFILE *ini1, const char *name1, INIFILE *ini2, const char *name2, VDX9RENDER *rs,
-                            XYRECT &hostRect, XYPOINT &ScreenSize)
-{
-    if (!CINODE::Init(ini1, name1, ini2, name2, rs, hostRect, ScreenSize))
-        return false;
-    return true;
+bool CXI_CHECKBUTTONS::Init(const Config& node_config, const Config& def_config,
+    VDX9RENDER *rs, XYRECT &hostRect, XYPOINT &ScreenSize) {
+    return CINODE::Init(node_config, def_config, rs, hostRect, ScreenSize);
 }
 
-void CXI_CHECKBUTTONS::LoadIni(INIFILE *ini1, const char *name1, INIFILE *ini2, const char *name2)
-{
-    char param[2048];
-    XYPOINT tmpLPnt;
+void CXI_CHECKBUTTONS::LoadIni(const Config& node_config, const Config& def_config) {
+    std::pair<const Config&, const Config&> configs{node_config, def_config};
 
     // Selecting only one item or not
-    m_bExclusiveChoose = GetIniBool(ini1, name1, ini2, name2, "exclusiveChoose", true);
+    m_bExclusiveChoose = Config::GetOrGet<std::int64_t>(configs, "exclusiveChoose", 1);
 
     // Selecting text activity on mouse click
-    m_bClickIntoTextActive = GetIniBool(ini1, name1, ini2, name2, "textClickable", false);
+    m_bClickIntoTextActive = Config::GetOrGet<std::int64_t>(configs, "textClickable", 0);
 
-    // get font number
-    if (ReadIniString(ini1, name1, ini2, name2, "font", param, sizeof(param), ""))
-    {
-        if ((m_nFontNum = m_rs->LoadFont(param)) == -1)
-            core.Trace("can not load font:'%s'", param);
+    const auto font = Config::GetOrGet<std::string>(configs, "font", {});
+    if (!font.empty()) {
+        m_nFontNum = m_rs->LoadFont(font.c_str());
     }
-    m_fFontScale = GetIniFloat(ini1, name1, ini2, name2, "fontScale", 1.f);
+    if (m_nFontNum == -1) {
+        core.Trace("can not load font:'%s'", font.c_str());
+    }
+    m_fFontScale = Config::GetOrGet<double>(configs, "fontScale", 1.0);
 
-    // get normal font color
-    m_dwNormalFontColor = GetIniARGB(ini1, name1, ini2, name2, "normalFontColor", 0xFFFFFFFF);
-    // selected font color
-    m_dwSelectFontColor = GetIniARGB(ini1, name1, ini2, name2, "selectFontColor", m_dwNormalFontColor);
-    // disable font color
-    m_dwDisableFontColor = GetIniARGB(ini1, name1, ini2, name2, "disableFontColor", m_dwNormalFontColor);
+    auto normal_font_color = Config::GetOrGet<Types::Vector4<std::int64_t>>(configs, "normalFontColor", {255});
+    m_dwNormalFontColor = ARGB(normal_font_color.x, normal_font_color.y, normal_font_color.z, normal_font_color.w);
 
-    //
-    m_frTextOffset.left = m_frTextOffset.top = m_frTextOffset.right = m_frTextOffset.bottom = 0.f;
-    m_frTextOffset = GetIniFloatRect(ini1, name1, ini2, name2, "rect_textoffset", m_frTextOffset);
+    auto select_font_color = Config::GetOrGet<Types::Vector4<std::int64_t>>(configs, "selectFontColor");
+    m_dwSelectFontColor = select_font_color.has_value()
+        ? ARGB(select_font_color->x, select_font_color->y, select_font_color->z, select_font_color->w)
+        : m_dwNormalFontColor;
 
-    m_fTextLineHeight =
-        GetIniFloat(ini1, name1, ini2, name2, "lineheight", static_cast<float>(m_rs->CharHeight(m_nFontNum)));
-    m_fTextSectionInterval =
-        GetIniFloat(ini1, name1, ini2, name2, "sectioninterval", static_cast<float>(m_rs->CharHeight(m_nFontNum)));
+    auto disable_font_color = Config::GetOrGet<Types::Vector4<std::int64_t>>(configs, "disableFontColor");
+    m_dwDisableFontColor = disable_font_color.has_value()
+        ? ARGB(disable_font_color->x, disable_font_color->y, disable_font_color->z, disable_font_color->w)
+        : m_dwNormalFontColor;
 
-    m_fpIconSize = GetIniFloatPoint(ini1, name1, ini2, name2, "iconsize", m_fpIconSize);
-    if (ReadIniString(ini1, name1, ini2, name2, "icongroup", param, sizeof(param), ""))
-        m_sIconGroupName = param;
-    //
-    if (ReadIniString(ini1, name1, ini2, name2, "normalpicture", param, sizeof(param), ""))
-        m_sNormalPicture = param;
-    m_dwNormalPicColor = GetIniARGB(ini1, name1, ini2, name2, "normalpiccolor", 0xFFFFFFFF);
-    //
-    if (ReadIniString(ini1, name1, ini2, name2, "selectpicture", param, sizeof(param), ""))
-        m_sSelectPicture = param;
-    else
-        m_sSelectPicture = m_sNormalPicture;
-    m_dwSelectPicColor = GetIniARGB(ini1, name1, ini2, name2, "selectpiccolor", m_dwNormalPicColor);
-    //
-    if (ReadIniString(ini1, name1, ini2, name2, "disablepicture", param, sizeof(param), ""))
-        m_sDisablePicture = param;
-    else
-        m_sDisablePicture = m_sNormalPicture;
-    m_dwDisablePicColor = GetIniARGB(ini1, name1, ini2, name2, "disablepiccolor", m_dwNormalPicColor);
+    m_frTextOffset = Config::GetOrGet<Types::Vector4<std::int64_t>>(configs, "rect_textoffset", {}).to<double>();
 
-    m_fpIconOffset = GetIniFloatPoint(ini1, name1, ini2, name2, "iconoffset", m_fpIconOffset);
+    m_fTextLineHeight = Config::GetOrGet<std::int64_t>(configs, "lineheight", m_rs->CharHeight(m_nFontNum));
+    m_fTextSectionInterval = Config::GetOrGet<std::int64_t>(configs, "sectioninterval", m_rs->CharHeight(m_nFontNum));
 
-    m_bIndividualPos = GetIniBool(ini1, name1, ini2, name2, "individualpos", false);
+    m_fpIconSize = Config::GetOrGet<Types::Vector2<std::int64_t>>(configs, "iconsize",
+        {static_cast<std::int64_t>(m_fpIconSize.x), static_cast<std::int64_t>(m_fpIconSize.y)}).to<double>();
+    m_sIconGroupName = Config::GetOrGet<std::string>(configs, "icongroup", {});
+
+    m_sNormalPicture = Config::GetOrGet<std::string>(configs, "normalpicture", {});
+
+    auto normal_pic_color = Config::GetOrGet<Types::Vector4<std::int64_t>>(configs, "normalpiccolor", {255});
+    m_dwNormalPicColor = ARGB(normal_pic_color.x, normal_pic_color.y, normal_pic_color.z, normal_pic_color.w);
+
+    const auto select_picture = Config::GetOrGet<std::string>(configs, "selectpicture", {});
+    m_sSelectPicture = !select_picture.empty()
+        ? select_picture.c_str()
+        : m_sNormalPicture;
+
+    auto select_pic_color = Config::GetOrGet<Types::Vector4<std::int64_t>>(configs, "selectpiccolor");
+    m_dwSelectPicColor = select_pic_color.has_value()
+        ? ARGB(select_pic_color->x, select_pic_color->y, select_pic_color->z, select_pic_color->w)
+        : m_dwNormalPicColor;
+
+    auto disable_picture = Config::GetOrGet<std::string>(configs, "disablepicture", {});
+    m_sDisablePicture = !disable_picture.empty()
+        ? disable_picture
+        : m_sNormalPicture;
+
+    auto disable_pic_color = Config::GetOrGet<Types::Vector4<std::int64_t>>(configs, "disablepiccolor");
+    m_dwDisablePicColor = disable_pic_color.has_value()
+        ? ARGB(disable_pic_color->x, disable_pic_color->y, disable_pic_color->z, disable_pic_color->w)
+        : m_dwNormalPicColor;
+
+    m_fpIconOffset = Config::GetOrGet<Types::Vector2<std::int64_t>>(configs, "iconoffset",
+        {static_cast<std::int64_t>(m_fpIconOffset.x), static_cast<std::int64_t>(m_fpIconOffset.y)}).to<double>();
+    m_bIndividualPos = Config::GetOrGet<std::int64_t>(configs, "individualpos", 0);
 
     // read out all the sections in turn
-    char pcKeyName[128];
-    for (int32_t n = 0; n < 100; n++)
-    {
-        sprintf_s(pcKeyName, "section%d", n + 1);
-        if (!ReadIniString(ini1, name1, ini2, name2, pcKeyName, param, sizeof(param), ""))
+    for (std::int32_t n = 0; n < 100; n++) {
+        const auto section_vec = Config::GetOrGet<std::vector<std::string>>(configs, "section" + std::to_string(n), {});
+        if (std::size(section_vec) < 3) {
             break;
-        const char *pTmpChar = param;
-        const auto bSelect = CXI_UTILS::StringGetInt(pTmpChar) != 0;
-        const auto bDisable = CXI_UTILS::StringGetInt(pTmpChar) != 0;
-        AddButton(pTmpChar, bDisable, bSelect);
+        }
+        auto bSelect = std::stoi(section_vec[0]);
+        auto bDisable = std::stoi(section_vec[1]);
+        AddButton(section_vec[2].c_str(), bDisable, bSelect);
     }
 
     // special positions for sections
-    if (m_bIndividualPos)
-    {
-        for (int32_t n = 0; n < m_aButton.size(); n++)
-        {
-            sprintf_s(pcKeyName, "pos%d", n + 1);
-            if (ReadIniString(ini1, name1, ini2, name2, pcKeyName, param, sizeof(param), ""))
-            {
-                const char *pTmpChar = param;
+    if (m_bIndividualPos) {
+        for (std::int32_t n = 0; n < m_aButton.size(); n++) {
+            const auto pos = Config::GetOrGet<Types::Vector2<std::int64_t>>(configs, "pos" + std::to_string(n));
+            if (pos.has_value()) {
                 m_aButton[n]->bSetPos = true;
-                m_aButton[n]->pos.x = static_cast<float>(CXI_UTILS::StringGetInt(pTmpChar));
-                m_aButton[n]->pos.y = static_cast<float>(CXI_UTILS::StringGetInt(pTmpChar));
+                m_aButton[n]->pos.x = pos->x;
+                m_aButton[n]->pos.y = pos->y;
             }
         }
     }
 
     m_nFontAlignment = PR_ALIGN_LEFT;
-    if (ReadIniString(ini1, name1, ini2, name2, "alignment", param, sizeof(param), ""))
-    {
-        if (storm::iEquals(param, "center"))
-            m_nFontAlignment = PR_ALIGN_CENTER;
-        if (storm::iEquals(param, "right"))
-            m_nFontAlignment = PR_ALIGN_RIGHT;
+    auto align = Config::GetOrGet<std::string>(configs, "alignment", {});
+    if (align == "right") {
+        m_nFontAlignment = PR_ALIGN_RIGHT;
+    } else if (align == "center") {
+        m_nFontAlignment = PR_ALIGN_CENTER;
     }
 
-    if (m_bExclusiveChoose)
-    {
+    if (m_bExclusiveChoose) {
         int32_t n;
         for (n = 0; n < m_aButton.size(); n++)
             if (m_aButton[n]->bChoose)
@@ -184,7 +186,7 @@ void CXI_CHECKBUTTONS::LoadIni(INIFILE *ini1, const char *name1, INIFILE *ini2, 
         if (n == m_aButton.size()) // none have been installed
             SetButtonOn(0);        // first option by default
     }
-    for (int32_t n = 0; n < m_aButton.size(); n++)
+    for (std::int32_t n = 0; n < m_aButton.size(); n++)
         WriteToAttributeButtonState(n);
 
     UpdateAllTextInfo();

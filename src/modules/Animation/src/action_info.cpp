@@ -45,7 +45,7 @@ bool ActionInfo::AddEvent(const char *ename, float frame, ExtAnimationEventType 
     // calculate the relative time
     if (frame > static_cast<float>(endFrame))
         frame = static_cast<float>(endFrame);
-    auto t = static_cast<float>(frame - startFrame);
+    auto t = frame - startFrame;
     if (t < 0.0f)
         t = 0.0f;
     if (t > 0.0f)

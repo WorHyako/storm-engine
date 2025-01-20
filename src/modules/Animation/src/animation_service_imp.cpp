@@ -15,46 +15,17 @@
 #include "animation_imp.h"
 #include "an_file.h"
 #include "string_compare.hpp"
-#include "file_service.h"
 
-//============================================================================================
+#include "Filesystem/Config/Config.hpp"
+#include "Filesystem/Constants/Paths.hpp"
+
+using namespace Storm::Filesystem;
+using namespace Storm::Math;
 
 // Unused animation unload time
 #define ASRV_DOWNTIME 1
 // Longest time span supplied by the AnimationManager
 #define ASRV_MAXDLTTIME 50
-
-// Paths
-#define ASKW_PATH_ANI "resource\\animation\\"
-#define ASKW_PATH_JFA "resource\\animation\\"
-
-// Keywords
-#define ASKW_JFA_FILE "animation" // Skeleton and Animation File
-#define ASKW_STIME "start_time" // Action start time
-#define ASKW_ETIME "end_time" // End time of action
-#define ASKW_RATE "speed" // Playback speed ratio
-#define ASKW_TYPE "type" // Animation type
-#define ASKW_LOOP "loop" // Repeat animation
-#define ASKW_EVENT "event" // Event
-#define ASKW_DATA "data" // User data
-#define ASKW_BONE "bone" // Bone indices used in animation
-
-// Animation type:
-#define ASKWAT_NORMAL "normal" // From start to the end and stop
-#define ASKWAT_REVERSE "reverse" // From end to start and stop
-#define ASKWAT_PINGPONG "pingpong" // From start to end, back and stop
-#define ASKWAT_RPINGPONG "rpingpong" // From end to start, back and stop
-// Looped animation
-#define ASKWAL_TRUE "true" // Animation looping allowed
-#define ASKWAL_FALSE "false" // Animation looping is forbidden
-// Event type
-#define ASKWAE_ALWAYS "always" // Always generate
-#define ASKWAE_NORMAL "normal" // On playing the animation forward
-#define ASKWAE_REVERSE "reverse" // On playing the animation backward
-
-//============================================================================================
-
-char AnimationServiceImp::key[1024];
 
 // ============================================================================================
 // Construction, destruction
@@ -175,328 +146,109 @@ void AnimationServiceImp::Event(const char *eventName)
 // load animation
 int32_t AnimationServiceImp::LoadAnimation(const char *animationName)
 {
-    // Form the file name
-    static char path[MAX_PATH];
-    strcpy_s(path, ASKW_PATH_ANI);
-    strcat_s(path, animationName);
-    strcat_s(path, ".ani");
+    std::filesystem::path aniPath{Constants::Paths::animation() / (std::string(animationName) + ".toml")};
     // Open the ini file describing the animation
-    auto ani = fio->OpenIniFile(path);
-    if (!ani)
-    {
-        core.Trace("Cannot open animation file %s", path);
+    auto config = Config::Load(aniPath);
+    std::ignore = config.SelectSection("Main");
+
+    const auto animation_path_opt = config.Get<std::string>("animation");
+    if (!animation_path_opt.has_value()) {
         return -1;
     }
-    // Get the name of the jfa file with the skeleton
-    strcpy_s(path, ASKW_PATH_JFA);
-    const size_t l = strlen(path);
-    if (!ani->ReadString(nullptr, ASKW_JFA_FILE, path + l, MAX_PATH - l - 1, nullptr))
-    {
-        core.Trace("Incorrect key \"%s\" in animation file %s.ani", ASKW_JFA_FILE, animationName);
-        return -1;
-    }
-    // Animation descriptor
+    const std::string animation_file = (aniPath.parent_path() / animation_path_opt.value()).string();
     auto *info = new AnimationInfo(animationName);
-    // read the bones
-    if (!LoadAN(path, info))
+    if (!LoadAN(animation_file.c_str(), info))
     {
         delete info;
-        core.Trace("Animation file %s is damaged!", path);
         return -1;
     }
-    // Global user data
-    LoadUserData(ani.get(), nullptr, info->GetUserData(), animationName);
-    // read actions
-    for (auto isHaveSection = ani->GetSectionName(path, 63); isHaveSection;
-         isHaveSection = ani->GetSectionNameNext(path, 63))
-    {
-        // Action handling
-        if (path[0] == 0 || strlen(path) >= 64)
-        {
-            core.Trace("Incorrect name action [%s] of animation file %s.ani", path, animationName);
+
+    const auto data_vec = config.Get<std::vector<Types::Vector2<std::string>>>("data", {{}});
+    for (const auto& data : data_vec) {
+        auto& userData = info->GetUserData();
+        userData[data.x] = data.y;
+    }
+
+    const auto sections = config.Sections();
+    for (const auto& section : sections) {
+        if (section == "Main") {
             continue;
         }
-        // Reading the times
-        const auto stime = ani->GetInt(path, ASKW_STIME, -1);
-        if (stime < 0)
-        {
-            core.Trace("Incorrect %s in action [%s] of animation file %s.ani", ASKW_STIME, path, animationName);
-            continue;
-        }
-        const auto etime = ani->GetInt(path, ASKW_ETIME, -1);
-        if (etime < 0)
-        {
-            core.Trace("Incorrect %s in action [%s] of animation file %s.ani", ASKW_ETIME, path, animationName);
-            continue;
-        }
-        // Add an action
-        auto *aci = info->AddAction(path, stime, etime);
+        std::ignore = config.SelectSection(section);
+        const auto stime = config.Get<std::int64_t>("start_time", {});
+        const auto etime = config.Get<std::int64_t>("end_time", {});
+
+        auto *aci = info->AddAction(section.c_str(), stime, etime);
         if (aci == nullptr)
         {
-            core.Trace("Warning! Action [%s] of animation file %s.ani is repeated, skip it", path, animationName);
+            core.Trace("Warning! Action [%s] of animation file %s.ani is repeated, skip it", animation_file.c_str(), animationName);
             continue;
         }
-        // Playback speed ratio
-        const auto rate = ani->GetFloat(path, ASKW_RATE, 1.0f);
+        auto rate = config.Get<double>("speed", 1.0);
         aci->SetRate(rate);
-        // Animation type
-        auto type = at_normal;
-        if (ani->ReadString(path, ASKW_TYPE, key, 256, ASKWAT_NORMAL))
-        {
-            if (storm::iEquals(key, ASKWAT_NORMAL))
+
+        auto type_str = config.Get<std::string>("type", "normal");
+        AnimationType type;
+        if  (type_str == "normal") {
                 type = at_normal;
-            else if (storm::iEquals(key, ASKWAT_REVERSE))
+        } else if (type_str == "reverse") {
                 type = at_reverse;
-            else if (storm::iEquals(key, ASKWAT_PINGPONG))
+        } else if (type_str == "pingpong") {
                 type = at_pingpong;
-            else if (storm::iEquals(key, ASKWAT_RPINGPONG))
+        } else if (type_str == "rpingpong") {
                 type = at_rpingpong;
-            else
-            {
-                core.Trace("Incorrect %s in action [%s] of animation file %s.ani\nNo set %s, set type is %s\n",
-                           ASKW_TYPE, path, animationName, key, ASKWAT_NORMAL);
-            }
         }
         aci->SetAnimationType(type);
-        // Looped animation
-        auto isLoop = true;
-        if (ani->ReadString(path, ASKW_LOOP, key, 256, "false"))
-        {
-            if (storm::iEquals(key, ASKWAL_TRUE))
-                isLoop = true;
-            else if (storm::iEquals(key, ASKWAL_FALSE))
-                isLoop = false;
-            else
-            {
-                core.Trace("Incorrect %s in action [%s] of animation file %s.ani\nThis parameter (%s) use is default "
-                           "value %s\n",
-                           ASKW_LOOP, path, animationName, key, ASKWAL_FALSE);
-            }
-        }
-        aci->SetLoop(isLoop);
-        // Events
-        if (ani->ReadString(path, ASKW_EVENT, key, 256, ""))
-        {
-            do
-            {
-                key[256] = 0;
-                memcpy(key + 257, key, 257);
-                // The beginning of the name
-                if (key[0] != '"')
-                {
-                    core.Trace("Incorrect %s <%s> in action [%s] of animation file %s.ani\nFirst symbol is not '\"'\n",
-                               ASKW_EVENT, key + 257, path, animationName);
-                    continue;
-                }
-                // End of name
-                int32_t p;
-                for (p = 1; key[p] && key[p] != '"'; p++)
-                    ;
-                if (!key[p])
-                {
-                    core.Trace(
-                        "Incorrect %s <%s> in action [%s] of animation file %s.ani\nNot found closed symbol '\"'\n",
-                        ASKW_EVENT, key + 257, path, animationName);
-                    continue;
-                }
-                if (p == 1)
-                {
-                    core.Trace("Incorrect %s <%s> in action [%s] of animation file %s.ani\nName have zero lenght\n",
-                               ASKW_EVENT, key + 257, path, animationName);
-                    continue;
-                }
-                if (p > 65)
-                {
-                    core.Trace(
-                        "Incorrect %s <%s> in action [%s] of animation file %s.ani\nName have big length (max 63)\n",
-                        ASKW_EVENT, key + 257, path, animationName);
-                    continue;
-                }
-                key[p++] = 0;
-                // determine the time
-                // First digit
-                for (; key[p] && (key[p] < '0' || key[p] > '9'); p++)
-                    ;
-                if (!key[p])
-                {
-                    core.Trace("Incorrect %s <%s> in action [%s] of animation file %s.ani\nNo found time\n", ASKW_EVENT,
-                               key + 257, path, animationName);
-                    continue;
-                }
-                auto *em = key + p;
-                // Looking for the end of the number
-                for (; key[p] >= '0' && key[p] <= '9'; p++)
-                    ;
-                float tm = 0;
-                if (key[p] != '%')
-                {
-                    // The absolute time value
-                    if (key[p])
-                        key[p++] = 0;
-                    tm = static_cast<float>(atof(em));
-                }
-                else
-                {
-                    // Relative time value
-                    key[p++] = 0;
-                    tm = static_cast<float>(atof(em));
-                    if (tm < 0)
-                        tm = 0;
-                    if (tm > 100)
-                        tm = 100;
-                    tm = stime + 0.01f * tm * (etime - stime);
-                }
-                if (tm < stime)
-                    tm = static_cast<float>(stime);
-                if (tm > etime)
-                    tm = static_cast<float>(etime);
-                // Reading the event type
-                auto ev = eae_normal;
-                if (key[p])
-                {
-                    // Looking for a start
-                    for (p++; key[p]; p++)
-                        if ((key[p] >= 'A' && key[p] <= 'Z') || (key[p] >= 'a' && key[p] <= 'z'))
-                            break;
-                    em = key + p;
-                    // Looking for an ending
-                    for (p++; key[p]; p++)
-                        if (!(key[p] >= 'A' && key[p] <= 'Z') && !(key[p] >= 'a' && key[p] <= 'z'))
-                            break;
-                    key[p] = 0;
-                    if (em[0] == 0)
-                    {
-                    }
-                    else if (storm::iEquals(em, ASKWAE_ALWAYS))
-                    {
-                        ev = eae_always;
-                    }
-                    else if (storm::iEquals(em, ASKWAE_NORMAL))
-                    {
-                        ev = eae_normal;
-                    }
-                    else if (storm::iEquals(em, ASKWAE_REVERSE))
-                    {
-                        ev = eae_reverse;
-                    }
-                    else
-                    {
-                        core.Trace("Warning: Incorrect %s <%s> in action [%s] of animation file %s.ani,\nunknow event "
-                                   "type <%s> -> set is default value\n",
-                                   ASKW_EVENT, key + 257, path, animationName, em);
-                    }
-                }
-                // core.Trace("Add event %s, time = %f to action %s", key + 1, (tm - stime)/float(etime - stime), path);
-                // Add an event
-                if (!aci->AddEvent(key + 1, tm, ev))
-                {
-                    core.Trace("Warning: Incorrect %s <%s> in action [%s] of animation file %s.ani,\nvery many events "
-                               "-> ignory it\n",
-                               ASKW_EVENT, key + 257, path, animationName);
-                }
-            } while (ani->ReadStringNext(path, ASKW_EVENT, key, 256));
-        }
-        // Bones
 
-        // User data
-        LoadUserData(ani.get(), path, aci->GetUserData(), animationName);
+        const auto ani_loop = config.Get<std::string>("loop", "false");
+        bool is_loop = false;
+        if (ani_loop == "false") {
+            is_loop = false;
+        } else if (ani_loop == "true") {
+            is_loop = true;
+        }
+        aci->SetLoop(is_loop);
+
+        const auto event_vec = config.Get<std::vector<Types::Vector3<std::string>>>("event", {});
+        for (auto& event : event_vec) {
+            ExtAnimationEventType event_type = eae_normal;
+            if (event.z == "always")
+            {
+                event_type = eae_always;
+            }
+            else if (event.z == "normal")
+            {
+                event_type = eae_normal;
+            }
+            else if (event.z == "reverse")
+            {
+                event_type = eae_reverse;
+            }
+            std::int64_t event_time = std::stoi(event.y);
+            event_time = std::clamp(event_time, stime, etime);
+
+            aci->AddEvent(event.x.c_str(), event_time, event_type);
+        }
+        const auto ani_data_vec = config.Get<std::vector<Types::Vector2<std::string>>>("data", {});
+        for (const auto& data : ani_data_vec) {
+            auto& aciData = aci->GetUserData();
+            aciData[data.x] = data.y;
+        }
     }
+
     // Looking for a free pointer
     int32_t i;
-    for (i = 0; i < ainfo.size(); i++)
-        if (!ainfo[i])
+    for (i = 0; i < ainfo.size(); i++) {
+        if (ainfo[i] == nullptr) {
             break;
+        }
+    }
     // expand the array if not found
-    if (i == ainfo.size())
+    if (i == ainfo.size()) {
         ainfo.emplace_back(nullptr);
-
+    }
     ainfo[i] = info;
     return i;
-}
-
-// Load user data from the current section
-void AnimationServiceImp::LoadUserData(INIFILE *ani, const char *sectionName,
-                                       std::unordered_map<std::string, std::string> &data, const char *animationName)
-{
-    if (ani->ReadString(sectionName, ASKW_DATA, key, 1023, ""))
-    {
-        do
-        {
-            key[1023] = 0;
-            // Looking for data name
-            // The beginning of the name
-            if (key[0] != '"')
-            {
-                if (sectionName)
-                    core.Trace("Incorrect %s in action [%s] of animation file %s.ani\nFirst symbol is not '\"'",
-                               ASKW_DATA, sectionName, animationName);
-                else
-                    core.Trace("Incorrect %s in global data of animation file %s.ani\nFirst symbol is not '\"'",
-                               ASKW_DATA, animationName);
-                continue;
-            }
-            // End of name
-            int32_t p;
-            for (p = 1; key[p] && key[p] != '"'; p++)
-                ;
-            if (!key[p])
-            {
-                if (sectionName)
-                    core.Trace("Incorrect %s in action [%s] of animation file %s.ani\nNot found closed symbol '\"' for "
-                               "data name",
-                               ASKW_DATA, sectionName, animationName);
-                else
-                    core.Trace("Incorrect %s in global data of animation file %s.ani\nNot found closed symbol '\"' for "
-                               "data name",
-                               ASKW_DATA, animationName);
-                continue;
-            }
-            if (p == 1)
-            {
-                if (sectionName)
-                    core.Trace("Incorrect %s in action [%s] of animation file %s.ani\nName have zero lenght", ASKW_DATA,
-                               sectionName, animationName);
-                else
-                    core.Trace("Incorrect %s in global data of animation file %s.ani\nName have zero lenght", ASKW_DATA,
-                               animationName);
-                continue;
-            }
-            key[p++] = 0;
-            // Checking for data availability
-            if (data.count(key + 1))
-            {
-                if (sectionName)
-                    core.Trace("Incorrect %s in action [%s] of animation file %s.ani\nUser data repeated", ASKW_DATA,
-                               sectionName, animationName);
-                else
-                    core.Trace("Incorrect %s in global data of animation file %s.ani\nUser data repeated", ASKW_DATA,
-                               animationName);
-
-                continue;
-            }
-            // looking for a string with data
-            for (; key[p] && key[p] != '"'; p++)
-                ;
-            if (!key[p])
-            {
-                if (sectionName)
-                    core.Trace("Incorrect %s in action [%s] of animation file %s.ani\nNo data string", ASKW_DATA,
-                               sectionName, animationName);
-                else
-                    core.Trace("Incorrect %s in global data of animation file %s.ani\nNo data string", ASKW_DATA,
-                               animationName);
-                continue;
-            }
-            // Looking for the end of the data string
-            auto *const uds = key + ++p;
-            for (; key[p] && key[p] != '"'; p++)
-                ;
-            key[p] = 0;
-            // Add data
-            // core.Trace("Add user data \"%s\", \"%s\" of \"%s\"", key + 1, uds, sectionName);
-            data[key + 1] = uds;
-        } while (ani->ReadStringNext((char *)sectionName, ASKW_DATA, key, 1023));
-    }
 }
 
 // load AN

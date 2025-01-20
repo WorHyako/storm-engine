@@ -108,8 +108,6 @@ class Core
 
     virtual uint32_t SetScriptFunction(IFUNCINFO *pFuncInfo) = 0;
 
-    virtual const char *EngineIniFileName() = 0;
-
     virtual void *GetScriptVariable(const char *pVariableName, uint32_t *pdwVarIndex = nullptr) = 0;
 
     [[nodiscard]] virtual storm::ENGINE_VERSION GetTargetEngineVersion() const noexcept = 0;

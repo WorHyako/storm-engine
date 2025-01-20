@@ -3,14 +3,15 @@
 #include "core.h"
 #include "string_compare.hpp"
 
-#include "file_service.h"
+#include "Filesystem/Config/Config.hpp"
+#include "Filesystem/Constants/ConfigNames.hpp"
 
 #include <input.hpp>
 
+using namespace Storm::Filesystem;
 using namespace storm;
 
-PCS_CONTROLS::PCS_CONTROLS()
-{
+PCS_CONTROLS::PCS_CONTROLS() {
     m_bLockAll = false;
     m_bIsOffDebugKeys = false;
 
@@ -28,11 +29,9 @@ PCS_CONTROLS::PCS_CONTROLS()
     nMouseWheel = 0;
     memset(&ControlsTab[0], 0, sizeof(ControlsTab));
 
-    auto pIni = fio->OpenIniFile(core.EngineIniFileName());
-    if (pIni)
-    {
-        m_bIsOffDebugKeys = pIni->GetInt("controls", "ondebugkeys", 0) == 0;
-    }
+    auto config = Config::Load(Constants::ConfigNames::engine());
+    std::ignore = config.SelectSection("controls");
+    m_bIsOffDebugKeys = config.Get<std::int64_t>("ondebugkeys", 0) == 0;
 
     input_ = Input::Create();
     inputHandlerID_ = input_->Subscribe([this](const InputEvent &evt) { HandleEvent(evt); });

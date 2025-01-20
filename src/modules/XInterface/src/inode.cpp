@@ -4,6 +4,11 @@
 #include "core.h"
 #include "string_compare.hpp"
 
+#include "Filesystem/Config/Config.hpp"
+
+using namespace Storm::Filesystem;
+using namespace Storm::Math;
+
 CINODE::CINODE()
 {
     m_bMouseWeelReaction = false;
@@ -20,7 +25,6 @@ CINODE::CINODE()
     m_bMouseSelect = false;
     m_nodeName = nullptr;
     m_bShowGlowCursor = true;
-    m_strHelpTextureFile = nullptr;
     m_bUseUserGlowCursor = false;
     m_bUseUserGlowOffset = false;
     m_bInProcessingMessageForThisNode = false;
@@ -31,8 +35,6 @@ CINODE::CINODE()
 
 CINODE::~CINODE()
 {
-    STORM_DELETE(m_strHelpTextureFile);
-
     STORM_DELETE(m_nodeName);
 
     if (m_list)
@@ -293,93 +295,6 @@ void CINODE::GetAbsoluteRectForSave(XYRECT &rect, int at) const
         rect.bottom -= m_hostRect.top;
 }
 
-const char *CINODE::GetSubStr(const char *inStr, char *buf, size_t bufSize, char devChar)
-{
-    if (bufSize <= 0 || buf == nullptr)
-        return inStr;
-    if (inStr == nullptr)
-    {
-        buf[0] = 0;
-        return nullptr;
-    }
-    auto curSize = 0;
-    const char *curStr;
-    for (curStr = inStr; *curStr != 0; curStr++)
-    {
-        if (*curStr == ' ' && curSize == 0)
-            continue;
-        if (*curStr == devChar || *curStr == 0)
-            break;
-        if (curSize < static_cast<int>(bufSize) - 1)
-            buf[curSize++] = *curStr;
-    }
-    buf[curSize] = 0;
-    if (*curStr == devChar)
-        curStr++;
-    return curStr;
-}
-
-bool CINODE::GetMidStr(const char *inStr, char *buf, size_t bufSize, const char *begStr, const char *endStr)
-{
-    if (bufSize <= 0 || buf == nullptr)
-        return false;
-    if (inStr == nullptr || begStr == nullptr || endStr == nullptr)
-    {
-        buf[0] = 0;
-        return false;
-    }
-    const int lenIn = strlen(inStr);
-    const int lenBeg = strlen(begStr);
-    const int lenEnd = strlen(endStr);
-
-    int i;
-    auto fcn = -1, lcn = -1;
-    for (i = 0; i <= lenIn - lenBeg; i++)
-        if (storm::iEquals(&inStr[i], begStr, lenBeg))
-        {
-            fcn = i;
-            break;
-        }
-    if (fcn < 0)
-    {
-        buf[0] = 0;
-        return false;
-    }
-    fcn += lenBeg;
-
-    for (i = fcn; i <= lenIn - lenEnd; i++)
-        if (storm::iEquals(&inStr[i], endStr, lenEnd))
-        {
-            lcn = i;
-            break;
-        }
-    if (lcn <= fcn)
-    {
-        buf[0] = 0;
-        return false;
-    }
-
-    if (lcn - fcn > static_cast<int>(bufSize) - 1)
-        lcn = fcn + bufSize - 1;
-    strncpy_s(buf, bufSize, &inStr[fcn], lcn - fcn);
-    buf[lcn - fcn] = 0;
-    return true;
-}
-
-uint32_t CINODE::GetColorFromStr(const char *inStr, uint32_t dwDefColor)
-{
-    if (inStr)
-    {
-        int a = ALPHA(dwDefColor);
-        int r = RED(dwDefColor);
-        int g = GREEN(dwDefColor);
-        int b = BLUE(dwDefColor);
-        GetDataStr(inStr, "llll", &a, &r, &g, &b);
-        dwDefColor = ARGB(a, r, g, b);
-    }
-    return dwDefColor;
-}
-
 bool CINODE::CheckByToolTip(float fX, float fY)
 {
     if (m_pToolTip)
@@ -394,31 +309,6 @@ void CINODE::ShowToolTip() const
 {
     if (m_pToolTip)
         m_pToolTip->Draw();
-}
-
-const char *CINODE::GetDataStr(const char *inStr, const char *strOrder, ...)
-{
-    if (inStr == nullptr || strOrder == nullptr)
-        return nullptr;
-    va_list vl;
-    va_start(vl, strOrder);
-    char param[256];
-    for (auto i = 0; strOrder[i] != 0; i++)
-    {
-        inStr = GetSubStr(inStr, param, sizeof(param));
-        switch (strOrder[i])
-        {
-        case 'f':
-        case 'F':
-            *va_arg(vl, float *) = static_cast<float>(atof(param));
-            break;
-        case 'l':
-        case 'L':
-            *va_arg(vl, int32_t *) = atol(param);
-            break;
-        }
-    }
-    return inStr;
 }
 
 uint32_t CINODE::MessageProc(int32_t msgcode, MESSAGE &message)
@@ -477,196 +367,69 @@ bool CINODE::CheckCommandUsed(int comCode) const
     return m_pCommands[i].bUse;
 }
 
-bool CINODE::Init(INIFILE *ini1, const char *name1, INIFILE *ini2, const char *name2, VDX9RENDER *rs, XYRECT &hostRect,
-                  XYPOINT &ScreenSize)
-{
-    char param[512];
-    if (!rs)
+bool CINODE::Init(const Config& node_config, const Config& def_config,
+        VDX9RENDER *rs, XYRECT &hostRect, XYPOINT &ScreenSize) {
+    if (!rs) {
         return false;
-    m_rs = rs;
-    memcpy(&m_screenSize, &ScreenSize, sizeof(ScreenSize));
-    memcpy(&m_hostRect, &hostRect, sizeof(hostRect));
+    }
 
-    // get position
-    m_rect = GetIniLongRect(ini1, name1, ini2, name2, "position", m_hostRect);
-    m_nAbsoluteRectVal = GetIniLong(ini1, name1, ini2, name2, "bAbsoluteRectangle", 0);
+    std::pair<const Config&, const Config&> configs{node_config, def_config};
+    m_rs = rs;
+    m_screenSize = ScreenSize;
+    m_hostRect = hostRect;
+
+    auto pos_opt = Config::GetOrGet<Types::Vector4<std::int64_t>>(configs, "position");
+    if (pos_opt.has_value()) {
+        m_rect = *pos_opt;
+    } else {
+        m_rect = m_hostRect;
+    }
+    m_nAbsoluteRectVal = static_cast<int>(Config::GetOrGet<std::int64_t>(configs, "bAbsoluteRectangle", 0));
+
     GetAbsoluteRect(m_rect, m_nAbsoluteRectVal);
 
     // glow cursor
-    SetGlowCursor(GetIniBool(ini1, name1, ini2, name2, "bShowGlowCursor", true));
-    SetGlowCursorToBack(GetIniBool(ini1, name1, ini2, name2, "bGlowCursorToBack", false));
+    const auto show_clow_cursor = Config::GetOrGet<std::int64_t>(configs, "bShowGlowCursor", 1);
+    SetGlowCursor(show_clow_cursor);
+    const auto show_glow_cursor = Config::GetOrGet<std::int64_t>(configs, "bGlowCursorToBack", 0);
+    SetGlowCursorToBack(show_glow_cursor);
 
     // start using
-    m_bUse = !GetIniBool(ini1, name1, ini2, name2, "bNotUse", false);
+    m_bUse = !Config::GetOrGet<std::int64_t>(configs, "bNotUse", 0);
 
     // mouse weel reaction
-    m_bMouseWeelReaction = GetIniBool(ini1, name1, ini2, name2, "bWheelUse", false);
-    m_bMouseWeelReaction = GetIniBool(ini1, name1, ini2, name2, "bUseWheel", m_bMouseWeelReaction);
+    m_bMouseWeelReaction = Config::GetOrGet<std::int64_t>(configs, "bWheelUse", 0);
+    m_bMouseWeelReaction = Config::GetOrGet<std::int64_t>(configs, "bUseWheel", m_bMouseWeelReaction);
 
-    if (ReadIniString(ini1, name1, ini2, name2, "HelpTextureFile", param, sizeof(param) - 1, ""))
-    {
-        const auto len = strlen(param) + 1;
-        m_strHelpTextureFile = new char[len];
-        if (m_strHelpTextureFile != nullptr)
-        {
-            memcpy(m_strHelpTextureFile, param, len);
-        }
-    }
-    m_frectHelpTextureUV = GetIniFloatRect(ini1, name1, ini2, name2, "HelpTextureUV", FXYRECT(0.0, 0.0, 1.0, 1.0));
+    m_strHelpTextureFile = Config::GetOrGet<std::string>(configs, "HelpTextureFile", {});
 
-    if (ReadIniString(ini1, name1, ini2, name2, "GlowRectangle", param, sizeof(param) - 1, ""))
-    {
-        m_bUseUserGlowCursor = true;
-        GetDataStr(param, "llll", &m_rectUserGlowCursor.left, &m_rectUserGlowCursor.top, &m_rectUserGlowCursor.right,
-                   &m_rectUserGlowCursor.bottom);
+    m_frectHelpTextureUV = Config::GetOrGet<Types::Vector4<std::int64_t>>(configs, "position", {0, 0, 1, 1}).to<double>();
+
+    auto glow_rect_opt = Config::GetOrGet<Types::Vector4<std::int64_t>>(configs, "GlowRectangle");
+    if (glow_rect_opt.has_value()) {
+        m_rectUserGlowCursor.left = glow_rect_opt->x;
+        m_rectUserGlowCursor.top = glow_rect_opt->y;
+        m_rectUserGlowCursor.right = glow_rect_opt->z;
+        m_rectUserGlowCursor.bottom = glow_rect_opt->w;
         GetAbsoluteRect(m_rectUserGlowCursor, m_nAbsoluteRectVal);
     }
 
-    if (ReadIniString(ini1, name1, ini2, name2, "GlowOffset", param, sizeof(param) - 1, ""))
-    {
+    auto glow_offset_opt = Config::GetOrGet<Types::Vector2<std::int64_t>>(configs, "GlowOffset");
+    if (glow_offset_opt.has_value()) {
         m_bUseUserGlowOffset = true;
-        GetDataStr(param, "ff", &m_rectUserGlowOffset.x, &m_rectUserGlowOffset.y);
+        m_rectUserGlowOffset.x = glow_offset_opt->x;
+        m_rectUserGlowOffset.y = glow_offset_opt->y;
     }
 
-    if (ReadIniString(ini1, name1, ini2, name2, "tooltip", param, sizeof(param), ""))
-    {
+    auto tooltip = Config::GetOrGet<std::string>(configs, "tooltip", {});
+    if (!tooltip.empty()) {
         m_pToolTip = new CXI_ToolTip(pPictureService, pStringService, m_screenSize);
         Assert(m_pToolTip);
-        m_pToolTip->SetByFormatString(m_rect, ini2, param);
+        m_pToolTip->SetByFormatString(m_rect, std::string(def_config.Name()), tooltip.c_str());
     }
 
-    m_bMakeActionInDeclick = GetIniBool(ini1, name1, ini2, name2, "UseActionByDeclick", false);
+    m_bMakeActionInDeclick = Config::GetOrGet<std::int64_t>(configs, "UseActionByDeclick", 0);
 
-    LoadIni(ini1, name1, ini2, name2);
+    LoadIni(node_config, def_config);
     return true;
-}
-
-float CINODE::GetIniFloat(INIFILE *ini1, const char *name1, INIFILE *ini2, const char *name2, const char *keyName,
-                          float fDefault)
-{
-    char param[256];
-    auto bYes = false;
-    if (ini1 && name1 && ini1->ReadString(name1, keyName, param, sizeof(param), ""))
-        bYes = true;
-    if (!bYes)
-        if (ini2 && name2 && ini2->ReadString(name2, keyName, param, sizeof(param), ""))
-            bYes = true;
-    if (bYes)
-    {
-        fDefault = static_cast<float>(atof(param));
-    }
-    return fDefault;
-}
-
-int32_t CINODE::GetIniLong(INIFILE *ini1, const char *name1, INIFILE *ini2, const char *name2, const char *keyName,
-                        int32_t iDefault)
-{
-    char param[256];
-    auto bYes = false;
-    if (ini1 && name1 && ini1->ReadString(name1, keyName, param, sizeof(param), ""))
-        bYes = true;
-    if (!bYes)
-        if (ini2 && name2 && ini2->ReadString(name2, keyName, param, sizeof(param), ""))
-            bYes = true;
-    if (bYes)
-    {
-        iDefault = atol(param);
-    }
-    return iDefault;
-}
-
-bool CINODE::ReadIniString(INIFILE *ini1, const char *name1, INIFILE *ini2, const char *name2, const char *keyName,
-                           char *buf, size_t bufSize, const char *strDef)
-{
-    auto bYes = false;
-    if (strDef == nullptr)
-        strDef = "";
-    if (ini1 && name1 && ini1->ReadString(name1, keyName, buf, bufSize - 1, strDef))
-        bYes = true;
-    if (!bYes)
-        if (ini2 && name2 && ini2->ReadString(name2, keyName, buf, bufSize - 1, strDef))
-            bYes = true;
-    if (!bYes && strDef != nullptr) //~!
-    {
-        if (buf)
-        {
-            int strDefLen = strlen(strDef);
-            if (strDefLen > static_cast<int>(bufSize) - 1)
-                strDefLen = bufSize - 1;
-            if (strDefLen > 0)
-                strncpy_s(buf, bufSize, strDef, strDefLen);
-            buf[strDefLen] = 0;
-        }
-    }
-    return bYes;
-}
-
-bool CINODE::GetIniBool(INIFILE *ini1, const char *name1, INIFILE *ini2, const char *name2, const char *keyName,
-                        bool bDefault)
-{
-    return GetIniLong(ini1, name1, ini2, name2, keyName, bDefault) != 0;
-}
-
-XYRECT CINODE::GetIniLongRect(INIFILE *ini1, const char *name1, INIFILE *ini2, const char *name2, const char *keyName,
-                              const XYRECT &rectDefault)
-{
-    char param[256];
-    auto outRect = rectDefault;
-    if (ReadIniString(ini1, name1, ini2, name2, keyName, param, sizeof(param)))
-    {
-        GetDataStr(param, "llll", &outRect.left, &outRect.top, &outRect.right, &outRect.bottom);
-    }
-    return outRect;
-}
-
-FXYRECT CINODE::GetIniFloatRect(INIFILE *ini1, const char *name1, INIFILE *ini2, const char *name2, const char *keyName,
-                                const FXYRECT &rectDefault)
-{
-    char param[256];
-    auto outRect = rectDefault;
-    if (ReadIniString(ini1, name1, ini2, name2, keyName, param, sizeof(param)))
-    {
-        GetDataStr(param, "ffff", &outRect.left, &outRect.top, &outRect.right, &outRect.bottom);
-    }
-    return outRect;
-}
-
-XYPOINT CINODE::GetIniLongPoint(INIFILE *ini1, const char *name1, INIFILE *ini2, const char *name2, const char *keyName,
-                                const XYPOINT &pntDefault)
-{
-    char param[256];
-    auto outPnt = pntDefault;
-    if (ReadIniString(ini1, name1, ini2, name2, keyName, param, sizeof(param)))
-    {
-        GetDataStr(param, "ll", &outPnt.x, &outPnt.y);
-    }
-    return outPnt;
-}
-
-FXYPOINT CINODE::GetIniFloatPoint(INIFILE *ini1, const char *name1, INIFILE *ini2, const char *name2,
-                                  const char *keyName, const FXYPOINT &pntDefault)
-{
-    char param[256];
-    auto outPnt = pntDefault;
-    if (ReadIniString(ini1, name1, ini2, name2, keyName, param, sizeof(param)))
-    {
-        GetDataStr(param, "ff", &outPnt.x, &outPnt.y);
-    }
-    return outPnt;
-}
-
-uint32_t CINODE::GetIniARGB(INIFILE *ini1, const char *name1, INIFILE *ini2, const char *name2, const char *keyName,
-                            uint32_t dwDefColor)
-{
-    char param[256];
-    if (ReadIniString(ini1, name1, ini2, name2, keyName, param, sizeof(param)))
-    {
-        int32_t a = ALPHA(dwDefColor);
-        int32_t r = RED(dwDefColor);
-        int32_t g = GREEN(dwDefColor);
-        int32_t b = BLUE(dwDefColor);
-        GetDataStr(param, "llll", &a, &r, &g, &b);
-        dwDefColor = ARGB(a, r, g, b);
-    }
-    return dwDefColor;
 }

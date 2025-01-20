@@ -4,7 +4,11 @@
 #include "math_inlines.h"
 #include "rands.h"
 #include "shared/messages.h"
-#include "file_service.h"
+
+#include "Filesystem/Config/Config.hpp"
+#include "Filesystem/Constants/ConfigNames.hpp"
+
+using namespace Storm::Filesystem;
 
 //--------------------------------------------------------------------
 TFishSchools::TFishSchools() : enabled(false)
@@ -25,14 +29,11 @@ TFishSchools::~TFishSchools()
 }
 
 //--------------------------------------------------------------------
-void TFishSchools::LoadSettings()
-{
-    auto ini = fio->OpenIniFile(ANIMALS_INI_FILENAME);
-    if (!ini)
-        return;
-
-    fishSchoolsCount = ini->GetInt(ANIMALS_FISHSCHOOLS_SECTION, "count", FISHSCHOOL_COUNT);
-    maxDistance = ini->GetFloat(ANIMALS_FISHSCHOOLS_SECTION, "distance", FISHSCHOOL_DISTANCE);
+void TFishSchools::LoadSettings() {
+    auto config = Config::Load(Constants::ConfigNames::animals());
+    std::ignore = config.SelectSection(ANIMALS_FISHSCHOOLS_SECTION);
+    fishSchoolsCount = config.Get<std::int64_t>("count", FISHSCHOOL_COUNT);
+    maxDistance = config.Get<double>("distance", FISHSCHOOL_DISTANCE);
 }
 
 //--------------------------------------------------------------------

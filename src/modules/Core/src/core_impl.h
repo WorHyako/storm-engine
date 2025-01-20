@@ -108,8 +108,6 @@ class CoreImpl final : public CorePrivate
 
     uint32_t SetScriptFunction(IFUNCINFO *pFuncInfo) override;
 
-    const char *EngineIniFileName() override;
-
     void *GetScriptVariable(const char *pVariableName, uint32_t *pdwVarIndex = nullptr) override;
 
     [[nodiscard]] storm::ENGINE_VERSION GetTargetEngineVersion() const noexcept override;
@@ -152,9 +150,6 @@ class CoreImpl final : public CorePrivate
     bool Exit_flag; // true if the program closing
 
 private:
-    void loadCompatibilitySettings(INIFILE &inifile);
-    void determineScreenSize(INIFILE &inifile);
-
     EntityManager entity_manager_;
 
     std::unique_ptr<storm::editor::EngineEditor> editor_;

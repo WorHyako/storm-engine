@@ -119,12 +119,10 @@ void SINKEFFECT::Execute(uint32_t _dTime)
 //--------------------------------------------------------------------
 void SINKEFFECT::InitializeSinks()
 {
-    auto psIni = fio->OpenIniFile("resource\\ini\\particles.ini");
-
     for (auto i = 0; i < sink_effect::MAX_SINKS; ++i)
     {
         sinks[i].Release();
-        sinks[i].Initialize(psIni.get(), nullptr, sea, renderer);
+        sinks[i].Initialize(nullptr, sea, renderer);
     }
 }
 

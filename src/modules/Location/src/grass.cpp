@@ -9,9 +9,7 @@
 //============================================================================================
 
 #include "grass.h"
-
 #include "core.h"
-
 #include "character.h"
 #include "entity.h"
 

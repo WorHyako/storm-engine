@@ -79,12 +79,12 @@ void SAILONE::goWave(SAILVERTEX *pv, uint32_t Delta_Time)
 
     if (ss.eSailType == SAIL_TREANGLE)
     {
-        wind_incr = pp->sailConfig_.WINDVECTOR_TINCR;
-        wind_add = static_cast<int>(static_cast<float>(pp->sailConfig_.WINDVECTOR_TADD) * static_cast<float>(Delta_Time) * .02f);
-        while (wind_incr >= pp->sailConfig_.WINDVECTOR_QUANTITY)
-            wind_incr -= pp->sailConfig_.WINDVECTOR_QUANTITY;
-        while (wind_add >= pp->sailConfig_.WINDVECTOR_QUANTITY)
-            wind_add -= pp->sailConfig_.WINDVECTOR_QUANTITY;
+        wind_incr = pp->WINDVECTOR_TINCR;
+        wind_add = static_cast<int>(static_cast<float>(pp->WINDVECTOR_TADD) * static_cast<float>(Delta_Time) * .02f);
+        while (wind_incr >= pp->WINDVECTOR_QUANTITY)
+            wind_incr -= pp->WINDVECTOR_QUANTITY;
+        while (wind_add >= pp->WINDVECTOR_QUANTITY)
+            wind_add -= pp->WINDVECTOR_QUANTITY;
 
         // triangular sails rolled on the yard
         if (bRolling)
@@ -97,12 +97,12 @@ void SAILONE::goWave(SAILVERTEX *pv, uint32_t Delta_Time)
     }
     else
     {
-        wind_incr = pp->sailConfig_.WINDVECTOR_SINCR;
-        wind_add = static_cast<int>(static_cast<float>(pp->sailConfig_.WINDVECTOR_SADD) * static_cast<float>(Delta_Time) * .02f);
-        while (wind_incr >= pp->sailConfig_.WINDVECTOR_QUANTITY)
-            wind_incr -= pp->sailConfig_.WINDVECTOR_QUANTITY;
-        while (wind_add >= pp->sailConfig_.WINDVECTOR_QUANTITY)
-            wind_add -= pp->sailConfig_.WINDVECTOR_QUANTITY;
+        wind_incr = pp->WINDVECTOR_SINCR;
+        wind_add = static_cast<int>(static_cast<float>(pp->WINDVECTOR_SADD) * static_cast<float>(Delta_Time) * .02f);
+        while (wind_incr >= pp->WINDVECTOR_QUANTITY)
+            wind_incr -= pp->WINDVECTOR_QUANTITY;
+        while (wind_add >= pp->WINDVECTOR_QUANTITY)
+            wind_add -= pp->WINDVECTOR_QUANTITY;
 
         // rectangular sails rolled on the yard
         if (bRolling)
@@ -118,12 +118,12 @@ void SAILONE::goWave(SAILVERTEX *pv, uint32_t Delta_Time)
             // sway sails
             GoVWave(pv);
 
-            if ((HorzIdx += wind_add) >= pp->sailConfig_.WINDVECTOR_QUANTITY)
-                HorzIdx -= pp->sailConfig_.WINDVECTOR_QUANTITY;
+            if ((HorzIdx += wind_add) >= pp->WINDVECTOR_QUANTITY)
+                HorzIdx -= pp->WINDVECTOR_QUANTITY;
             VertIdx = HorzIdx;
             if (!sroll)
             {
-                const auto delta = static_cast<float>(Delta_Time) * pp->sailConfig_.FLEXSPEED;
+                const auto delta = static_cast<float>(Delta_Time) * pp->FLEXSPEED;
                 if (WindUp)
                 {
                     SumWind -= delta;
@@ -389,7 +389,7 @@ void SAILONE::FillIndex(uint16_t *pt)
         else
         {
             // Fill ?x2
-            const int sailCols = pp->sailConfig_.SSailRollForm.size();
+            const int sailCols = pp->SSailRollForm.size();
             if (m_dwRow == 3)
             {
                 for (ix = 0; ix < static_cast<int>(m_dwCol - 1); ix++)
@@ -458,7 +458,7 @@ void SAILONE::FillVertex(SAILVERTEX *pv)
     CVECTOR dnorm;
     CVECTOR dStart;
 
-    const int sailCols = pp->sailConfig_.SSailRollForm.size();
+    const int sailCols = pp->SSailRollForm.size();
     auto tmpCol = 1.f / static_cast<float>((sailCols - 1));
     auto tmpRow = 1.f / static_cast<float>((SAIL_ROW_MAX - 1));
 
@@ -585,7 +585,7 @@ void SAILONE::SetTexGrid(SAILVERTEX *pv) const
     // rig for rectangular sail
     else
     {
-        const int sailCols = pp->sailConfig_.SSailRollForm.size();
+        const int sailCols = pp->SSailRollForm.size();
         kx1 = 1.f / static_cast<float>((sailCols - 1));
         ky1 = 1.f / static_cast<float>((SAIL_ROW_MAX - 1));
         kx2 = .5f / static_cast<float>((sailCols - 1));
@@ -643,7 +643,7 @@ bool SAILONE::SetSail()
     // Set sail dimensions
     m_dwRow = SAIL_ROW_MAX;
 
-    const int sailCols = pp->sailConfig_.SSailRollForm.size();
+    const int sailCols = pp->SSailRollForm.size();
     if (ss.eSailType == SAIL_TREANGLE)
     {
         hpq = 10;
@@ -656,8 +656,8 @@ bool SAILONE::SetSail()
     }
 
     // set random values for wind
-    VertIdx = rand() % pp->sailConfig_.WINDVECTOR_QUANTITY;
-    HorzIdx = rand() % pp->sailConfig_.WINDVECTOR_QUANTITY;
+    VertIdx = rand() % pp->WINDVECTOR_QUANTITY;
+    HorzIdx = rand() % pp->WINDVECTOR_QUANTITY;
 
     // calculation of sail width and height
     if (ss.eSailType == SAIL_TREANGLE)
@@ -749,14 +749,14 @@ bool SAILONE::SetSail()
 
     // Setting wind parameters
     WindUp = (rand() & 1) == 1;
-    MaxSumWind = sailHeight * pp->sailConfig_.MAXSUMWIND;
+    MaxSumWind = sailHeight * pp->MAXSUMWIND;
     SumWind = MaxSumWind * static_cast<float>(rand()) / static_cast<float>(RAND_MAX);
 
     oldWindAngl = 0.f;
 
     // set sail rotation limit
-    m_fMaxAngle = pp->sailConfig_.MAXTURNANGL;
-    m_fMinAngle = pp->sailConfig_.MAXTURNANGL;
+    m_fMaxAngle = pp->MAXTURNANGL;
+    m_fMinAngle = pp->MAXTURNANGL;
 
     return true;
 }
@@ -780,12 +780,12 @@ void SAILONE::GoTWave(SAILVERTEX *pv)
     auto pStart = ss.hardPoints[0];
     auto pStartDelta = (ss.hardPoints[1] - ss.hardPoints[0]) / static_cast<float>((SAIL_ROW_MAX - 1));
 
-    auto WindAmplitude = pp->sailConfig_.TsailWindDepend * ss.boundSphere.r * (pp->globalWind.base + .3f) /
+    auto WindAmplitude = pp->TsailWindDepend * ss.boundSphere.r * (pp->globalWind.base + .3f) /
                          static_cast<float>((SAIL_ROW_MAX - 1)) / static_cast<float>((SAIL_ROW_MAX - 1));
 
     // take into account holes in the sail for the deflection of the sail
-    WindAmplitude *= 1.f - static_cast<float>(ss.holeCount) * pp->sailConfig_.fTHoleFlexDepend;
-    CenterFlex *= 1.f - static_cast<float>(ss.holeCount) * pp->sailConfig_.fTHoleFlexDepend;
+    WindAmplitude *= 1.f - static_cast<float>(ss.holeCount) * pp->fTHoleFlexDepend;
+    CenterFlex *= 1.f - static_cast<float>(ss.holeCount) * pp->fTHoleFlexDepend;
 
     // Set rope point
     if (sailtrope.pnttie[0])
@@ -831,8 +831,8 @@ void SAILONE::GoTWave(SAILVERTEX *pv)
             pcur += dV;
         }
 
-        if ((VertIdx += wind_incr) >= pp->sailConfig_.WINDVECTOR_QUANTITY)
-            VertIdx -= pp->sailConfig_.WINDVECTOR_QUANTITY;
+        if ((VertIdx += wind_incr) >= pp->WINDVECTOR_QUANTITY)
+            VertIdx -= pp->WINDVECTOR_QUANTITY;
 
         switch (m_dwRow)
         {
@@ -868,8 +868,8 @@ void SAILONE::GoTWave(SAILVERTEX *pv)
     if (sailtrope.pnttie[2])
         *sailtrope.pPos[2] = pcur - dV;
 
-    if ((HorzIdx += wind_add) >= pp->sailConfig_.WINDVECTOR_QUANTITY)
-        HorzIdx -= pp->sailConfig_.WINDVECTOR_QUANTITY;
+    if ((HorzIdx += wind_add) >= pp->WINDVECTOR_QUANTITY)
+        HorzIdx -= pp->WINDVECTOR_QUANTITY;
     VertIdx = HorzIdx;
 }
 
@@ -898,8 +898,8 @@ void SAILONE::GoVWave(SAILVERTEX *pv)
     }
 
     // the amplitude of the movement of the sail from the wind
-    const int sailCols = pp->sailConfig_.SSailRollForm.size();
-    auto WindAmplitude = pp->sailConfig_.SsailWindDepend * sailHeight * (fWindBase + pp->sailConfig_.fWindAdding) / (pp->sailConfig_.fWindAdding + 1.f) /
+    const int sailCols = pp->SSailRollForm.size();
+    auto WindAmplitude = pp->SsailWindDepend * sailHeight * (fWindBase + pp->fWindAdding) / (pp->fWindAdding + 1.f) /
                          static_cast<float>((sailCols / 2 + 2));
     if (ss.bYesLimitPoint)
     {
@@ -986,8 +986,8 @@ void SAILONE::GoVWave(SAILVERTEX *pv)
         if (trigger)
         {
             // VertIdx
-            if ((VertIdx += wind_incr) >= pp->sailConfig_.WINDVECTOR_QUANTITY)
-                VertIdx -= pp->sailConfig_.WINDVECTOR_QUANTITY;
+            if ((VertIdx += wind_incr) >= pp->WINDVECTOR_QUANTITY)
+                VertIdx -= pp->WINDVECTOR_QUANTITY;
         }
         trigger = !trigger;
 
@@ -1031,7 +1031,7 @@ void SAILONE::SetGeometry()
     else
         pG = &sgeo;
 
-    const int sailCols = pp->sailConfig_.SSailRollForm.size();
+    const int sailCols = pp->SSailRollForm.size();
     const auto tmpCol = 1.f / static_cast<float>((sailCols - 1));
     const auto tmpRow = 1.f / static_cast<float>((SAIL_ROW_MAX - 1));
 
@@ -1066,12 +1066,12 @@ void SAILONE::SetGeometry()
         pG->cv.dnormR = (!(p13 ^ p23) - pG->cv.normR) * tmpRow;
 
         pG->cv.dddVv = CVECTOR(0.f, 0.f, 0.f);
-        pG->cv.dVv = pG->cv.normL * ss.fDeepZ * (1.f - ss.holeCount * pp->sailConfig_.fSHoleFlexDepend) + pG->cv.dopV;
+        pG->cv.dVv = pG->cv.normL * ss.fDeepZ * (1.f - ss.holeCount * pp->fSHoleFlexDepend) + pG->cv.dopV;
         pG->cv.ddVv = pG->cv.dVv * (-2.f / static_cast<float>(SAIL_ROW_MAX));
         pG->cv.dVv += p02 * tmpRow;
 
         pG->cv.dVh = (normLD * ss.fDeepH - p13 * ss.fDeepVh + pG->cv.normR * ss.fDeepVz) * tmpRow *
-                  (1.f - ss.holeCount * pp->sailConfig_.fSHoleFlexDepend);
+                  (1.f - ss.holeCount * pp->fSHoleFlexDepend);
         pG->cv.ddVh = pG->cv.dVh * (-2.f * tmpCol);
         pG->cv.dVh += (p13 - p02) * tmpCol * tmpRow;
     }
@@ -1097,7 +1097,7 @@ void SAILONE::SetRolling(bool bRoll)
     {
         const auto locPos = hostNode->loc_mtx.Pos();
         hostNode->loc_mtx.SetPosition(0.f, 0.f, 0.f);
-        const double turnStepAngle = pp->sailConfig_.TURNSTEPANGL;
+        const double turnStepAngle = pp->TURNSTEPANGL;
         if (oldWindAngl < 0.f)
         {
             oldWindAngl += turnStepAngle;
@@ -1198,7 +1198,7 @@ void SAILONE::TurnSail(float fTurnStep)
     windAng -= oldWindAngl;
 
     // if the angle is large enough to rotate
-    if (windAng < -pp->sailConfig_.WINDANGL_DISCRETE || windAng > pp->sailConfig_.WINDANGL_DISCRETE)
+    if (windAng < -pp->WINDANGL_DISCRETE || windAng > pp->WINDANGL_DISCRETE)
     {
         if (windAng > fTurnStep)
             windAng = fTurnStep;
@@ -1462,8 +1462,8 @@ void SAILONE::DoSRollSail(SAILVERTEX *pv)
     const auto p4 = p1 * 4;
 
     auto windVal = pp->windVectors_[VertIdx]; // sinf((float)VertIdx/(float)WINDVECTOR_QUANTITY*2.f*PI);
-    const float dz = pp->sailConfig_.ROLL_Z_VAL * sailHeight;
-    const float dy = pp->sailConfig_.ROLL_Y_VAL * sailHeight;
+    const float dz = pp->ROLL_Z_VAL * sailHeight;
+    const float dy = pp->ROLL_Y_VAL * sailHeight;
 
     auto idx = 0;
     CVECTOR dv1, dv2, dv3, dv4;
@@ -1475,15 +1475,15 @@ void SAILONE::DoSRollSail(SAILVERTEX *pv)
     dv4 = sgeo.cv.normL * (-.5f * dz);
     for (i = 0; i < static_cast<int>(m_dwCol); i++)
     {
-        windVal = 1.f - pp->windVectors_[VertIdx] * pp->sailConfig_.ROLL_Z_DELTA;
+        windVal = 1.f - pp->windVectors_[VertIdx] * pp->ROLL_Z_DELTA;
         pv[idx].pos = pcur;
-        pv[idx + p1].pos = pcur + dv1 * (pp->sailConfig_.SSailRollForm[i] * windVal);
-        pv[idx + p2].pos = pcur + dv2 * (pp->sailConfig_.SSailRollForm[i] * windVal);
-        pv[idx + p3].pos = pcur + dv3 * (pp->sailConfig_.SSailRollForm[i] * windVal);
-        pv[idx + p4].pos = pcur + dv4 * (pp->sailConfig_.SSailRollForm[i] * windVal);
+        pv[idx + p1].pos = pcur + dv1 * (pp->SSailRollForm[i] * windVal);
+        pv[idx + p2].pos = pcur + dv2 * (pp->SSailRollForm[i] * windVal);
+        pv[idx + p3].pos = pcur + dv3 * (pp->SSailRollForm[i] * windVal);
+        pv[idx + p4].pos = pcur + dv4 * (pp->SSailRollForm[i] * windVal);
 
-        if ((VertIdx += wind_incr) >= pp->sailConfig_.WINDVECTOR_QUANTITY)
-            VertIdx -= pp->sailConfig_.WINDVECTOR_QUANTITY;
+        if ((VertIdx += wind_incr) >= pp->WINDVECTOR_QUANTITY)
+            VertIdx -= pp->WINDVECTOR_QUANTITY;
         pcur += dp;
         idx += SAIL_ROW_MAX;
     }
@@ -1502,12 +1502,12 @@ void SAILONE::DoTRollSail(SAILVERTEX *pv)
     const auto dp = (ss.hardPoints[1] - ss.hardPoints[0]) * .25f;
 
     auto windVal = pp->windVectors_[VertIdx];
-    float dx = pp->sailConfig_.ROLL_Z_VAL * sailHeight;
-    float dy = pp->sailConfig_.ROLL_Y_VAL * sailHeight;
+    float dx = pp->ROLL_Z_VAL * sailHeight;
+    float dy = pp->ROLL_Y_VAL * sailHeight;
     if (ss.turningSail)
     {
-        dx *= pp->sailConfig_.TR_FORM_MUL;
-        dy *= pp->sailConfig_.TR_FORM_MUL;
+        dx *= pp->TR_FORM_MUL;
+        dy *= pp->TR_FORM_MUL;
     }
 
     CVECTOR dv1, dv2, dv3, dv4;
@@ -1520,27 +1520,27 @@ void SAILONE::DoTRollSail(SAILVERTEX *pv)
 
     auto idx = 6;
     pv[idx++].pos = pcur;
-    pv[idx++].pos = pcur + dv1 * pp->sailConfig_.TSailRollForm[0];
-    pv[idx++].pos = pcur + dv3 * pp->sailConfig_.TSailRollForm[0];
-    pv[idx++].pos = pcur + dv4 * pp->sailConfig_.TSailRollForm[0];
+    pv[idx++].pos = pcur + dv1 * pp->TSailRollForm[0];
+    pv[idx++].pos = pcur + dv3 * pp->TSailRollForm[0];
+    pv[idx++].pos = pcur + dv4 * pp->TSailRollForm[0];
 
     pcur += dp;
     auto pd = 1;
     for (i = 1; i < 5; i++)
     {
-        windVal = 1.f - pp->windVectors_[VertIdx] * pp->sailConfig_.ROLL_Z_DELTA;
+        windVal = 1.f - pp->windVectors_[VertIdx] * pp->ROLL_Z_DELTA;
         pv[idx].pos = pcur;
         idx += pd;
-        pv[idx].pos = pcur + dv1 * (pp->sailConfig_.TSailRollForm[i] * windVal);
+        pv[idx].pos = pcur + dv1 * (pp->TSailRollForm[i] * windVal);
         idx += pd;
-        pv[idx].pos = pcur + dv2 * (pp->sailConfig_.TSailRollForm[i] * windVal);
+        pv[idx].pos = pcur + dv2 * (pp->TSailRollForm[i] * windVal);
         idx += pd;
-        pv[idx].pos = pcur + dv3 * (pp->sailConfig_.TSailRollForm[i] * windVal);
+        pv[idx].pos = pcur + dv3 * (pp->TSailRollForm[i] * windVal);
         idx += pd;
-        pv[idx].pos = pcur + dv4 * (pp->sailConfig_.TSailRollForm[i] * windVal);
+        pv[idx].pos = pcur + dv4 * (pp->TSailRollForm[i] * windVal);
 
-        if ((VertIdx += wind_incr) >= pp->sailConfig_.WINDVECTOR_QUANTITY)
-            VertIdx -= pp->sailConfig_.WINDVECTOR_QUANTITY;
+        if ((VertIdx += wind_incr) >= pp->WINDVECTOR_QUANTITY)
+            VertIdx -= pp->WINDVECTOR_QUANTITY;
         pcur += dp;
         pd++;
         idx += i * 12 + 10;
@@ -1766,13 +1766,13 @@ void SAILONE::CalculateSailWind()
         switch (ss.eSailType)
         {
         case SAIL_TREANGLE:
-            curSpeed *= pp->sailConfig_.ts.x + xtmp * pp->sailConfig_.ts.y + ztmp * pp->sailConfig_.ts.z;
+            curSpeed *= pp->ts.x + xtmp * pp->ts.y + ztmp * pp->ts.z;
             break;
         case SAIL_TRAPECIDAL:
-            curSpeed *= pp->sailConfig_.fs.x + xtmp * pp->sailConfig_.ts.y + ztmp * pp->sailConfig_.ts.z;
+            curSpeed *= pp->fs.x + xtmp * pp->ts.y + ztmp * pp->ts.z;
             break;
         default:
-            curSpeed *= pp->sailConfig_.ts.x + xtmp * pp->sailConfig_.ts.y + ztmp * pp->sailConfig_.ts.z;
+            curSpeed *= pp->ts.x + xtmp * pp->ts.y + ztmp * pp->ts.z;
         }
 
         // take into account the folding of sails
@@ -1925,8 +1925,8 @@ void SAILONE::DoSFreeSail(SAILVERTEX *pv)
 
             float mul;
             if (iy)
-                mul = (pp->sailConfig_.FALL_SSAIL_ADD_MIN +
-                       static_cast<float>(rand()) / static_cast<float>(RAND_MAX) * pp->sailConfig_.FALL_SSAIL_ADD_RAND) /
+                mul = (pp->FALL_SSAIL_ADD_MIN +
+                       static_cast<float>(rand()) / static_cast<float>(RAND_MAX) * pp->FALL_SSAIL_ADD_RAND) /
                       sqrtf(~dvec);
             else
                 mul = 1.f;
@@ -1955,8 +1955,8 @@ void SAILONE::DoTFreeSail(SAILVERTEX *pv)
 
             float mul;
             if (iy)
-                mul = (pp->sailConfig_.FALL_TSAIL_ADD_MIN +
-                       static_cast<float>(rand()) / static_cast<float>(RAND_MAX) * pp->sailConfig_.FALL_TSAIL_ADD_RAND) /
+                mul = (pp->FALL_TSAIL_ADD_MIN +
+                       static_cast<float>(rand()) / static_cast<float>(RAND_MAX) * pp->FALL_TSAIL_ADD_RAND) /
                       sqrtf(~dvec);
             else
                 mul = 1.f;
@@ -2020,9 +2020,9 @@ void SAILONE::SetTurnLimits()
 
     const float fstep = 0.01f;
     const float fAdding = sqrtf(kx * kx + ky * ky) *
-                          (pp->sailConfig_.TsailWindDepend * ss.boundSphere.r * 1.3f + inf.boxsize.x + ss.fDeepH + ss.fDeepZ);
+                          (pp->TsailWindDepend * ss.boundSphere.r * 1.3f + inf.boxsize.x + ss.fDeepH + ss.fDeepZ);
 
-    for (float fA = pp->sailConfig_.MAXTURNANGL; fA > 0.f; fA -= fstep)
+    for (float fA = pp->MAXTURNANGL; fA > 0.f; fA -= fstep)
     {
         const float ca = cosf(fA);
         const float sa = sinf(fA);

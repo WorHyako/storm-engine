@@ -3,12 +3,13 @@
 #include "core.h"
 #include "c_vector.h"
 #include "storm_assert.h"
-#include "file_service.h"
 #include "math_inlines.h"
 
 #include <algorithm>
 #include <string>
 #include <vector>
+
+#include "Filesystem/Config/Config.hpp"
 
 #define INVALID_ARRAY_INDEX 0xFFFFFFFF
 
@@ -99,7 +100,7 @@ class AIFlowGraph
 
     // save/load/release section
     void ReleaseAll();
-    bool Load(INIFILE &pIni);
+    bool Load(const std::string_view& config_path);
 
     size_t GetNumEdges()
     {
@@ -131,48 +132,24 @@ inline void AIFlowGraph::ReleaseAll()
     aPoints.clear();
 }
 
-inline bool AIFlowGraph::Load(INIFILE &pIni)
+inline bool AIFlowGraph::Load(const std::string_view& config_path)
 {
-    char cTemp[32768];
     ReleaseAll();
 
-    std::string sKey;
-    while (true) //~!~ Optimize?
-    {
-        sKey = "pnt" + std::to_string(aPoints.size());
-        cTemp[0] = 0;
-        pIni.ReadString((char *)sSectionName.c_str(), (char *)sKey.c_str(), cTemp, 32768, "\0");
-        if (!cTemp[0])
+    auto config = Storm::Filesystem::Config::Load(config_path);
+    std::ignore = config.SelectSection(sSectionName);
+
+    while (true) {
+        auto array_opt = config.Get<std::vector<std::string>>("pnt" + std::to_string(std::size(aPoints)));
+        if (!array_opt.has_value() || array_opt->empty()) {
             break;
+        }
+        auto&& array = array_opt.value();
+        point_t point(CVECTOR(std::stof(array[0]), 0.0f, std::stof(array[1])));
+        aPoints.push_back(point);
 
-        // point_t *pP = &aPoints[aPoints.Add()];
-        point_t p;
-        p.vPos.y = 0.0f;
-        sscanf(cTemp, "%f,%f", &p.vPos.x, &p.vPos.z);
-        aPoints.push_back(p);
-    }
-    for (uint32_t i = 0; i < aPoints.size(); i++)
-    {
-        float x, z;
-        uint32_t dwNum;
-        sKey = "pnt" + std::to_string(i);
-        cTemp[0] = 0;
-        pIni.ReadString((char *)sSectionName.c_str(), (char *)sKey.c_str(), cTemp, 32768);
-        if (!cTemp[0])
-            continue;
-
-        const char *buf = cTemp;
-        int offset;
-        sscanf(buf, "%f,%f,%d,%n", &x, &z, &dwNum, &offset);
-        buf += offset;
-
-        for (uint32_t j = 0; j < dwNum; j++)
-        {
-            uint32_t dw1, dw2;
-            sscanf(buf, "%d,%d,%n", &dw1, &dw2, &offset);
-            ;
-            buf += offset;
-            aPoints[i].aEdges.push_back(AddEdge(dw1, dw2));
+        for (int i = 3; i < std::size(array); i += 2) {
+            aPoints[i].aEdges.push_back(AddEdge(std::stol(array[i]), std::stol(array[i + 1])));
         }
     }
 

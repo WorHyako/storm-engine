@@ -1,5 +1,9 @@
 #include "xi_slide_picture.h"
+
 #include <stdio.h>
+
+using namespace Storm::Filesystem;
+using namespace Storm::Math;
 
 void SetTextureCoordinate(XI_ONETEX_VERTEX v[4], FXYRECT tr, float angle)
 {
@@ -42,67 +46,48 @@ CXI_SLIDEPICTURE::CXI_SLIDEPICTURE()
     m_nNodeType = NODETYPE_SLIDEPICTURE;
     pSlideSpeedList = nullptr;
     nSlideListSize = 0;
-    strTechniqueName = nullptr;
 }
 
-CXI_SLIDEPICTURE::~CXI_SLIDEPICTURE()
-{
+CXI_SLIDEPICTURE::~CXI_SLIDEPICTURE() {
     ReleaseAll();
 }
 
-void CXI_SLIDEPICTURE::Draw(bool bSelected, uint32_t Delta_Time)
-{
-    if (m_bUse)
-    {
-        Update(Delta_Time);
-        m_rs->TextureSet(0, m_idTex);
-        m_rs->SetSamplerState(0, D3DSAMP_ADDRESSU, D3DTADDRESS_WRAP);
-        m_rs->SetSamplerState(0, D3DSAMP_ADDRESSV, D3DTADDRESS_WRAP);
-        if (strTechniqueName == nullptr)
-            m_rs->DrawPrimitiveUP(D3DPT_TRIANGLESTRIP, XI_ONETEX_FVF, 2, m_v, sizeof(XI_ONETEX_VERTEX), "iVideo");
-        else
-            m_rs->DrawPrimitiveUP(D3DPT_TRIANGLESTRIP, XI_ONETEX_FVF, 2, m_v, sizeof(XI_ONETEX_VERTEX),
-                                  strTechniqueName);
+void CXI_SLIDEPICTURE::Draw(bool bSelected, uint32_t Delta_Time) {
+    if (!m_bUse) {
+        return;
     }
+    Update(Delta_Time);
+    m_rs->TextureSet(0, m_idTex);
+    m_rs->SetSamplerState(0, D3DSAMP_ADDRESSU, D3DTADDRESS_WRAP);
+    m_rs->SetSamplerState(0, D3DSAMP_ADDRESSV, D3DTADDRESS_WRAP);
+    m_rs->DrawPrimitiveUP(D3DPT_TRIANGLESTRIP, XI_ONETEX_FVF, 2, m_v, sizeof(XI_ONETEX_VERTEX),
+        strTechniqueName.empty()
+            ? "iVideo"
+            : strTechniqueName.c_str());
 }
 
-bool CXI_SLIDEPICTURE::Init(INIFILE *ini1, const char *name1, INIFILE *ini2, const char *name2, VDX9RENDER *rs,
-                            XYRECT &hostRect, XYPOINT &ScreenSize)
-{
-    if (!CINODE::Init(ini1, name1, ini2, name2, rs, hostRect, ScreenSize))
+bool CXI_SLIDEPICTURE::Init(const Config& node_config, const Config& def_config,
+    VDX9RENDER *rs, XYRECT &hostRect, XYPOINT &ScreenSize) {
+    if (!CINODE::Init(node_config, def_config, rs, hostRect, ScreenSize)) {
         return false;
+    }
     SetGlowCursor(false);
     return true;
 }
 
-void CXI_SLIDEPICTURE::LoadIni(INIFILE *ini1, const char *name1, INIFILE *ini2, const char *name2)
-{
-    int i;
-    char param[255];
-    FXYPOINT fPos;
+void CXI_SLIDEPICTURE::LoadIni(const Config& node_config, const Config& def_config) {
+    std::pair<const Config&, const Config&> configs{node_config, def_config};
+    strTechniqueName = Config::GetOrGet<std::string>(configs, "techniqueName", {});
 
-    STORM_DELETE(strTechniqueName);
-    if (ReadIniString(ini1, name1, ini2, name2, "techniqueName", param, sizeof(param), ""))
-    {
-        const auto len = strlen(param) + 1;
-        if (strlen(param) > 1)
-        {
-            strTechniqueName = new char[len];
-            if (strTechniqueName == nullptr)
-            {
-                throw std::runtime_error("allocate memory error");
-            }
-            memcpy(strTechniqueName, param, len);
-        }
-    }
+    auto texture_name = Config::GetOrGet<std::string>(configs, "textureName", {});
+    m_idTex = texture_name.empty()
+        ? -1
+        : m_rs->TextureCreate(texture_name.c_str());
 
-    m_idTex = -1;
-    if (ReadIniString(ini1, name1, ini2, name2, "textureName", param, sizeof(param), ""))
-        m_idTex = m_rs->TextureCreate(param);
+    m_texRect = Config::GetOrGet<Types::Vector4<double>>(configs, "textureRect", {0.0, 0.0, 1.0, 1.0});
 
-    m_texRect = GetIniFloatRect(ini1, name1, ini2, name2, "textureRect", FXYRECT(0.f, 0.f, 1.f, 1.f));
-
-    const auto color = GetIniARGB(ini1, name1, ini2, name2, "color", 0xFFFFFFFF);
+    auto color_vec = Config::GetOrGet<Types::Vector4<std::int64_t>>(configs, "color", {255});
+    const auto color = ARGB(color_vec.x, color_vec.y, color_vec.z, color_vec.w);
 
     // Create rectangle
     m_v[0].pos.x = static_cast<float>(m_rect.left);
@@ -120,77 +105,36 @@ void CXI_SLIDEPICTURE::LoadIni(INIFILE *ini1, const char *name1, INIFILE *ini2, 
     m_v[3].pos.x = static_cast<float>(m_rect.right), m_v[3].pos.y = static_cast<float>(m_rect.bottom);
     m_v[3].tu = m_texRect.right;
     m_v[3].tv = m_texRect.bottom;
-    for (i = 0; i < 4; i++)
-    {
-        m_v[i].color = color;
-        m_v[i].pos.z = 1.f;
+    for (auto &each : m_v) {
+        each.color = color;
+        each.pos.z = 1.f;
     }
 
     curAngle = 0.f;
     curRotate = 0.f;
-    fPos = GetIniFloatPoint(ini1, name1, ini2, name2, "rotate", FXYPOINT(0.f, 0.f));
+    FXYPOINT fPos;
+    fPos = Config::GetOrGet<Types::Vector2<double>>(configs, "rotate", {});
     minRotate = fPos.x;
     deltaRotate = fPos.y;
 
     nLifeTime = 0;
     nCurSlide = 0;
-    nSlideListSize = 0;
     pSlideSpeedList = nullptr;
 
-    auto bUse1Ini = true;
-    // Calculating the size of the speed table
-    if (ini1->ReadString(name1, "speed", param, sizeof(param) - 1, ""))
-    {
-        do
-        {
-            nSlideListSize++;
-        } while (ini1->ReadStringNext(name1, "speed", param, sizeof(param) - 1));
-    }
-    else
-    {
-        if (ini2->ReadString(name2, "speed", param, sizeof(param) - 1, ""))
-        {
-            bUse1Ini = false;
-            do
-            {
-                nSlideListSize++;
-            } while (ini2->ReadStringNext(name2, "speed", param, sizeof(param) - 1));
-        }
-    }
+    auto speed = Config::GetOrGet<std::vector<Types::Vector3<double>>>(configs, "speed", {});
+    nSlideListSize = std::size(speed);
 
-    if (nSlideListSize > 0)
-    {
+    if (nSlideListSize > 0) {
         pSlideSpeedList = new SLIDE_SPEED[nSlideListSize];
-        if (pSlideSpeedList == nullptr)
-        {
+        if (pSlideSpeedList == nullptr) {
             throw std::runtime_error("allocate memory error");
         }
     }
 
-    // fill in the speed table
-    if (bUse1Ini)
-    {
-        ini1->ReadString(name1, "speed", param, sizeof(param) - 1, "");
-        for (i = 0; i < nSlideListSize; i++)
-        {
-            pSlideSpeedList[i].time = 0;
-            pSlideSpeedList[i].xspeed = 0;
-            pSlideSpeedList[i].yspeed = 0;
-            GetDataStr(param, "lff", &pSlideSpeedList[i].time, &pSlideSpeedList[i].xspeed, &pSlideSpeedList[i].yspeed);
-            ini1->ReadStringNext(name1, "speed", param, sizeof(param) - 1);
-        }
-    }
-    else
-    {
-        ini2->ReadString(name2, "speed", param, sizeof(param) - 1, "");
-        for (i = 0; i < nSlideListSize; i++)
-        {
-            pSlideSpeedList[i].time = 0;
-            pSlideSpeedList[i].xspeed = 0;
-            pSlideSpeedList[i].yspeed = 0;
-            GetDataStr(param, "lff", &pSlideSpeedList[i].time, &pSlideSpeedList[i].xspeed, &pSlideSpeedList[i].yspeed);
-            ini2->ReadStringNext(name2, "speed", param, sizeof(param) - 1);
-        }
+    for (int i = 0; i < nSlideListSize; i++) {
+        pSlideSpeedList[i].time = static_cast<std::uint32_t>(speed[i].x);
+        pSlideSpeedList[i].xspeed = static_cast<float>(speed[i].y);
+        pSlideSpeedList[i].yspeed = static_cast<float>(speed[i].z);
     }
 }
 
@@ -198,7 +142,6 @@ void CXI_SLIDEPICTURE::ReleaseAll()
 {
     TEXTURE_RELEASE(m_rs, m_idTex);
     STORM_DELETE(pSlideSpeedList);
-    STORM_DELETE(strTechniqueName);
     nSlideListSize = 0;
 }
 

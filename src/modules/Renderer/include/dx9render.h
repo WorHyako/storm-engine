@@ -9,7 +9,6 @@
 #ifdef _WIN32
 #include "platform/d3dx9.hpp"
 #endif
-#include <string_view>
 
 #include "entity.h"
 #include "matrix.h"
@@ -17,6 +16,9 @@
 #include "storm_assert.h"
 #include "types3d.h"
 #include "utf8.h"
+
+#include "Math/Types/Vector4.hpp"
+#include "Math/Types/Vector2.hpp"
 
 #define FONT_DEFAULT 0
 
@@ -92,10 +94,73 @@ struct IPOINT
 struct FPOINT
 {
     float x, y;
+
+    /**
+     * \brief   Ctor.
+     */
+    FPOINT() noexcept
+        : x(0.0f),
+          y(0.0f) {
+    }
+
+    /**
+     * \brief   Ctor.
+     *
+     * \param   vec Custom vector.
+     */
+    explicit FPOINT(const Storm::Math::Types::Vector2<double>& vec) noexcept
+        : x(vec.x),
+          y(vec.y) {
+    }
+
+    FPOINT& operator=(const Storm::Math::Types::Vector2<double>& vec) noexcept {
+        x = vec.x;
+        y = vec.y;
+        return *this;
+    }
 };
 
-struct FRECT
-{
+struct FRECT {
+    /**
+     * \brief   Ctor.
+     *
+     * \param   vec Custom vector.
+     */
+    explicit FRECT(const Storm::Math::Types::Vector4<double>& vec) noexcept
+        : x1(vec.x),
+          y1(vec.y),
+          x2(vec.z),
+          y2(vec.w) {
+    }
+
+    /**
+     * \brief   Ctor.
+     */
+    FRECT(float x1, float y1, float x2, float y2) noexcept
+        : x1(x1),
+          y1(y1),
+          x2(x2),
+          y2(y2) {
+    }
+
+    FRECT& operator=(const Storm::Math::Types::Vector4<double>& vec) noexcept {
+        x1 = vec.x;
+        y1 = vec.y;
+        x2 = vec.z;
+        y2 = vec.w;
+        return *this;
+    }
+
+    /**
+     * \brief   Ctor.
+     */
+    FRECT() noexcept
+        : x1(0.0f),
+          y1(0.0f),
+          x2(0.0f),
+          y2(0.0f) {
+    }
+
     union {
         struct
         {

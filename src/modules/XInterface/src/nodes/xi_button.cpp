@@ -2,10 +2,12 @@
 
 #include "string_compare.hpp"
 
+using namespace Storm::Filesystem;
+using namespace Storm::Math;
+
 CXI_BUTTON::CXI_BUTTON()
 {
     m_rs = nullptr;
-    m_sGroupName = nullptr;
     m_idTex = -1;
     m_pTex = nullptr;
 
@@ -137,37 +139,29 @@ void CXI_BUTTON::Draw(bool bSelected, uint32_t Delta_Time)
     }
 }
 
-bool CXI_BUTTON::Init(INIFILE *ini1, const char *name1, INIFILE *ini2, const char *name2, VDX9RENDER *rs,
-                      XYRECT &hostRect, XYPOINT &ScreenSize)
+bool CXI_BUTTON::Init(const Config& node_config, const Config& def_config,
+        VDX9RENDER *rs, XYRECT &hostRect, XYPOINT &ScreenSize)
 {
-    if (!CINODE::Init(ini1, name1, ini2, name2, rs, hostRect, ScreenSize))
-        return false;
-    return true;
+    return CINODE::Init(node_config, def_config, rs, hostRect, ScreenSize);
 }
 
-void CXI_BUTTON::LoadIni(INIFILE *ini1, const char *name1, INIFILE *ini2, const char *name2)
-{
-    char param[255];
-    XYPOINT tmpLPnt;
-
-    // get font number
-    if (ReadIniString(ini1, name1, ini2, name2, "font", param, sizeof(param), ""))
-    {
-        if ((m_nFontNum = m_rs->LoadFont(param)) == -1)
-            core.Trace("can not load font:'%s'", param);
+void CXI_BUTTON::LoadIni(const Config& node_config, const Config& def_config) {
+    std::pair<const Config&, const Config&> configs{node_config, def_config};
+    m_nFontNum = m_rs->LoadFont(Config::GetOrGet<std::string>(configs, "font", {}));
+    if (m_nFontNum == -1) {
+        std::printf("Failed to load font");
     }
+    auto face_color = Config::GetOrGet<Types::Vector4<std::int64_t>>(configs, "faceColor", {255});
+    m_dwFaceColor = ARGB(face_color.x, face_color.y, face_color.z, face_color.w);
 
-    // get face color
-    m_dwFaceColor = GetIniARGB(ini1, name1, ini2, name2, "faceColor", 0xFFFFFFFF);
+    auto light_color = Config::GetOrGet<Types::Vector4<std::int64_t>>(configs, "lightColor", {255});
+    m_dwLightColor = ARGB(light_color.x, light_color.y, light_color.z, light_color.w);
 
-    // selected color (light)
-    m_dwLightColor = GetIniARGB(ini1, name1, ini2, name2, "lightColor", 0xFFFFFFFF);
-
-    // (dark)
-    m_dwDarkColor = GetIniARGB(ini1, name1, ini2, name2, "darkColor", 0xFFFFFFFF);
+    auto dark_color = Config::GetOrGet<Types::Vector4<std::int64_t>>(configs, "darkColor", {255});
+    m_dwDarkColor = ARGB(dark_color.x, dark_color.y, dark_color.z, dark_color.w);
 
     // blinking speed
-    m_fBlindSpeed = GetIniFloat(ini1, name1, ini2, name2, "blindTimeSec", -1.f);
+    m_fBlindSpeed = static_cast<float>(Config::GetOrGet<double>(configs, "blindTimeSec", -1.0));
     if (m_fBlindSpeed <= 0.f)
         m_fBlindSpeed = 1.f;
     else
@@ -175,33 +169,28 @@ void CXI_BUTTON::LoadIni(INIFILE *ini1, const char *name1, INIFILE *ini2, const 
     m_fCurBlind = 1.f;
     m_bUpBlind = false;
 
-    // get disable color
-    m_argbDisableColor = GetIniARGB(ini1, name1, ini2, name2, "disableColor", ARGB(255, 128, 128, 128));
+    auto disable_color = Config::GetOrGet<Types::Vector4<std::int64_t>>(configs, "disableColor", {255, 128, 128, 128});
+    m_argbDisableColor = ARGB(disable_color.x, disable_color.y, disable_color.z, disable_color.w);
 
-    // get shadow color
-    m_dwShadowColor = GetIniARGB(ini1, name1, ini2, name2, "shadowColor", ARGB(255, 0, 0, 0));
+    auto shadow_color = Config::GetOrGet<Types::Vector4<std::int64_t>>(configs, "shadowColor", {255, 0, 0, 0});
+    m_dwShadowColor = ARGB(shadow_color.x, shadow_color.y, shadow_color.z, shadow_color.w);
 
-    // get font color
-    m_dwFontColor = GetIniARGB(ini1, name1, ini2, name2, "fontColor", 0xFFFFFFFF);
+    auto font_color = Config::GetOrGet<Types::Vector4<std::int64_t>>(configs, "fontColor", {255});
+    m_dwFontColor = ARGB(font_color.x, font_color.y, font_color.z, font_color.w);
 
-    // get group name and get texture for this
-    if (ReadIniString(ini1, name1, ini2, name2, "group", param, sizeof(param), ""))
-    {
-        m_idTex = pPictureService->GetTextureID(param);
-        const auto len = strlen(param) + 1;
-        m_sGroupName = new char[len];
-        if (m_sGroupName == nullptr)
-            throw std::runtime_error("allocate memory error");
-        memcpy(m_sGroupName, param, len);
+    m_sGroupName = Config::GetOrGet<std::string>(configs, "group", {});
+    if (!m_sGroupName.empty()) {
+        m_idTex = pPictureService->GetTextureID(m_sGroupName.c_str());
 
-        // get button picture name
-        if (ReadIniString(ini1, name1, ini2, name2, "picture", param, sizeof(param), ""))
-            pPictureService->GetTexturePos(m_sGroupName, param, m_tRect);
-    }
-    else
-    {
-        if (ReadIniString(ini1, name1, ini2, name2, "videoTexture", param, sizeof(param), ""))
-            m_pTex = m_rs->GetVideoTexture(param);
+        auto picture = Config::GetOrGet<std::string>(configs, "picture", {});
+        if (!picture.empty()) {
+            pPictureService->GetTexturePos(m_sGroupName.c_str(), picture.c_str(), m_tRect);
+        }
+    } else {
+        auto video_texture = Config::GetOrGet<std::string>(configs, "videoTexture", {});
+        if (!video_texture.empty()) {
+            m_pTex = m_rs->GetVideoTexture(video_texture.c_str());
+        }
         m_tRect.left = 0.f;
         m_tRect.top = 0.f;
         m_tRect.right = 1.f;
@@ -209,34 +198,34 @@ void CXI_BUTTON::LoadIni(INIFILE *ini1, const char *name1, INIFILE *ini2, const 
     }
 
     // get offset button image in case pressed button
-    tmpLPnt = GetIniLongPoint(ini1, name1, ini2, name2, "pressPictureOffset", XYPOINT(0, 0));
-    fXDeltaPress = static_cast<float>(tmpLPnt.x);
-    fYDeltaPress = static_cast<float>(tmpLPnt.y);
+    auto press_picture_offset = Config::GetOrGet<Types::Vector2<std::int64_t>>(configs, "pressPictureOffset", {});
+    fXDeltaPress = static_cast<float>(press_picture_offset.x);
+    fYDeltaPress = static_cast<float>(press_picture_offset.y);
 
     // get offset button shadow in case pressed button
-    tmpLPnt = GetIniLongPoint(ini1, name1, ini2, name2, "shadowOffset", XYPOINT(0, 0));
-    fXShadow = static_cast<float>(tmpLPnt.x);
-    fYShadow = static_cast<float>(tmpLPnt.y);
+    auto shadow_offset = Config::GetOrGet<Types::Vector2<std::int64_t>>(configs, "shadowOffset", {});
+    fXShadow = static_cast<float>(shadow_offset.x);
+    fYShadow = static_cast<float>(shadow_offset.y);
 
     // get offset button shadow in case not pressed button
-    tmpLPnt = GetIniLongPoint(ini1, name1, ini2, name2, "pressShadowOffset", XYPOINT(0, 0));
-    fXShadowPress = static_cast<float>(tmpLPnt.x);
-    fYShadowPress = static_cast<float>(tmpLPnt.y);
+    auto press_shadow_offset = Config::GetOrGet<Types::Vector2<std::int64_t>>(configs, "pressShadowOffset", {});
+    fXShadowPress = static_cast<float>(press_shadow_offset.x);
+    fYShadowPress = static_cast<float>(press_shadow_offset.y);
 
     // get press delay
-    nMaxDelay = GetIniLong(ini1, name1, ini2, name2, "pressDelay", 20);
+    nMaxDelay = Config::GetOrGet<std::int64_t>(configs, "pressDelay", 20);
 
-    m_dwStrOffset = GetIniLong(ini1, name1, ini2, name2, "strOffset", 0);
+    m_dwStrOffset = Config::GetOrGet<std::int64_t>(configs, "strOffset", 0);
 
-    m_idString = -1;
-    if (ReadIniString(ini1, name1, ini2, name2, "group", param, sizeof(param), ""))
-        m_idString = pStringService->GetStringNum(param);
+    auto group = Config::GetOrGet<std::string>(configs, "group", {});
+    m_idString = group.empty()
+        ? -1
+        : pStringService->GetStringNum(group.c_str());
 }
 
 void CXI_BUTTON::ReleaseAll()
 {
-    PICTURE_TEXTURE_RELEASE(pPictureService, m_sGroupName, m_idTex);
-    STORM_DELETE(m_sGroupName);
+    PICTURE_TEXTURE_RELEASE(pPictureService, m_sGroupName.c_str(), m_idTex);
     FONT_RELEASE(m_rs, m_nFontNum);
     VIDEOTEXTURE_RELEASE(m_rs, m_pTex);
 }
@@ -322,20 +311,17 @@ uint32_t CXI_BUTTON::MessageProc(int32_t msgcode, MESSAGE &message)
         if (len == 1)
             break;
 
-        if (m_sGroupName == nullptr || !storm::iEquals(m_sGroupName, param))
+        if (m_sGroupName.empty() || !storm::iEquals(m_sGroupName, param))
         {
-            PICTURE_TEXTURE_RELEASE(pPictureService, m_sGroupName, m_idTex);
-            STORM_DELETE(m_sGroupName);
+            PICTURE_TEXTURE_RELEASE(pPictureService, m_sGroupName.c_str(), m_idTex);
+            m_sGroupName.clear();
 
-            m_sGroupName = new char[len];
-            if (m_sGroupName == nullptr)
-                throw std::runtime_error("allocate memory error");
-            memcpy(m_sGroupName, param.c_str(), len);
-            m_idTex = pPictureService->GetTextureID(m_sGroupName);
+            m_sGroupName = std::string(param);
+            m_idTex = pPictureService->GetTextureID(m_sGroupName.c_str());
         }
 
         const std::string &param2 = message.String();
-        pPictureService->GetTexturePos(m_sGroupName, param2.c_str(), m_tRect);
+        pPictureService->GetTexturePos(m_sGroupName.c_str(), param2.c_str(), m_tRect);
     }
     break;
     }

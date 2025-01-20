@@ -3,6 +3,11 @@
 #include "core.h"
 #include "shared/messages.h"
 
+#include "Filesystem/Config/Config.hpp"
+#include "Filesystem/Constants/ConfigNames.hpp"
+
+using namespace Storm::Filesystem;
+
 #define ANGLESPEED_MUL 0.2f
 
 BLAST::BLAST()
@@ -32,24 +37,19 @@ bool BLAST::Init()
         return false;
 
     //    int32_t n;
-    auto ini = fio->OpenIniFile("resource\\ini\\particles\\particles.ini");
-    if (!ini)
-    {
-        core.Trace("not found: resource\\ini\\particles\\particles.ini");
+    auto config = Config::Load(Constants::ConfigNames::particles());
+    std::ignore = config.SelectSection("geo");
+
+    const auto RandomNum = config.Get<std::int64_t>("randomnum", 0);
+
+    auto files = config.Get<std::vector<std::string>>("file");
+    if (!files.has_value()) {
         return false;
     }
-
-    const auto RandomNum = ini->GetInt("geo", "randomnum", 0);
-
-    char name[MAX_PATH];
-    if (ini->ReadString("geo", "file", name, sizeof(name), ""))
-    {
-        AddGeometry(name, RandomNum * rand() / RAND_MAX + 1);
-    }
-    while (ini->ReadStringNext("geo", "file", name, sizeof(name)))
-    {
-        AddGeometry(name, RandomNum * rand() / RAND_MAX + 1);
-    }
+    std::ranges::for_each(files.value(),
+                          [&](std::string& file) {
+                              AddGeometry(file.data(), RandomNum * std::rand() / RAND_MAX + 1);
+                          });
 
     Splash = core.GetEntityId("BallSplash");
 

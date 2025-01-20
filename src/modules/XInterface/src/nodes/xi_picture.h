@@ -2,7 +2,6 @@
 
 #include "../inode.h"
 
-class INIFILE;
 class XINTERFACE;
 
 // video
@@ -14,8 +13,8 @@ class CXI_PICTURE : public CINODE
     CXI_PICTURE();
     ~CXI_PICTURE() override;
     void Draw(bool bSelected, uint32_t Delta_Time) override;
-    bool Init(INIFILE *ini1, const char *name1, INIFILE *ini2, const char *name2, VDX9RENDER *rs, XYRECT &hostRect,
-              XYPOINT &ScreenSize) override;
+    bool Init(const Storm::Filesystem::Config& node_config, const Storm::Filesystem::Config& def_config,
+        VDX9RENDER *rs, XYRECT &hostRect, XYPOINT &ScreenSize) override;
     void ReleaseAll() override;
     int CommandExecute(int wActCode) override;
     bool IsClick(int buttonID, int32_t xPos, int32_t yPos) override;
@@ -32,14 +31,14 @@ class CXI_PICTURE : public CINODE
     void SetPictureSize(int32_t &nWidth, int32_t &nHeight);
 
   protected:
-    void LoadIni(INIFILE *ini1, const char *name1, INIFILE *ini2, const char *name2) override;
+    void LoadIni(const Storm::Filesystem::Config& node_config, const Storm::Filesystem::Config& def_config) override;
     void SetNewPicture(bool video, const char *sNewTexName);
     void SetNewPictureFromDir(const char *dirName);
     void SetNewPictureByGroup(const char *groupName, const char *picName);
     void SetNewPictureByPointer(int32_t pTex);
     void ReleasePicture();
 
-    char *m_pcGroupName;
+    std::string m_pcGroupName;
     int32_t m_idTex;
     CVideoTexture *m_pTex;
     XI_ONETEX_VERTEX m_v[4];
