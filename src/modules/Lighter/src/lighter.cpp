@@ -17,6 +17,9 @@
 
 #include "Filesystem/Config/Config.hpp"
 #include "Filesystem/Constants/ConfigNames.hpp"
+
+using namespace Storm::Filesystem;
+
 // ============================================================================================
 // Construction, destruction
 // ============================================================================================
@@ -37,7 +40,7 @@ Lighter::~Lighter()
 bool Lighter::Init()
 {
     // Checking if ini file exists
-    auto config = Storm::Filesystem::Config::Load(Storm::Filesystem::Constants::ConfigNames::loclighter());
+    auto config = Config::Load(Constants::ConfigNames::loclighter());
     std::ignore = config.SelectSection("Main");
     auto isLoading = config.Get<std::int64_t>("loading", 0);
     autoTrace = config.Get<std::int64_t>("autotrace", 0) != 0;

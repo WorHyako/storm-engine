@@ -19,6 +19,9 @@
 #include "Filesystem/Config/Config.hpp"
 #include "Filesystem/Constants/Paths.hpp"
 
+using namespace Storm::Filesystem;
+using namespace Storm::Math;
+
 // Unused animation unload time
 #define ASRV_DOWNTIME 1
 // Longest time span supplied by the AnimationManager
@@ -143,9 +146,9 @@ void AnimationServiceImp::Event(const char *eventName)
 // load animation
 int32_t AnimationServiceImp::LoadAnimation(const char *animationName)
 {
-    std::filesystem::path aniPath{Storm::Filesystem::Constants::Paths::animation() / (std::string(animationName) + ".toml")};
+    std::filesystem::path aniPath{Constants::Paths::animation() / (std::string(animationName) + ".toml")};
     // Open the ini file describing the animation
-    auto config = Storm::Filesystem::Config::Load(aniPath);
+    auto config = Config::Load(aniPath);
     std::ignore = config.SelectSection("Main");
 
     const auto animation_path_opt = config.Get<std::string>("animation");
@@ -160,7 +163,7 @@ int32_t AnimationServiceImp::LoadAnimation(const char *animationName)
         return -1;
     }
 
-    const auto data_vec = config.Get<std::vector<Storm::Math::Types::Vector2<std::string>>>("data", {{}});
+    const auto data_vec = config.Get<std::vector<Types::Vector2<std::string>>>("data", {{}});
     for (const auto& data : data_vec) {
         auto& userData = info->GetUserData();
         userData[data.x] = data.y;
@@ -206,7 +209,7 @@ int32_t AnimationServiceImp::LoadAnimation(const char *animationName)
         }
         aci->SetLoop(is_loop);
 
-        const auto event_vec = config.Get<std::vector<Storm::Math::Types::Vector3<std::string>>>("event", {});
+        const auto event_vec = config.Get<std::vector<Types::Vector3<std::string>>>("event", {});
         for (auto& event : event_vec) {
             ExtAnimationEventType event_type = eae_normal;
             if (event.z == "always")
@@ -226,7 +229,7 @@ int32_t AnimationServiceImp::LoadAnimation(const char *animationName)
 
             aci->AddEvent(event.x.c_str(), event_time, event_type);
         }
-        const auto ani_data_vec = config.Get<std::vector<Storm::Math::Types::Vector2<std::string>>>("data", {});
+        const auto ani_data_vec = config.Get<std::vector<Types::Vector2<std::string>>>("data", {});
         for (const auto& data : ani_data_vec) {
             auto& aciData = aci->GetUserData();
             aciData[data.x] = data.y;

@@ -10,6 +10,8 @@
 #include "Filesystem/Config/Config.hpp"
 #include "Filesystem/Constants/ConfigNames.hpp"
 
+using namespace Storm::Filesystem;
+
 #define DELTA_TIME(x) ((x)*0.001f)
 #define DELTA_TIME_ROTATE(x) ((x)*0.01f)
 
@@ -104,9 +106,9 @@ void MAST::Execute(uint32_t Delta_Time)
     {
         // ====================================================
         // If the ini-file has been changed, read the info from it
-        if (fio->_FileOrDirectoryExists(Storm::Filesystem::Constants::ConfigNames::mast().string().c_str()))
+        if (fio->_FileOrDirectoryExists(Constants::ConfigNames::mast().string().c_str()))
         {
-            auto ft_new = fio->_GetLastWriteTime(Storm::Filesystem::Constants::ConfigNames::mast().string().c_str());
+            auto ft_new = fio->_GetLastWriteTime(Constants::ConfigNames::mast().string().c_str());
             if (ft_old != ft_new)
             {
                 LoadIni();
@@ -424,12 +426,12 @@ void MAST::LoadIni()
     // GUARD(MAST::LoadIni());
     char section[256];
 
-    if (fio->_FileOrDirectoryExists(Storm::Filesystem::Constants::ConfigNames::mast().string().c_str()))
+    if (fio->_FileOrDirectoryExists(Constants::ConfigNames::mast().string().c_str()))
     {
-        ft_old = fio->_GetLastWriteTime(Storm::Filesystem::Constants::ConfigNames::mast().string().c_str());
+        ft_old = fio->_GetLastWriteTime(Constants::ConfigNames::mast().string().c_str());
     }
 
-    auto config = Storm::Filesystem::Config::Load(Storm::Filesystem::Constants::ConfigNames::mast());
+    auto config = Config::Load(Constants::ConfigNames::mast());
     std::ignore = config.SelectSection("MAST");
 
     // step of movement of the mast when lowering one end into the water

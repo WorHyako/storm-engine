@@ -4,6 +4,8 @@
 #include "Filesystem/Constants/ConfigNames.hpp"
 #include "Filesystem/Constants/Paths.hpp"
 
+using namespace Storm::Filesystem;
+
 #include "core.h"
 #include "core_impl.h"
 #include "file_service.h"
@@ -43,7 +45,7 @@ enum CacheMode : int
 
 std::filesystem::path GetCacheFolder()
 {
-    static const std::filesystem::path cache_folder{ Storm::Filesystem::Constants::Paths::script_cache() };
+    static const std::filesystem::path cache_folder{ Constants::Paths::script_cache() };
     return cache_folder;
 }
 constexpr auto kCacheStateFile = "state";
@@ -420,7 +422,7 @@ void COMPILER::SetWarning(const char *data_PTR, ...)
 }
 
 void COMPILER::LoadPreprocess() {
-    auto config = Storm::Filesystem::Config::Load(Storm::Filesystem::Constants::ConfigNames::engine());
+    auto config = Config::Load(Constants::ConfigNames::engine());
     std::ignore = config.SelectSection("script");
     bDebugInfo = config.Get<std::int64_t>("debuginfo", 0) == 0;
     bWriteCodeFile = config.Get<std::int64_t>("codefiles", 0) == 0;

@@ -17,6 +17,8 @@
 #include "Filesystem/Config/Config.hpp"
 #include "Filesystem/Constants/ConfigNames.hpp"
 
+using namespace Storm::Filesystem;
+
 // ============================================================================================
 // Construction, destruction
 // ============================================================================================
@@ -1141,7 +1143,7 @@ int32_t Window::SelPreset()
     {
         if (lastPreset != ins) {
             // Load the name
-            auto config = Storm::Filesystem::Config::Load(Storm::Filesystem::Constants::ConfigNames::loclighter());
+            auto config = Config::Load(Constants::ConfigNames::loclighter());
             std::ignore = config.SelectSection("prs" + std::to_string(ins));
             auto prsComment_str = config.Get<std::string>("comment", "");
             std::ranges::move(prsComment_str, prsComment);
@@ -1160,7 +1162,7 @@ void Window::SavePreset(int32_t prs)
     if (prs < 0)
         return;
     // Checking if able to work
-    auto config = Storm::Filesystem::Config::Load(Storm::Filesystem::Constants::ConfigNames::loclighter());
+    auto config = Config::Load(Constants::ConfigNames::loclighter());
     std::ignore = config.SelectSection("prs" + std::to_string(prs));
 
     for (int32_t i = 0; i < numElements; i++)
@@ -1225,7 +1227,7 @@ void Window::LoadPreset(int32_t prs)
     if (prs < 0)
         return;
     // Checking if able to work
-    auto config = Storm::Filesystem::Config::Load(Storm::Filesystem::Constants::ConfigNames::loclighter());
+    auto config = Config::Load(Constants::ConfigNames::loclighter());
     std::ignore = config.SelectSection("prs" + std::to_string(prs));
 
     for (int32_t i = 0; i < numElements; i++)

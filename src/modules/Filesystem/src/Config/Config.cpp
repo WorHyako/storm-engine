@@ -4,7 +4,7 @@ using namespace Storm::Filesystem;
 using namespace Storm::Math;
 
 Config::Config() noexcept
-    : _section(nullptr) {
+    : _section{nullptr} {
 }
 
 Config Config::Load(const std::filesystem::path &file_path) noexcept {
@@ -19,7 +19,7 @@ Config Config::Load(const std::filesystem::path &file_path) noexcept {
         std::printf("Can't parse config file - %s\n", file_path.string().c_str());
         std::printf("\tError - %s\n\t\t%s\n", err.what(), std::string(err.description()).c_str());
     }
-    return config;
+    return std::move(config);
 }
 
 bool Config::SelectSection(const std::string_view &section_name) noexcept {
@@ -42,7 +42,7 @@ bool Config::Empty() const noexcept {
 std::string Config::Name() const noexcept {
     return Empty()
                ? std::string()
-               : _config.source().path->c_str();
+               : *_config.source().path;
 }
 
 std::vector<std::string> Config::Sections() noexcept {
@@ -180,7 +180,7 @@ std::vector<double> Config::ArrayValue(toml::node *node) const {
     if (node->as_array() == nullptr) {
         return {};
     }
-    std::vector<double> result;
+    std::vector<double> result{};
     result.reserve(std::size(*node->as_array()));
     for (auto &&element: *node->as_array()) {
         toml::impl::wrap_node<double> *value{element.as<double>()};
@@ -198,7 +198,7 @@ std::vector<std::int64_t> Config::ArrayValue(toml::node *node) const {
     if (node->as_array() == nullptr) {
         return {};
     }
-    std::vector<std::int64_t> result;
+    std::vector<std::int64_t> result{};
     result.reserve(std::size(*node->as_array()));
     for (auto &&element: *node->as_array()) {
         toml::impl::wrap_node<std::int64_t> *value{element.as<std::int64_t>()};
@@ -216,7 +216,7 @@ std::vector<std::string> Config::ArrayValue(toml::node *node) const {
     if (node->as_array() == nullptr) {
         return {};
     }
-    std::vector<std::string> result;
+    std::vector<std::string> result{};
     result.reserve(std::size(*node->as_array()));
     for (auto &&element: *node->as_array()) {
         toml::impl::wrap_node<std::string> *value{element.as<std::string>()};
@@ -446,7 +446,6 @@ std::vector<Types::Vector3<std::string> > Config::ArrayVector3Value(toml::node *
 }
 
 template<>
-[[nodiscard]]
 bool Config::Vector2Value(const std::string_view &key, Types::Vector2<double> value) const {
     const auto &&node{Node(key)};
     toml::impl::wrap_node<toml::array> *wrap_node{nullptr};
@@ -468,7 +467,6 @@ bool Config::Vector2Value(const std::string_view &key, Types::Vector2<double> va
 }
 
 template<>
-[[nodiscard]]
 bool Config::Vector2Value(const std::string_view &key, Types::Vector2<std::int64_t> value) const {
     const auto &&node{Node(key)};
     toml::impl::wrap_node<toml::array> *wrap_node{nullptr};
@@ -490,7 +488,6 @@ bool Config::Vector2Value(const std::string_view &key, Types::Vector2<std::int64
 }
 
 template<>
-[[nodiscard]]
 bool Config::Vector2Value(const std::string_view &key, Types::Vector2<std::string> value) const {
     const auto &&node{Node(key)};
     toml::impl::wrap_node<toml::array> *wrap_node{nullptr};
@@ -512,7 +509,6 @@ bool Config::Vector2Value(const std::string_view &key, Types::Vector2<std::strin
 }
 
 template<>
-[[nodiscard]]
 bool Config::Vector3Value(const std::string_view &key, Types::Vector3<double> value) const {
     const auto &&node{Node(key)};
     toml::impl::wrap_node<toml::array> *wrap_node{nullptr};
@@ -535,7 +531,6 @@ bool Config::Vector3Value(const std::string_view &key, Types::Vector3<double> va
 }
 
 template<>
-[[nodiscard]]
 bool Config::Vector3Value(const std::string_view &key, Types::Vector3<std::int64_t> value) const {
     const auto &&node{Node(key)};
     toml::impl::wrap_node<toml::array> *wrap_node{nullptr};
@@ -558,7 +553,6 @@ bool Config::Vector3Value(const std::string_view &key, Types::Vector3<std::int64
 }
 
 template<>
-[[nodiscard]]
 bool Config::Vector3Value(const std::string_view &key, Types::Vector3<std::string> value) const {
     const auto &&node{Node(key)};
     toml::impl::wrap_node<toml::array> *wrap_node{nullptr};
@@ -581,7 +575,6 @@ bool Config::Vector3Value(const std::string_view &key, Types::Vector3<std::strin
 }
 
 template<>
-[[nodiscard]]
 bool Config::Vector4Value(const std::string_view &key, Types::Vector4<double> value) const {
     const auto &&node{Node(key)};
     toml::impl::wrap_node<toml::array> *wrap_node{nullptr};
@@ -605,7 +598,6 @@ bool Config::Vector4Value(const std::string_view &key, Types::Vector4<double> va
 }
 
 template<>
-[[nodiscard]]
 bool Config::Vector4Value(const std::string_view &key, Types::Vector4<std::int64_t> value) const {
     const auto &&node{Node(key)};
     toml::impl::wrap_node<toml::array> *wrap_node{nullptr};
@@ -629,7 +621,6 @@ bool Config::Vector4Value(const std::string_view &key, Types::Vector4<std::int64
 }
 
 template<>
-[[nodiscard]]
 bool Config::Vector4Value(const std::string_view &key, Types::Vector4<std::string> value) const {
     const auto &&node{Node(key)};
     toml::impl::wrap_node<toml::array> *wrap_node{nullptr};

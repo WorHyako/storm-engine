@@ -15,6 +15,7 @@
 #include "Filesystem/Constants/ConfigNames.hpp"
 
 using namespace Storm::Filesystem;
+using namespace Storm::Math;
 
 #define CHECK_FILE_NAME "PiratesReadme.txt"
 
@@ -1229,7 +1230,7 @@ void XINTERFACE::LoadDialog(const char *sFileName) {
     m_strDefHelpTextureFile = node_config.Get<std::string>("DefaultHelp", "");
     m_frectDefHelpTextureUV = FXYRECT(0.f, 0.f, 1.f, 1.f);
 
-    const auto def_help_uv = node_config.Get<Storm::Math::Types::Vector4<std::string>>("DefaultHelpUV");
+    const auto def_help_uv = node_config.Get<Types::Vector4<std::string>>("DefaultHelpUV");
     if (def_help_uv.has_value()) {
         m_frectDefHelpTextureUV.left = std::stof(def_help_uv->x);
         m_frectDefHelpTextureUV.top = std::stof(def_help_uv->y);

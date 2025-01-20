@@ -15,6 +15,9 @@
 
 using storm::Sqr;
 
+using namespace Storm::Filesystem;
+using namespace Storm::Math;
+
 #define HMAP_EMPTY 0
 #define HMAP_START 2.0f
 #define HMAP_NUMBERS (255.0f - HMAP_START)
@@ -377,9 +380,8 @@ void ISLAND::CalcBoxParameters(CVECTOR &_vBoxCenter, CVECTOR &_vBoxSize)
 bool ISLAND::CreateHeightMap(const std::string_view &pDir, const std::string_view &pName)
 {
     TGA_H tga_head;
-    char str_tmp[256];
 
-    std::filesystem::path path = Storm::Filesystem::Constants::Paths::foam() / pDir / pName;
+    std::filesystem::path path = Constants::Paths::foam() / pDir / pName;
     std::string fileName = path.string() + ".tga";
 
     // calc center and size
@@ -411,7 +413,7 @@ bool ISLAND::CreateHeightMap(const std::string_view &pDir, const std::string_vie
         }
     }
 
-    auto config = Storm::Filesystem::Config::Load(path.string() + ".toml");
+    auto config = Config::Load(path.string() + ".toml");
     std::ignore = config.SelectSection("Main");
     if (bLoad)
     {
@@ -429,9 +431,9 @@ bool ISLAND::CreateHeightMap(const std::string_view &pDir, const std::string_vie
         vRealBoxSize /= 2.0f;
 
 
-        auto vbox_center_vec3 = config.Get<Storm::Math::Types::Vector3<double>>("vBoxCenter", {1.0,1.0,1.0});
+        auto vbox_center_vec3 = config.Get<Types::Vector3<double>>("vBoxCenter", {1.0,1.0,1.0});
         CVECTOR vTmpBoxCenter(vbox_center_vec3.x, vbox_center_vec3.y, vbox_center_vec3.z);
-        auto vbox_size_vec3 = config.Get<Storm::Math::Types::Vector3<double>>("vBoxSize", {1.0,1.0,1.0});
+        auto vbox_size_vec3 = config.Get<Types::Vector3<double>>("vBoxSize", {1.0,1.0,1.0});
         CVECTOR vTmpBoxSize(vbox_size_vec3.x, vbox_size_vec3.y, vbox_size_vec3.z);
 
         if (~(vTmpBoxCenter - vBoxCenter) > 0.1f)
@@ -527,8 +529,8 @@ bool ISLAND::CreateHeightMap(const std::string_view &pDir, const std::string_vie
     pDepthMap.clear();
 
     config.Set<std::string>("DepthFile", fileName);
-    config.Set<Storm::Math::Types::Vector3<double>>("vBoxCenter", {vBoxCenter.x, vBoxCenter.y, vBoxCenter.z});
-    config.Set<Storm::Math::Types::Vector3<double>>("vBoxSize", {vBoxSize.x, vBoxSize.y, vBoxSize.z});
+    config.Set<Types::Vector3<double>>("vBoxCenter", {vBoxCenter.x, vBoxCenter.y, vBoxCenter.z});
+    config.Set<Types::Vector3<double>>("vBoxSize", {vBoxSize.x, vBoxSize.y, vBoxSize.z});
 
     return true;
 }

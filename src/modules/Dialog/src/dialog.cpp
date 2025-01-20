@@ -98,7 +98,7 @@ void DIALOG::DlgTextDescribe::ChangeText(const std::string_view text)
 
 void DIALOG::DlgTextDescribe::Init(VDX9RENDER *pRS, D3DVIEWPORT9 &vp)
 {
-    auto config = Storm::Filesystem::Config::Load(Storm::Filesystem::Constants::ConfigNames::dialog());
+    auto config = Config::Load(Constants::ConfigNames::dialog());
     std::ignore = config.SelectSection("DIALOG");
 
     Assert(pRS);
@@ -600,7 +600,7 @@ void DIALOG::InitLinks(VDX9RENDER *pRS, D3DVIEWPORT9 &vp)
     int32_t window_width = vp.Width - 2 * offset.x;
     linkDescribe_.SetWindowWidth(window_width);
 
-    auto config = Storm::Filesystem::Config::Load(Storm::Filesystem::Constants::ConfigNames::dialog());
+    auto config = Config::Load(Constants::ConfigNames::dialog());
     std::ignore = config.SelectSection("DIALOG");
 
     int32_t font_id = pRS->LoadFont(config.Get<std::string>("subfont", "DIALOG3"));

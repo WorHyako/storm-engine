@@ -4,6 +4,12 @@
 #include "core.h"
 #include <storm/config/config.hpp>
 
+#include "Filesystem/Config/Config.hpp"
+#include "Filesystem/Constants/ConfigNames.hpp"
+
+using namespace Storm::Filesystem;
+using namespace Storm::Math;
+
 namespace storm {
 
 std::unique_ptr<VFont> LoadFont(const std::string_view &font_name,
@@ -12,7 +18,6 @@ std::unique_ptr<VFont> LoadFont(const std::string_view &font_name,
                                 IDirect3DDevice9 &device)
 {
     const auto font_name_str = std::string(font_name);
-    const auto ini_file_name_str = std::string(ini_file_name);
 
     const auto opt_config = storm::LoadConfig(ini_file_name);
 
@@ -59,7 +64,7 @@ std::unique_ptr<VFont> LoadFont(const std::string_view &font_name,
     }
     else {
         auto result = std::make_unique<FONT>(renderer, device);
-        if (result->Init(font_name_str.c_str(), ini_file_name_str.c_str())) {
+        if (result->Init(font_name_str.c_str(), std::string(ini_file_name).c_str())) {
             return result;
         }
         else {

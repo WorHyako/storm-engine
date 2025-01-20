@@ -8,6 +8,8 @@
 #include "Filesystem/Config/Config.hpp"
 #include "Filesystem/Constants/ConfigNames.hpp"
 
+using namespace Storm::Filesystem;
+
 SEAFOAM_PS::SEAFOAM_PS() : enableEmit(true)
 {
     ParticleColor = 0xffffffff;
@@ -163,7 +165,7 @@ bool SEAFOAM_PS::Init(const std::string_view& section)
     // if(!gs) return false;
 
 
-    auto config = Storm::Filesystem::Config::Load(Storm::Filesystem::Constants::ConfigNames::particles());
+    auto config = Config::Load(Constants::ConfigNames::particles());
     std::ignore = config.SelectSection(std::string(section));
 
     TexturesNum = 0;
@@ -753,7 +755,7 @@ bool SEAFOAM_PS::BuildTrack(TRACK_EVENT *Track, const std::string_view& section,
 {
     bool is_full_config = true;
 
-    auto config = Storm::Filesystem::Config::Load(Storm::Filesystem::Constants::ConfigNames::particles());
+    auto config = Config::Load(Constants::ConfigNames::particles());
     std::ignore = config.SelectSection(std::string(section));
 
     auto value_time_vec = config.Get<std::vector<std::vector<double>>>(std::string(key), {});

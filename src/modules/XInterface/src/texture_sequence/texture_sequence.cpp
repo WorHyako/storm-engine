@@ -5,6 +5,8 @@
 #include "Filesystem/Config/Config.hpp"
 #include "Filesystem/Constants/ConfigNames.hpp"
 
+using namespace Storm::Filesystem;
+
 #define FILE_PATH "TextureSequence\\%s.tga"
 
 #define TS_VERTEX_FRMT (D3DFVF_XYZRHW | D3DFVF_TEX2 | D3DFVF_TEXTUREFORMAT2)
@@ -60,7 +62,7 @@ IDirect3DTexture9 *TextureSequence::Initialize(VDX9RENDER *pRS, const char *sect
     m_pRS = pRS;
 
     // open ini file
-    auto config = Storm::Filesystem::Config::Load(Storm::Filesystem::Constants::ConfigNames::texture_sequence());
+    auto config = Config::Load(Constants::ConfigNames::texture_sequence());
     std::ignore = config.SelectSection(std::string(section));
 
     m_dwDeltaTime = config.Get<std::int64_t>("timeDelay", 128);

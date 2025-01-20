@@ -8,6 +8,8 @@
 #include "Filesystem/Config/Config.hpp"
 #include "Filesystem/Constants/ConfigNames.hpp"
 
+using namespace Storm::Filesystem;
+
 VANT_BASE::VANT_BASE()
 {
     bUse = false;
@@ -89,9 +91,9 @@ void VANT_BASE::Execute(uint32_t Delta_Time)
     {
         // ====================================================
         // If the ini-file has been changed, read the info from it
-        if (fio->_FileOrDirectoryExists(Storm::Filesystem::Constants::ConfigNames::rigging().string().c_str()))
+        if (fio->_FileOrDirectoryExists(Constants::ConfigNames::rigging().string().c_str()))
         {
-            auto ft_new = fio->_GetLastWriteTime(Storm::Filesystem::Constants::ConfigNames::rigging().string().c_str());
+            auto ft_new = fio->_GetLastWriteTime(Constants::ConfigNames::rigging().string().c_str());
             if (ft_old != ft_new)
             {
                 LoadIni();
@@ -620,12 +622,12 @@ void VANT_BASE::SetAll()
 void VANT::LoadIni()
 {
     // GUARD(VANT::LoadIni());
-    if (fio->_FileOrDirectoryExists(Storm::Filesystem::Constants::ConfigNames::rigging().string().c_str()))
+    if (fio->_FileOrDirectoryExists(Constants::ConfigNames::rigging().string().c_str()))
     {
-        ft_old = fio->_GetLastWriteTime(Storm::Filesystem::Constants::ConfigNames::rigging().string().c_str());
+        ft_old = fio->_GetLastWriteTime(Constants::ConfigNames::rigging().string().c_str());
     }
 
-    auto config = Storm::Filesystem::Config::Load(Storm::Filesystem::Constants::ConfigNames::rigging());
+    auto config = Config::Load(Constants::ConfigNames::rigging());
     std::ignore = config.SelectSection("VANTS");
 
     auto texture_name = config.Get<std::string>("TextureName", "vant.tga");
@@ -690,12 +692,12 @@ void VANTL::LoadIni()
 {
     // GUARD(VANT::LoadIni());
 
-    if (fio->_FileOrDirectoryExists(Storm::Filesystem::Constants::ConfigNames::rigging().string().c_str()))
+    if (fio->_FileOrDirectoryExists(Constants::ConfigNames::rigging().string().c_str()))
     {
-        ft_old = fio->_GetLastWriteTime(Storm::Filesystem::Constants::ConfigNames::rigging().string().c_str());
+        ft_old = fio->_GetLastWriteTime(Constants::ConfigNames::rigging().string().c_str());
     }
 
-    auto config = Storm::Filesystem::Config::Load(Storm::Filesystem::Constants::ConfigNames::rigging());
+    auto config = Config::Load(Constants::ConfigNames::rigging());
     std::ignore = config.SelectSection("VANTS_L");
 
     auto texture_name = config.Get<std::string>("TextureName", "vant.tga");
@@ -759,12 +761,12 @@ void VANTZ::LoadIni()
 {
     // GUARD(VANT::LoadIni());
 
-    if (fio->_FileOrDirectoryExists(Storm::Filesystem::Constants::ConfigNames::rigging().string().c_str()))
+    if (fio->_FileOrDirectoryExists(Constants::ConfigNames::rigging().string().c_str()))
     {
-        ft_old = fio->_GetLastWriteTime(Storm::Filesystem::Constants::ConfigNames::rigging().string().c_str());
+        ft_old = fio->_GetLastWriteTime(Constants::ConfigNames::rigging().string().c_str());
     }
 
-    auto config = Storm::Filesystem::Config::Load(Storm::Filesystem::Constants::ConfigNames::rigging());
+    auto config = Config::Load(Constants::ConfigNames::rigging());
     std::ignore = config.SelectSection("VANTS_Z");
 
     auto texture_name = config.Get<std::string>("TextureName", "vant.tga");

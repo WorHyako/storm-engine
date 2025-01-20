@@ -18,6 +18,8 @@
 #include "math3d/color.h"
 #include "math_inlines.h"
 
+using namespace Storm::Filesystem;
+
 #define DISTANCEFACTOR 1.0f
 #define CHECKFMODERR(expr) ErrorHandler(expr, __FILE__, __LINE__, __func__, #expr)
 
@@ -99,7 +101,7 @@ bool SoundService::Init()
     CHECKFMODERR(system->set3DSettings(1.0, DISTANCEFACTOR, 1.0f));
 
     {
-        auto config = Storm::Filesystem::Config::Load(Storm::Filesystem::Constants::ConfigNames::engine());
+        auto config = Config::Load(Constants::ConfigNames::engine());
         std::ignore = config.SelectSection("sound");
         fadeTimeInSeconds = config.Get<double>("fade_time", 0.5f);
     }
@@ -1045,7 +1047,7 @@ void SoundService::AnalyseNameStringAndAddToAlias(tAlias *_alias, const char *in
 
 void SoundService::LoadAliasFile(const char *_filename)
 {
-    auto config = Storm::Filesystem::Config::Load(Storm::Filesystem::Constants::Paths::aliases() / _filename);
+    auto config = Config::Load(Constants::Paths::aliases() / _filename);
 
     const auto sections = config.Sections();
     for (const auto& section : sections) {
@@ -1068,7 +1070,7 @@ void SoundService::LoadAliasFile(const char *_filename)
 
 void SoundService::InitAliases()
 {
-    const auto vFilenames = fio->_GetPathsOrFilenamesByMask(Storm::Filesystem::Constants::Paths::aliases().string().c_str(), "*.toml", false);
+    const auto vFilenames = fio->_GetPathsOrFilenamesByMask(Constants::Paths::aliases().string().c_str(), "*.toml", false);
     for (std::string curName : vFilenames)
     {
         LoadAliasFile(curName.c_str());
@@ -1448,7 +1450,7 @@ void SoundService::ResetScheme()
 
 //--------------------------------------------------------------------
 bool SoundService::AddScheme(const char *_schemeName) {
-    auto config = Storm::Filesystem::Config::Load(Storm::Filesystem::Constants::ConfigNames::sound_scheme());
+    auto config = Config::Load(Constants::ConfigNames::sound_scheme());
     std::ignore = config.SelectSection(_schemeName);
 
     if (auto ch_vec = config.Get<std::vector<std::vector<std::string>>>("ch", {}); !ch_vec.empty()) {

@@ -16,12 +16,15 @@
 #include "Filesystem/Config/Config.hpp"
 #include "Filesystem/Constants/ConfigNames.hpp"
 
+using namespace Storm::Filesystem;
+using namespace Storm::Math;
+
 #define WIND_SPEED_MAX 12.f
 
 namespace {
     template<typename Type>
-    D3DCOLORVALUE toD3DCOLOR(const Storm::Math::Types::Vector4<Type>& vector) {
-        Storm::Math::Types::Vector4<float> result = vector.template to<float>();
+    D3DCOLORVALUE toD3DCOLOR(const Types::Vector4<Type>& vector) {
+        Types::Vector4<float> result = vector.template to<float>();
         return D3DCOLORVALUE{
             .r = result.x,
             .g = result.y,
@@ -30,8 +33,8 @@ namespace {
     }
 
     template<typename Type>
-    Vector toVector(const Storm::Math::Types::Vector3<Type>& vector) {
-        Storm::Math::Types::Vector3<float> result = vector.template to<float>();
+    Vector toVector(const Types::Vector3<Type>& vector) {
+        Types::Vector3<float> result = vector.template to<float>();
         return Vector(result.x, result.y, result.z);
     }
 }
@@ -238,9 +241,9 @@ void SAIL::Execute(uint32_t Delta_Time)
         int i;
         // ====================================================
         // If the ini-file has been changed, read the info from it
-        if (fio->_FileOrDirectoryExists(Storm::Filesystem::Constants::ConfigNames::rigging().string().c_str()))
+        if (fio->_FileOrDirectoryExists(Constants::ConfigNames::rigging().string().c_str()))
         {
-            auto ft_new = fio->_GetLastWriteTime(Storm::Filesystem::Constants::ConfigNames::rigging().string().c_str());
+            auto ft_new = fio->_GetLastWriteTime(Constants::ConfigNames::rigging().string().c_str());
             if (ft_old != ft_new)
             {
                 const int wind_vector_quantity = WINDVECTOR_QUANTITY;
@@ -1250,21 +1253,21 @@ void SAIL::SetAllSails()
 }
 
 void SAIL::LoadSailIni() {
-    auto config = Storm::Filesystem::Config::Load(Storm::Filesystem::Constants::ConfigNames::rigging());
+    auto config = Config::Load(Constants::ConfigNames::rigging());
     std::ignore = config.SelectSection("SAILS");
 
     g_fSailHoleDepend = config.Get<double>("fHoleDepend", 1.0f);
 
-    const auto diffuse = config.Get<Storm::Math::Types::Vector4<double>>("Diffuse", {});
+    const auto diffuse = config.Get<Types::Vector4<double>>("Diffuse", {});
     mat.Diffuse = toD3DCOLOR(diffuse);
 
-    const auto ambient = config.Get<Storm::Math::Types::Vector4<double>>("Ambient", {});
+    const auto ambient = config.Get<Types::Vector4<double>>("Ambient", {});
     mat.Ambient = toD3DCOLOR(ambient);
 
-    const auto specular = config.Get<Storm::Math::Types::Vector4<double>>("Specular", {});
+    const auto specular = config.Get<Types::Vector4<double>>("Specular", {});
     mat.Specular = toD3DCOLOR(specular);
 
-    const auto emissive = config.Get<Storm::Math::Types::Vector4<double>>("Emissive", {});
+    const auto emissive = config.Get<Types::Vector4<double>>("Emissive", {});
     mat.Emissive = toD3DCOLOR(emissive);
 
     mat.Power = config.Get<double>("Power", 0.5f);
@@ -1309,13 +1312,13 @@ void SAIL::LoadSailIni() {
         SSailRollForm = {0.2, 0.8, 1.0, 0.8, 0.4, 1.0, 1.3, 1.0, 0.4, 0.8, 1.0, 0.8, 0.2};
     }
 
-    auto ts_vec = config.Get<Storm::Math::Types::Vector3<double>>("TriangleWindSpeed", {0.2, 0.6, 0.8});
+    auto ts_vec = config.Get<Types::Vector3<double>>("TriangleWindSpeed", {0.2, 0.6, 0.8});
     ts = toVector(ts_vec);
 
-    auto fs_vec = config.Get<Storm::Math::Types::Vector3<double>>("TrapecidalWindSpeed", {0.4, 0.5, 0.6});
+    auto fs_vec = config.Get<Types::Vector3<double>>("TrapecidalWindSpeed", {0.4, 0.5, 0.6});
     fs = toVector(fs_vec);
 
-    auto ss_vec = config.Get<Storm::Math::Types::Vector3<double>>("SquareWindSpeed", {0.4, 0.5, 0.6});
+    auto ss_vec = config.Get<Types::Vector3<double>>("SquareWindSpeed", {0.4, 0.5, 0.6});
     ss = toVector(ss_vec);
 
     auto TSailRollForm_vec = config.Get<std::vector<double>>("rollSSailForm", {});

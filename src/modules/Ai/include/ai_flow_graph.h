@@ -140,8 +140,7 @@ inline bool AIFlowGraph::Load(const std::string_view& config_path)
     std::ignore = config.SelectSection(sSectionName);
 
     while (true) {
-        const std::string key{"pnt" + std::to_string(std::size(aPoints))};
-        auto array_opt = config.Get<std::vector<std::string>>(key);
+        auto array_opt = config.Get<std::vector<std::string>>("pnt" + std::to_string(std::size(aPoints)));
         if (!array_opt.has_value() || array_opt->empty()) {
             break;
         }

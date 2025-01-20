@@ -9,6 +9,8 @@
 #include "Filesystem/Config/Config.hpp"
 #include "Filesystem/Constants/ConfigNames.hpp"
 
+using namespace Storm::Filesystem;
+
 #include <algorithm>
 
 //#pragma warning (disable : 4244)
@@ -26,7 +28,7 @@ TSeagulls::~TSeagulls()
 
 //--------------------------------------------------------------------
 void TSeagulls::LoadSettings() {
-    auto config = Storm::Filesystem::Config::Load(Storm::Filesystem::Constants::ConfigNames::animals());
+    auto config = Config::Load(Constants::ConfigNames::animals());
     std::ignore = config.SelectSection(ANIMALS_SEAGULLS_SECTION);
     maxRadius = config.Get<double>("radius", SEAGULL_MAX_RADIUS);
     maxAngleSpeed = config.Get<double>("angle", SEAGULL_MAX_SPEED);

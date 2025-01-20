@@ -9,7 +9,6 @@ char ANIMALS_SHARKS_SECTION[] = "sharks";
 const char ANIMALS_FISHSCHOOL_FILENAME[] = "fish01";
 char ANIMALS_FISHSCHOOLS_SECTION[] = "fish schools";
 const char ANIMALS_BUTTERFLY_FILENAME[] = "fish01";
-char ANIMALS_BUTTERFLIES_SECTION[] = "butterflies";
 
 //--------------------------------------------------------------------
 //--------------------------------------------------------------------

@@ -8,6 +8,8 @@
 
 #include "../xdefines.h"
 
+using namespace Storm::Filesystem;
+
 #define HCHOOSER_FVF (D3DFVF_XYZRHW | D3DFVF_TEX1 | D3DFVF_TEXTUREFORMAT2)
 
 struct HCHOOSER_VERTEX
@@ -205,7 +207,7 @@ bool HELPCHOOSER::RunChooser(const char *ChooserGroup)
     if (ChooserGroup == nullptr)
         return false;
 
-    auto config = Storm::Filesystem::Config::Load(Storm::Filesystem::Constants::ConfigNames::helpchooser());
+    auto config = Config::Load(Constants::ConfigNames::helpchooser());
     std::ignore = config.SelectSection(ChooserGroup);
 
     // get the size of the textures

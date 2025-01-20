@@ -6,6 +6,8 @@
 #include "geometry_r.h"
 #include "string_compare.hpp"
 
+using namespace Storm::Filesystem;
+
 IDirect3DVertexDeclaration9 *GEOM_SERVICE_R::vertexDecl_ = nullptr;
 
 char technique[256] = "";
@@ -62,7 +64,7 @@ bool GEOMETRY::Init() {
     }
     GSR.SetRenderService(RenderService);
 
-    auto config = Storm::Filesystem::Config::Load(Storm::Filesystem::Constants::ConfigNames::engine());
+    auto config = Config::Load(Constants::ConfigNames::engine());
     std::ignore = config.SelectSection("Main");
     geoLog = config.Get<std::int64_t>("geometry_log", 0) == 1;
     return true;

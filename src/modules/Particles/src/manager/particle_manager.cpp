@@ -18,6 +18,8 @@
 #include <stdio.h>
 #include <thread>
 
+using namespace Storm::Filesystem;
+
 uint32_t GraphRead = 0;
 
 ParticleManager::ParticleManager(ParticleService *service) : IParticleManager(service)
@@ -110,7 +112,7 @@ bool ParticleManager::OpenProject(const char *FileName)
     auto path = std::filesystem::path() / "resource" / "particles" / FileName;
     path.replace_extension(".prf");
 
-    auto config = Storm::Filesystem::Config::Load(path);
+    auto config = Config::Load(path);
     std::ignore = config.SelectSection("Textures");
 
     SetProjectTexture(config.Get<std::string>("MainTexture", "none").c_str());

@@ -8,6 +8,8 @@
 #include "Filesystem/Config/Config.hpp"
 #include "Filesystem/Constants/ConfigNames.hpp"
 
+using namespace Storm::Filesystem;
+
 extern void sailPrint(VDX9RENDER *rs, const CVECTOR &pos3D, float rad, int32_t line, const char *format, ...);
 
 ROPE::ROPE()
@@ -789,7 +791,7 @@ void ROPE::LoadIni()
 {
     // GUARD(ROPE::LoadIni());
 
-    auto config = Storm::Filesystem::Config::Load(Storm::Filesystem::Constants::ConfigNames::rigging());
+    auto config = Config::Load(Constants::ConfigNames::rigging());
     std::ignore = config.SelectSection("ROPES");
 
     auto texture_name = config.Get<std::string>("TextureName", "sail_rope.tga");

@@ -10,6 +10,8 @@
 #include "Filesystem/Config/Config.hpp"
 #include "Filesystem/Constants/ConfigNames.hpp"
 
+using namespace Storm::Filesystem;
+
 FLAG::FLAG()
 {
     bUse = false;
@@ -90,7 +92,7 @@ void FLAG::Execute(uint32_t Delta_Time)
         DoSTORM_DELETE();
     if (bUse)
     {
-        const std::string config_name{Storm::Filesystem::Constants::ConfigNames::rigging().string()};
+        const std::string config_name{Constants::ConfigNames::rigging().string()};
         // ====================================================
         // If the ini-file has been changed, read the info from it
         if (fio->_FileOrDirectoryExists(config_name.c_str()))
@@ -572,13 +574,13 @@ void FLAG::LoadIni()
 {
     // GUARD(FLAG::LoadIni());
 
-    const std::string config_name {Storm::Filesystem::Constants::ConfigNames::rigging().string()};
+    const std::string config_name {Constants::ConfigNames::rigging().string()};
 
     if (fio->_FileOrDirectoryExists(config_name.c_str()))
     {
         ft_old = fio->_GetLastWriteTime(config_name.c_str());
     }
-    auto config = Storm::Filesystem::Config::Load(config_name.c_str());
+    auto config = Config::Load(config_name.c_str());
     std::ignore = config.SelectSection("FLAGS");
 
     // load texture parameters

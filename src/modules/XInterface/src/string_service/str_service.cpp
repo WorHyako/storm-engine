@@ -11,6 +11,9 @@
 #include "Filesystem/Constants/ConfigNames.hpp"
 #include "Filesystem/Constants/Paths.hpp"
 
+using namespace Storm::Filesystem;
+using namespace Storm::Math;
+
 #define USER_BLOCK_BEGINER '{'
 #define USER_BLOCK_ENDING '}'
 
@@ -169,7 +172,7 @@ void STRSERVICE::SetLanguage(const char *sLanguage)
     m_sLanguageDir = {};
     m_sIniFileName = {};
 
-    auto lang_config = Storm::Filesystem::Config::Load(Storm::Filesystem::Constants::ConfigNames::language());
+    auto lang_config = Config::Load(Constants::ConfigNames::language());
 
     std::ignore = lang_config.SelectSection("DIRECTORY");
     m_sLanguageDir = lang_config.Get<std::string>(m_sLanguage, {});
@@ -185,14 +188,14 @@ void STRSERVICE::SetLanguage(const char *sLanguage)
     if (RenderService) {
         std::ignore = lang_config.SelectSection("FONTS");
         const std::string font_file_name = lang_config.Get<std::string>(m_sLanguage, "fonts.toml").c_str();
-        RenderService->SetFontIniFileName((Storm::Filesystem::Constants::Paths::ini() / font_file_name).string().c_str());
+        RenderService->SetFontIniFileName((Constants::Paths::ini() / font_file_name).string().c_str());
     }
 
-    std::filesystem::path iniDir{Storm::Filesystem::Constants::Paths::texts() / m_sLanguageDir / m_sIniFileName};
-    auto config = Storm::Filesystem::Config::Load(iniDir.replace_extension("toml"));
+    std::filesystem::path iniDir{Constants::Paths::texts() / m_sLanguageDir / m_sIniFileName};
+    auto config = Config::Load(iniDir.replace_extension("toml"));
     std::ignore = config.SelectSection("Main");
 
-    const auto texts = config.Get<std::vector<Storm::Math::Types::Vector2<std::string>>>("string",{});
+    const auto texts = config.Get<std::vector<Types::Vector2<std::string>>>("string",{});
     if (texts.empty()) {
         return;
     }
@@ -305,7 +308,7 @@ void STRSERVICE::SetDialogSourceFile(const char *fileName)
 
 void STRSERVICE::LoadIni()
 {
-    auto config = Storm::Filesystem::Config::Load(Storm::Filesystem::Constants::ConfigNames::language());
+    auto config = Config::Load(Constants::ConfigNames::language());
     std::ignore = config.SelectSection("COMMON");
 
     SetLanguage(config.Get<std::string>("defaultLanguage", {}).c_str());

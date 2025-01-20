@@ -8,6 +8,9 @@
 #include "Filesystem/Config/Config.hpp"
 #include "Filesystem/Constants/Paths.hpp"
 
+using namespace Storm::Filesystem;
+using namespace Storm::Math;
+
 namespace
 {
 
@@ -782,8 +785,8 @@ void CoastFoam::Save()
         return;
 
     const auto location_name = to_string(AttributesPointer->GetAttribute("id"));
-    const auto config_path = Storm::Filesystem::Constants::Paths::locations() / (location_name + ".toml");
-    auto config = Storm::Filesystem::Config::Load(config_path);
+    const auto config_path = Constants::Paths::locations() / (location_name + ".toml");
+    auto config = Config::Load(config_path);
     std::ignore = config.SelectSection("Main");
     /**
      * TODO: recreate config file
@@ -799,10 +802,10 @@ void CoastFoam::Save()
 
         auto&& pF = aFoams[i];
         config.Set<int>("NumParts", pF->aFoamParts.size());
-        config.Set<Storm::Math::Types::Vector2<double>>("Alpha", {pF->fAlphaMin, pF->fAlphaMax});
-        config.Set<Storm::Math::Types::Vector2<double>>("Speed", {pF->fSpeedMin, pF->fSpeedMax});
-        config.Set<Storm::Math::Types::Vector2<double>>("Braking", {pF->fBrakingMin, pF->fBrakingMax});
-        config.Set<Storm::Math::Types::Vector2<double>>("Appear", {pF->fAppearMin, pF->fAppearMax});
+        config.Set<Types::Vector2<double>>("Alpha", {pF->fAlphaMin, pF->fAlphaMax});
+        config.Set<Types::Vector2<double>>("Speed", {pF->fSpeedMin, pF->fSpeedMax});
+        config.Set<Types::Vector2<double>>("Braking", {pF->fBrakingMin, pF->fBrakingMax});
+        config.Set<Types::Vector2<double>>("Appear", {pF->fAppearMin, pF->fAppearMax});
         config.Set<double>("TexScaleX", pF->fTexScaleX);
         config.Set<int>("NumFoams", pF->iNumFoams);
         config.Set<std::string>("Texture", pF->sTexture);
@@ -810,7 +813,7 @@ void CoastFoam::Save()
 
         for (int32_t j = 0; j < pF->aFoamParts.size(); j++) {
             auto *pFP = &pF->aFoamParts[j];
-            config.Set<Storm::Math::Types::Vector4<double>>("key_" + std::to_string(j), {pFP->v[0].x, pFP->v[0].z, pFP->v[1].x, pFP->v[1].z});
+            config.Set<Types::Vector4<double>>("key_" + std::to_string(j), {pFP->v[0].x, pFP->v[0].z, pFP->v[1].x, pFP->v[1].z});
         }
     }
 #ifdef _WIN32 // FIX_LINUX _flushall
@@ -831,8 +834,8 @@ void CoastFoam::clear()
 void CoastFoam::Load()
 {
     const auto location_name = to_string(AttributesPointer->GetAttribute("id"));
-    const auto config_path = Storm::Filesystem::Constants::Paths::locations() / (location_name + ".toml");
-    auto config = Storm::Filesystem::Config::Load(config_path);
+    const auto config_path = Constants::Paths::locations() / (location_name + ".toml");
+    auto config = Config::Load(config_path);
     std::ignore = config.SelectSection("Main");
 
     clear();
@@ -849,19 +852,19 @@ void CoastFoam::Load()
 
         std::ignore = config.SelectSection(std::string("foam_" + std::to_string(i)));
 
-        auto alpha_vec = config.Get<Storm::Math::Types::Vector2<std::int64_t>>("Alpha", {148, 196}).to<float>();
+        auto alpha_vec = config.Get<Types::Vector2<std::int64_t>>("Alpha", {148, 196}).to<float>();
         pF->fAlphaMin = alpha_vec.x;
         pF->fAlphaMax = alpha_vec.y;
 
-        auto speed_vec = config.Get<Storm::Math::Types::Vector2<double>>("Speed", {0.2, 0.3}).to<float>();
+        auto speed_vec = config.Get<Types::Vector2<double>>("Speed", {0.2, 0.3}).to<float>();
         pF->fSpeedMin = speed_vec.x;
         pF->fSpeedMax = speed_vec.y;
 
-        auto braking_vec = config.Get<Storm::Math::Types::Vector2<double>>("Braking", {}).to<float>();
+        auto braking_vec = config.Get<Types::Vector2<double>>("Braking", {}).to<float>();
         pF->fBrakingMin = braking_vec.x;
         pF->fBrakingMax = braking_vec.y;
 
-        auto appear_vec = config.Get<Storm::Math::Types::Vector2<double>>("Appear", {0.0, 0.2}).to<float>();
+        auto appear_vec = config.Get<Types::Vector2<double>>("Appear", {0.0, 0.2}).to<float>();
         pF->fAppearMin = appear_vec.x;
         pF->fAppearMax = appear_vec.y;
 
@@ -876,7 +879,7 @@ void CoastFoam::Load()
         const auto iNumParts = config.Get<std::int64_t>("NumParts", 0);
 
         for (std::int32_t j = 0; j < (iNumParts ? iNumParts : 100000); j++) {
-            const auto vec4 = config.Get<Storm::Math::Types::Vector4<double>>("key_" + std::to_string(j), {}).to<float>();
+            const auto vec4 = config.Get<Types::Vector4<double>>("key_" + std::to_string(j), {}).to<float>();
 
             FoamPart foam{};
             foam.v[0] = CVECTOR(vec4.x, 0.0f, vec4.y),

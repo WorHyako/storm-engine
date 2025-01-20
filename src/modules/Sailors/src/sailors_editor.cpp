@@ -7,6 +7,8 @@
 #include "Filesystem/Config/Config.hpp"
 #include "Filesystem/Constants/ConfigNames.hpp"
 
+using namespace Storm::Filesystem;
+
 SailorsEditor::SailorsEditor()
     : rs(nullptr), sailors(0), shipID(0), pointID(0), model(nullptr)
 {
@@ -148,7 +150,7 @@ void SailorsEditor::SetCamera(uint32_t &dltTime)
 }
 
 void SailorsEditor::LoadFromIni() {
-    auto config = Storm::Filesystem::Config::Load(Storm::Filesystem::Constants::ConfigNames::sailors_editor());
+    auto config = Config::Load(Constants::ConfigNames::sailors_editor());
     std::ignore = config.SelectSection("PATH");
 
     _shipName = config.Get<std::string>("ship", {});

@@ -16,6 +16,7 @@
 
 #include <imgui.h>
 
+using namespace Storm::Filesystem;
 using storm::Sqr;
 
 //#define OLD_WORLD_POS
@@ -193,7 +194,7 @@ bool SEA::Init()
     rs = static_cast<VDX9RENDER *>(core.GetService("dx9render"));
     CreateVertexDeclaration();
     {
-        auto config = Storm::Filesystem::Config::Load(Storm::Filesystem::Constants::ConfigNames::engine());
+        auto config = Config::Load(Constants::ConfigNames::engine());
         std::ignore = config.SelectSection("sea");
         bIniFoamEnable = config.Get<std::int64_t>("FoamEnable", 1) != 0;
     }

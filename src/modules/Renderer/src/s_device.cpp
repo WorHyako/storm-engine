@@ -21,6 +21,8 @@
 #include <algorithm>
 #include <imgui_impl_sdl2.h>
 
+using namespace Storm::Filesystem;
+
 #ifdef _WIN32
 /**
  * TODO: hide for a while
@@ -482,9 +484,9 @@ bool DX9RENDER::Init() {
     d3d = nullptr;
     d3d9 = nullptr;
 
-    std::filesystem::create_directories(Storm::Filesystem::Constants::Paths::screenshots());
+    std::filesystem::create_directories(Constants::Paths::screenshots());
 
-    auto config = Storm::Filesystem::Config::Load(Storm::Filesystem::Constants::ConfigNames::engine());
+    auto config = Config::Load(Constants::ConfigNames::engine());
     std::ignore = config.SelectSection("Main");
 
     // bPostProcessEnabled = ini->GetInt(0, "PostProcess", 0) == 1;
@@ -573,13 +575,13 @@ bool DX9RENDER::Init() {
 
     std::ignore = config.SelectSection("ProgressImage");
     // Progress image parameters
-    progressFramesPosX = config.Get<double>("RelativePosX", 0.85f);
-    progressFramesPosY = config.Get<double>("RelativePosY", 0.8f);
+    progressFramesPosX = config.Get<double>("RelativePosX", 0.85);
+    progressFramesPosY = config.Get<double>("RelativePosY", 0.8);
 
-    progressFramesWidth = config.Get<double>("RelativeWidth", 0.0625f);
+    progressFramesWidth = config.Get<double>("RelativeWidth", 0.0625);
     progressFramesWidth = std::clamp(progressFramesWidth, 0.0f, 10.0f);
 
-    progressFramesHeight = config.Get<double>("RelativeHeight", 0.0625f);
+    progressFramesHeight = config.Get<double>("RelativeHeight", 0.0625);
     progressFramesHeight = std::clamp(progressFramesHeight, 0.0f, 10.0f);
 
     progressFramesCountX = config.Get<std::int64_t>("HorisontalFramesCount", 8);
@@ -2914,18 +2916,13 @@ int32_t DX9RENDER::ExtPrint(int32_t nFontNum, uint32_t foreColor, uint32_t backC
     // UNGUARD
 }
 
-int32_t DX9RENDER::LoadFont(const std::string_view &fontName)
-{
-    const auto sDup = std::string(fontName);
-
+int32_t DX9RENDER::LoadFont(const std::string_view &fontName) {
     const uint32_t hashVal = MakeHashValue(fontName);
-
-    int32_t i;
 
     auto existing_font = std::find_if(std::begin(FontList), std::end(FontList), [&] (FONTEntity &font) {
         return font.hash == hashVal && storm::iEquals(font.name, fontName);
     });
-     if (existing_font != std::end(FontList))
+    if (existing_font != std::end(FontList))
     {
         if (existing_font->ref > 0)
             existing_font->ref++;
@@ -2936,24 +2933,23 @@ int32_t DX9RENDER::LoadFont(const std::string_view &fontName)
         }
         return std::distance(std::begin(FontList), existing_font);
     }
-    else {
-        if (FontList.size() >= MAX_FONTS) {
-            throw std::runtime_error("maximal font quantity exceeded");
-        }
 
-        auto font = storm::LoadFont(fontName, fontIniFileName, *this, *d3d9);
-        if (font == nullptr) {
-            core.Trace("Can't load font %s", sDup.c_str());
-            return -1L;
-        }
-        FontList.emplace_back(FONTEntity{
-            sDup,
-            hashVal,
-            std::move(font),
-            1,
-        });
-        return FontList.size() - 1;
+    if (FontList.size() >= MAX_FONTS) {
+        throw std::runtime_error("maximal font quantity exceeded");
     }
+
+    auto font = storm::LoadFont(fontName, fontIniFileName, *this, *d3d9);
+    if (font == nullptr) {
+        core.Trace("Can't load font %s", std::string(fontName).c_str());
+        return -1L;
+    }
+    FontList.emplace_back(FONTEntity{
+        std::string(fontName),
+        hashVal,
+        std::move(font),
+        1,
+    });
+    return FontList.size() - 1;
 }
 
 bool DX9RENDER::UnloadFont(const char *fontName)

@@ -16,6 +16,8 @@
 #include "Filesystem/Config/Config.hpp"
 #include "Filesystem/Constants/ConfigNames.hpp"
 
+using namespace Storm::Filesystem;
+
 // ============================================================================================
 // Construction, destruction
 // ============================================================================================
@@ -58,7 +60,7 @@ bool Lights::Init()
         throw std::runtime_error("No service: dx9render");
     collide = static_cast<COLLIDE *>(core.GetService("COLL"));
     // read the parameters
-    auto config = Storm::Filesystem::Config::Load(Storm::Filesystem::Constants::ConfigNames::lights());
+    auto config = Config::Load(Constants::ConfigNames::lights());
 
     const auto sections = config.Sections();
 
@@ -544,7 +546,7 @@ void Lights::PrintDebugInfo()
 }
 
 void Lights::fill_light_by_config(LightType& light) const {
-    auto config = Storm::Filesystem::Config::Load(Storm::Filesystem::Constants::ConfigNames::lights());
+    auto config = Config::Load(Constants::ConfigNames::lights());
     std::ignore = config.SelectSection(light.name);
 
     light.color.r = config.Get<double>("r", 1.0f);

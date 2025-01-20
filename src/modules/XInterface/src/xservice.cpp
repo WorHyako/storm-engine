@@ -6,6 +6,8 @@
 #include "Filesystem/Config/Config.hpp"
 #include "Filesystem/Constants/ConfigNames.hpp"
 
+using namespace Storm::Filesystem;
+
 #define ERROR_MUL 1.0f
 
 XSERVICE::XSERVICE()
@@ -182,7 +184,7 @@ void XSERVICE::GetTextureCutForSize(const char *pcImageListName, const FXYPOINT 
 }
 
 void XSERVICE::LoadAllPicturesInfo() {
-    auto config = Storm::Filesystem::Config::Load(Storm::Filesystem::Constants::ConfigNames::pictures());
+    auto config = Config::Load(Constants::ConfigNames::pictures());
     const auto sections = config.Sections();
 
     m_pList.reserve(std::size(sections));

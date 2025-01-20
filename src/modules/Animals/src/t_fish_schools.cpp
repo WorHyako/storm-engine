@@ -8,6 +8,8 @@
 #include "Filesystem/Config/Config.hpp"
 #include "Filesystem/Constants/ConfigNames.hpp"
 
+using namespace Storm::Filesystem;
+
 //--------------------------------------------------------------------
 TFishSchools::TFishSchools() : enabled(false)
 {
@@ -28,7 +30,7 @@ TFishSchools::~TFishSchools()
 
 //--------------------------------------------------------------------
 void TFishSchools::LoadSettings() {
-    auto config = Storm::Filesystem::Config::Load(Storm::Filesystem::Constants::ConfigNames::animals());
+    auto config = Config::Load(Constants::ConfigNames::animals());
     std::ignore = config.SelectSection(ANIMALS_FISHSCHOOLS_SECTION);
     fishSchoolsCount = config.Get<std::int64_t>("count", FISHSCHOOL_COUNT);
     maxDistance = config.Get<double>("distance", FISHSCHOOL_DISTANCE);

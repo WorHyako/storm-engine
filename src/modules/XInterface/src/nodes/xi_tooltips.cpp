@@ -4,6 +4,7 @@
 
 #include "Filesystem/Config/Config.hpp"
 
+using namespace Storm::Filesystem;
 using namespace Storm::Math;
 
 CXI_ToolTip::CXI_ToolTip(VXSERVICE *pPicService, VSTRSERVICE *pStrService, XYPOINT &pntScrSize)
@@ -119,7 +120,7 @@ void CXI_ToolTip::SetByFormatString(XYRECT &rectOwner, const std::string& pDefIn
 
     if (pDefIni.empty())
     {
-        auto config = Storm::Filesystem::Config::Load(pDefIni);
+        auto config = Config::Load(pDefIni);
         std::ignore = config.SelectSection(pcToolTipType);
 
         auto font_id = config.Get<std::string>("font_id", {});

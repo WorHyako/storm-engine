@@ -113,7 +113,10 @@
 #include "xinterface.h"
 
 #include <steam_api_script_lib.hpp>
-#include <Filesystem/Config/Config.hpp>
+
+#include "Filesystem/Config/Config.hpp"
+
+using namespace Storm::Filesystem;
 
 namespace
 {
@@ -431,7 +434,7 @@ int main(int argc, char *argv[])
         /**
          * TODO: load config for ALL classes in some place of Engine module once
          */
-        auto config =  Storm::Filesystem::Config::Load(Storm::Filesystem::Constants::ConfigNames::engine());
+        auto config =  Config::Load(Constants::ConfigNames::engine());
         std::ignore = config.SelectSection("Main");
         dwMaxFPS = config.Get<std::int64_t>("max_fps", 0);
         bDebugWindow = config.Get<std::int64_t>("DebugWindow", 0) == 1;

@@ -6,6 +6,8 @@
 #include "Filesystem/Config/Config.hpp"
 #include "Filesystem/Constants/ConfigNames.hpp"
 
+using namespace Storm::Filesystem;
+
 #define ANGLESPEED_MUL 0.2f
 
 BLAST::BLAST()
@@ -35,7 +37,7 @@ bool BLAST::Init()
         return false;
 
     //    int32_t n;
-    auto config = Storm::Filesystem::Config::Load(Storm::Filesystem::Constants::ConfigNames::particles());
+    auto config = Config::Load(Constants::ConfigNames::particles());
     std::ignore = config.SelectSection("geo");
 
     const auto RandomNum = config.Get<std::int64_t>("randomnum", 0);

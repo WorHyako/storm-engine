@@ -1,12 +1,12 @@
 #include "t_butterflies.h"
 
-
 #include "core.h"
 #include "shared/messages.h"
 
 #include "Filesystem/Config/Config.hpp"
 #include "Filesystem/Constants/ConfigNames.hpp"
-#include "Filesystem/Constants/ConfigSections.hpp"
+
+using namespace Storm::Filesystem;
 
 #pragma warning(disable : 4244)
 
@@ -25,8 +25,8 @@ TButterflies::~TButterflies()
 
 //--------------------------------------------------------------------
 void TButterflies::LoadSettings() {
-    auto config = Storm::Filesystem::Config::Load(Storm::Filesystem::Constants::ConfigNames::animals());
-    std::ignore = config.SelectSection(ANIMALS_BUTTERFLIES_SECTION);
+    auto config = Config::Load(Constants::ConfigNames::animals());
+    std::ignore = config.SelectSection("butterflies");
     butterfliesCount = config.Get<std::int64_t>("count", BUTTERFLY_COUNT);
     maxDistance = config.Get<std::int64_t>("distance", BUTTERFLY_DISTANCE);
     // DEBUG!
