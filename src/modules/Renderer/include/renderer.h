@@ -416,6 +416,7 @@ public:
     std::int32_t Release(IUnknown* pSurface) override;
 
     // Vertex/Index Buffers Section
+    RHI::BufferHandle CreateVertexBuffer(std::size_t vertexBufferSize, RHI::MemoryPropertiesBits memoryProperties = RHI::MemoryPropertiesBits::DEVICE_LOCAL_BIT);
     RHI::BufferHandle CreateVertexBufferAndUpload(std::size_t vertexBufferSize, const void* pVertexData);
 
     // D3D Textures/Surfaces Section
@@ -446,8 +447,8 @@ public:
     // D3D Render Target/Begin/End/Clear
     std::int32_t GetRenderTarget(RHI::TextureHandle pRenderTarget) override;
     std::int32_t SetRenderTarget(RHI::TextureHandle pRenderTarget, RHI::TextureHandle pNewZStencil) override;
-    std::int32_t Clear(std::uint32_t Count, const D3DRECT* pRects, std::uint32_t Flags, Color Color, float Z,
-        std::uint32_t Stencil) override;
+    std::int32_t Clear(std::vector<RHI::TextureHandle> colorAttachments, RHI::TextureHandle depthAttachment, const std::vector<RHI::Rect> pRects,
+        Color Color, float Depth, std::uint32_t Stencil) override;
 
     std::int32_t ImageBlt(const char* pName, Rect* pDstRect, Rect* pSrcRect);
     std::int32_t ImageBlt(std::int32_t nTextureId, Rect* pDstRect, Rect* pSrcRect) override;
@@ -636,6 +637,8 @@ private:
     QuadVertex PostProcessQuad[4];
     QuadVertex SeaEffectQuadVertices[32 * 32];
     std::uint16_t SeaEffectQuadIndices[31 * 31 * 2 * 3];
+    RHI::BufferHandle SeaEffectQuadVertexBuffer;
+    RHI::BufferHandle SeaEffectQuadIndexBuffer;
 
     float fSmallWidth;
     float fSmallHeight;
@@ -652,6 +655,8 @@ private:
 
     RHI::BufferHandle CreateRenderQuad(float fWidth, float fHeight, float fSrcWidth, float fSrcHeight, float fMulU = 1.0f,
         float fMulV = 1.0f);
+
+    void ClearDepthTexture(RHI::TextureHandle texture);
 
     void ClearPostProcessTexture(RHI::TextureHandle texture);
     void BlurGlowTexture();
@@ -720,6 +725,8 @@ private:
     RHI::IRHIModule* m_RhiModule;
     RHI::IDynamicRHI* m_DynamicRHI;
 
+    RHI::FramebufferHandle m_CurrentFramebuffer;
+
     RHI::Viewport viewport;
     RHI::RenderState renderState;
     AlphaTestState defaultAlphaTest = {};
@@ -734,10 +741,10 @@ private:
     std::uint32_t textureFactorColor = 0;
 
     void MakeVertexBindings(RHI::BufferHandle vertexBuffer, const VertexFVFBits vertexBindingsFormat, std::vector<RHI::VertexBufferBinding>& vertexBufferBindings);
-    void CreateInputLayout(const VertexFVFBits vertexBindingsFormat, RHI::IInputLayout* inputLayout);
+    void CreateInputLayout(const VertexFVFBits vertexBindingsFormat, RHI::InputLayoutHandle inputLayout);
     void CreateGraphicsPipeline(RHI::ShaderHandle vertexShader, RHI::ShaderHandle pixelShader,
-        RHI::IInputLayout* inputLayout, RHI::IBindingLayout* bindingLayout,
+        RHI::InputLayoutHandle inputLayout, RHI::BindingLayoutHandle bindingLayout,
         RHI::FramebufferHandle framebuffer, RHI::GraphicsPipelineHandle pipeline);
     RHI::GraphicsState CreateGraphicsState(RHI::GraphicsPipelineHandle pipeline, RHI::FramebufferHandle framebuffer,
-        RHI::IBindingSet* bindingSet, RHI::BufferHandle vertexBuffer = nullptr, RHI::BufferHandle indexBuffer = nullptr);
+        RHI::BindingSetHandle bindingSet, RHI::BufferHandle vertexBuffer = nullptr, RHI::BufferHandle indexBuffer = nullptr);
 };

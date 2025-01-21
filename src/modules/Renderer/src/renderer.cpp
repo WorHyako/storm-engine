@@ -628,9 +628,19 @@ bool RENDER::ReleaseDevice()
 //################################################################################
 bool RENDER::Clear(ClearBits type)
 {
-    if (CHECKERR(d3d9->Clear(0L, NULL, type, dwBackColor, 1.0f, 0L)) == true)
-        return false;
-    // if(CHECKERR(d3d9->Clear(0L, NULL, type, 0x0, 1.0f, 0L))==true)    return false;
+    if(m_CurrentFramebuffer.get())
+    {
+        RHI::Rect rect{};
+        rect.minX = 0;
+        rect.maxX = static_cast<float>(m_CurrentFramebuffer->framebufferWidth);
+        rect.minY = 0;
+        rect.maxY = static_cast<float>(m_CurrentFramebuffer->framebufferHeight);
+        commandList->clearAttachments(
+            type == ClearBits::Color ? m_CurrentFramebuffer->getDesc().colorAttachments : nullptr,
+            (type == ClearBits::Depth || type == ClearBits::Stencil) ? m_CurrentFramebuffer->getDesc().depthAttachment : nullptr,
+            { rect });
+    }
+
     return true;
 }
 
@@ -826,13 +836,18 @@ void RENDER::CopyPostProcessToScreen()
     if (bSeaEffect)
     {
         vertexFormat = POST_PROCESS_FVF;
-        DrawIndexedPrimitiveUP(RHI::PrimitiveType::TriangleList, 0, 32 * 32, 31 * 31 * 2, SeaEffectQuadIndices, RHI::Format::R16_UINT, SeaEffectQuadVertices, sizeof(QuadVertex),
+        DrawIndexedPrimitive(RHI::PrimitiveType::TriangleList, 0, 32 * 32, 31 * 31 * 2, SeaEffectQuadIndices, RHI::Format::R16_UINT, SeaEffectQuadVertices, sizeof(QuadVertex),
             "PostProcess");
     }
     else
     {
         DrawPrimitive(RHI::PrimitiveType::TriangleStrip, POST_PROCESS_FVF, 4, 1, 0, postProcessQuadBuffer, sizeof(QuadVertex), "PostProcess");
     }
+}
+
+void RENDER::ClearDepthTexture(RHI::TextureHandle texture)
+{
+    commandList->clearDepthTexture(texture.get(), RHI::TextureSubresourse(), 0.0f, 0x00);
 }
 
 void RENDER::ClearPostProcessTexture(RHI::TextureHandle texture)
@@ -949,9 +964,9 @@ bool RENDER::EndScene()
     if (bMakeShoot)
         MakeScreenShot();
 
-    const HRESULT hRes = d3d9->Present(nullptr, nullptr, nullptr, nullptr);
+    const bool bPresent = m_DynamicRHI->Present();
 
-    if (hRes == D3DERR_DEVICELOST)
+    if (!bPresent)
     {
         LostRender();
     }
@@ -1759,7 +1774,7 @@ std::int32_t RENDER::CreateIndexBuffer(std::size_t size, std::uint32_t usage)
 
 //################################################################################
 
-void RENDER::CreateInputLayout(const VertexFVFBits vertexBindingsFormat, RHI::IInputLayout* inputLayout)
+void RENDER::CreateInputLayout(const VertexFVFBits vertexBindingsFormat, RHI::InputLayoutHandle inputLayout)
 {
     std::uint32_t attributeOffset = 0;
     std::uint32_t location = 0;
@@ -1837,7 +1852,7 @@ void RENDER::MakeVertexBindings(RHI::BufferHandle vertexBuffer, const VertexFVFB
 }
 
 void RENDER::CreateGraphicsPipeline(RHI::ShaderHandle vertexShader, RHI::ShaderHandle pixelShader,
-    RHI::IInputLayout* inputLayout, RHI::IBindingLayout* bindingLayout,
+    RHI::InputLayoutHandle inputLayout, RHI::BindingLayoutHandle bindingLayout,
     RHI::FramebufferHandle framebuffer, RHI::GraphicsPipelineHandle pipeline)
 {
     RHI::GraphicsPipelineDesc pipelineDesc;
@@ -1852,7 +1867,7 @@ void RENDER::CreateGraphicsPipeline(RHI::ShaderHandle vertexShader, RHI::ShaderH
 }
 
 RHI::GraphicsState RENDER::CreateGraphicsState(RHI::GraphicsPipelineHandle pipeline, RHI::FramebufferHandle framebuffer,
-    RHI::IBindingSet* bindingSet, RHI::BufferHandle vertexBuffer, RHI::BufferHandle indexBuffer)
+    RHI::BindingSetHandle bindingSet, RHI::BufferHandle vertexBuffer, RHI::BufferHandle indexBuffer)
 {
     RHI::GraphicsState state{};
     // Pick the right binding set for this view.
@@ -2873,8 +2888,10 @@ void RENDER::MakeScreenShot()
         screenshot_path.replace_filename(screenshot_base_filename + "_" + std::to_string(i));
         screenshot_path.replace_extension(screenshotExt);
     }
+
+    // TODO: replace saving surface to file
 #ifdef _WIN32 // Screenshot
-    D3DXSaveSurfaceToFile(screenshot_path.c_str(), screenshotFormat, surface, nullptr, nullptr);
+    //D3DXSaveSurfaceToFile(screenshot_path.c_str(), screenshotFormat, surface, nullptr, nullptr);
 #endif
 }
 
@@ -3191,6 +3208,19 @@ void RENDER::DrawLines2D(RS_LINE2D* pRSL2D, std::size_t dwLinesNum, const char* 
 }
 
 //-----------------------
+RHI::BufferHandle RENDER::CreateVertexBuffer(std::size_t vertexBufferSize, RHI::MemoryPropertiesBits memoryProperties)
+{
+    RHI::BufferDesc vertexBufferDesc = {};
+    vertexBufferDesc
+        .setSize(vertexBufferSize)
+        .setIsVertexBuffer(true)
+        .setIsTransferDst(true)
+        .setMemoryProperties(memoryProperties);
+    RHI::BufferHandle vertexBuffer{ device->createBuffer(vertexBufferDesc) };
+
+    return vertexBuffer;
+}
+
 RHI::BufferHandle RENDER::CreateVertexBufferAndUpload(std::size_t vertexBufferSize, const void* pVertexData)
 {
     RHI::BufferDesc vertexBufferDesc = {};
@@ -3232,7 +3262,7 @@ std::int32_t RENDER::GetDepthStencilSurface(RHI::TextureHandle pZStencilSurface)
 std::int32_t RENDER::GetCubeMapSurface(RHI::TextureHandle pCubeTexture, CubemapFaces FaceType, std::uint32_t Level,
     RHI::TextureHandle pCubeMapSurface)
 {
-    return ppCubeTexture->GetCubeMapSurface(FaceType, Level, ppCubeMapSurface);
+    return pCubeTexture->GetCubeMapSurface(FaceType, Level, pCubeMapSurface);
 }
 
 std::int32_t RENDER::SetRenderTarget(RHI::TextureHandle pRenderTarget, RHI::TextureHandle pNewZStencil)
@@ -3242,10 +3272,13 @@ std::int32_t RENDER::SetRenderTarget(RHI::TextureHandle pRenderTarget, RHI::Text
     return 0;
 }
 
-std::int32_t RENDER::Clear(std::uint32_t Count, const D3DRECT* pRects, std::uint32_t Flags, Color Color, float Z,
-    std::uint32_t Stencil)
+std::int32_t RENDER::Clear(std::vector<RHI::TextureHandle> colorAttachments, RHI::TextureHandle depthAttachment, const std::vector<RHI::Rect> pRects,
+    Color Color, float Depth, std::uint32_t Stencil)
 {
-    return CHECKERR(d3d9->Clear(Count, pRects, Flags, Color, Z, Stencil));
+
+
+    commandList->clearAttachments(colorAttachments.data(), depthAttachment.get(), pRects);
+    return 0;
 }
 
 std::int32_t RENDER::CreateTexture(std::uint32_t Width, std::uint32_t Height, std::uint32_t Levels, std::uint32_t Usage, RHI::Format Format, RHI::MemoryPropertiesBits Pool,
@@ -3876,7 +3909,7 @@ void RENDER::ProgressView()
     DrawPrimitive(RHI::PrimitiveType::TriangleStrip, VertexFVFBits::XYZ | VertexFVFBits::Color | VertexFVFBits::UV1, 4, 1, 0, v, sizeof(v[0]),
         "ProgressTech");
     EndScene();
-    d3d9->Present(nullptr, nullptr, nullptr, nullptr);
+    m_DynamicRHI->Present();
     BeginScene();
     // Next frame
     loadFrame++;
