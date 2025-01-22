@@ -1773,6 +1773,10 @@ std::int32_t RENDER::CreateIndexBuffer(std::size_t size, std::uint32_t usage)
 }
 
 //################################################################################
+RHI::FramebufferHandle RENDER::GetCurrentFramebuffer() const
+{
+    return m_DynamicRHI->GetFramebuffer(m_DynamicRHI->GetCurrentBackBufferIndex());
+}
 
 void RENDER::CreateInputLayout(const VertexFVFBits vertexBindingsFormat, RHI::InputLayoutHandle inputLayout)
 {
@@ -1827,6 +1831,27 @@ void RENDER::CreateInputLayout(const VertexFVFBits vertexBindingsFormat, RHI::In
     inputLayout = device->createInputLayout(attributes.data(), bindings);
 }
 
+void RENDER::CreateBindingLayout(std::vector<RHI::TextureAttachment> texturesAttachments, std::vector<RHI::BufferAttachment> bufferAttachments,
+    std::vector<RHI::TextureArrayAttachment> textureArrayAttachments, RHI::BindingLayoutHandle bindingLayout)
+{
+    RHI::DescriptorSetInfo bindingSetInfo{};
+    bindingSetInfo.textures = texturesAttachments;
+    bindingSetInfo.buffers = bufferAttachments;
+    bindingSetInfo.textureArrays = textureArrayAttachments;
+
+    device->createDescriptorSetLayout(bindingSetInfo);
+}
+
+void RENDER::CreateBindingLayout(const RHI::DescriptorSetInfo& dsInfo, RHI::BindingLayoutHandle bindingLayout)
+{
+    bindingLayout = device->createDescriptorSetLayout(dsInfo);
+}
+
+void RENDER::CreateBindingSet(RHI::DescriptorSetInfo& dsInfo, std::uint32_t dsCount, RHI::BindingLayoutHandle bindingLayout, RHI::BindingSetHandle bindingSet)
+{
+	bindingSet = device->createDescriptorSet(dsInfo, dsCount, bindingLayout.get());
+}
+
 void RENDER::MakeVertexBindings(RHI::BufferHandle vertexBuffer, const VertexFVFBits vertexBindingsFormat, std::vector<RHI::VertexBufferBinding>& vertexBufferBindings)
 {
     std::uint32_t bindingSlotIndex = 0;
@@ -1853,7 +1878,8 @@ void RENDER::MakeVertexBindings(RHI::BufferHandle vertexBuffer, const VertexFVFB
 
 void RENDER::CreateGraphicsPipeline(RHI::ShaderHandle vertexShader, RHI::ShaderHandle pixelShader,
     RHI::InputLayoutHandle inputLayout, RHI::BindingLayoutHandle bindingLayout,
-    RHI::FramebufferHandle framebuffer, RHI::GraphicsPipelineHandle pipeline)
+    const RHI::RenderState& renderState, RHI::FramebufferHandle framebuffer,
+    RHI::GraphicsPipelineHandle pipeline)
 {
     RHI::GraphicsPipelineDesc pipelineDesc;
     pipelineDesc.VS = vertexShader;
@@ -1861,7 +1887,7 @@ void RENDER::CreateGraphicsPipeline(RHI::ShaderHandle vertexShader, RHI::ShaderH
     pipelineDesc.inputLayout = inputLayout;
     pipelineDesc.bindingLayouts = { bindingLayout };
     pipelineDesc.primType = RHI::PrimitiveType::TriangleList;
-    pipelineDesc.renderState.depthStencilState.depthTestEnable = true;
+    pipelineDesc.renderState = renderState;
 
     pipeline = device->createGraphicsPipeline(pipelineDesc, framebuffer.get());
 }

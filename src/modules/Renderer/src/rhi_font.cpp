@@ -167,6 +167,10 @@ bool FONT::Init(const char* font_name, const char* iniName)
     }
     ini->CaseSensitive(false);
 
+    vertexShader_ = device_->createShaderModule("font.vert");
+    pixelShader_ = device_->createShaderModule("font.frag");
+    textureSamler_ = device_->createTextureSampler();
+
     vertexBuffer_ = renderService_.CreateVertexBuffer(sizeof(FONT_CHAR_VERTEX) * MAX_SYMBOLS * SYM_VERTEXS, RHI::MemoryPropertiesBits::HOST_VISIBLE_BIT | RHI::MemoryPropertiesBits::HOST_COHERENT_BIT);
     /*device_.CreateVertexBuffer(sizeof(FONT_CHAR_VERTEX) * MAX_SYMBOLS * SYM_VERTEXS,
         D3DUSAGE_DYNAMIC | D3DUSAGE_WRITEONLY, FONT_CHAR_FVF, D3DPOOL_SYSTEMMEM, &vertexBuffer_,
@@ -187,6 +191,13 @@ bool FONT::Init(const char* font_name, const char* iniName)
         core.Trace("Not Found Texture: %s", textureName_.c_str());
         return false;
     }
+
+    renderService_.TextureSet(textureHandle_, 0, textureSamler_, dsInfo_);
+    renderService_.CreateInputLayout(FONT_CHAR_FVF, inputLayoutHandle_);
+    renderService_.CreateBindingLayout(dsInfo_, bindingLayoutHandle_);
+    renderService_.CreateBindingSet(dsInfo_, 0, bindingLayoutHandle_, bindingSetHandle_);
+
+    renderService_.CreateGraphicsPipeline(vertexShader_, pixelShader_, inputLayoutHandle_, bindingLayoutHandle_, RHI::RenderState{}, renderService_.GetCurrentFramebuffer(), graphicsPipeline_);
 
     return true;
 }
@@ -343,13 +354,16 @@ std::optional<size_t> FONT::Print(float x, float y, const std::string_view& text
     if (!bDraw)
         return xoffset;
 
-    renderService_.TextureSet(textureHandle_, 0, );
-    device_.SetStreamSource(0, vertexBuffer_, 0, sizeof(FONT_CHAR_VERTEX));
     // Device->SetIndices(0);
 
     const bool drawShadows = overrides.shadow.value_or(drawShadows_);
     const float scale = overrides.scale.value_or(scale_);
     const uint32_t color = overrides.color.value_or(color_);
+
+    graphicsState_.pipeline = graphicsPipeline_.get();
+    graphicsState_.bindingSets = {bindingSetHandle_};
+    graphicsState_.vertexBufferBindings = { {vertexBuffer_.get(), 0, 0} };
+    graphicsState_.framebuffer = renderService_.GetCurrentFramebuffer().get();
 
     RHI::RenderState renderState{};
     if (drawShadows)
