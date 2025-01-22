@@ -5,6 +5,7 @@
 #include <matrix.h>
 #include <RHICommon.hpp>
 
+#include "rhi_font.h"
 #include "rhi_video_texture.h"
 #include "script_libriary.h"
 #include "utf8.h"
@@ -565,6 +566,20 @@ public:
 
     void RecompileEffects();
 
+    RHI::FramebufferHandle GetCurrentFramebuffer() const;
+    void MakeVertexBindings(RHI::BufferHandle vertexBuffer, const VertexFVFBits vertexBindingsFormat, std::vector<RHI::VertexBufferBinding>& vertexBufferBindings);
+    void CreateInputLayout(const VertexFVFBits vertexBindingsFormat, RHI::InputLayoutHandle inputLayout);
+    void CreateBindingLayout(std::vector<RHI::TextureAttachment> texturesAttachments, std::vector<RHI::BufferAttachment> bufferAttachments,
+        std::vector<RHI::TextureArrayAttachment> textureArrayAttachments, RHI::BindingLayoutHandle bindingLayout);
+    void CreateBindingLayout(const RHI::DescriptorSetInfo& dsInfo, RHI::BindingLayoutHandle bindingLayout);
+    void CreateBindingSet(RHI::DescriptorSetInfo& dsInfo, std::uint32_t dsCount, RHI::BindingLayoutHandle bindingLayout, RHI::BindingSetHandle bindingSet);
+    void CreateGraphicsPipeline(RHI::ShaderHandle vertexShader, RHI::ShaderHandle pixelShader,
+        RHI::InputLayoutHandle inputLayout, RHI::BindingLayoutHandle bindingLayout,
+        const RHI::RenderState& renderState, RHI::FramebufferHandle framebuffer,
+        RHI::GraphicsPipelineHandle pipeline);
+    RHI::GraphicsState CreateGraphicsState(RHI::GraphicsPipelineHandle pipeline, RHI::FramebufferHandle framebuffer,
+        RHI::BindingSetHandle bindingSet, RHI::BufferHandle vertexBuffer = nullptr, RHI::BufferHandle indexBuffer = nullptr);
+
 private:
     struct RECT_VERTEX
     {
@@ -739,12 +754,4 @@ private:
     Material material;
     VertexFVFBits vertexFormat = 0;
     std::uint32_t textureFactorColor = 0;
-
-    void MakeVertexBindings(RHI::BufferHandle vertexBuffer, const VertexFVFBits vertexBindingsFormat, std::vector<RHI::VertexBufferBinding>& vertexBufferBindings);
-    void CreateInputLayout(const VertexFVFBits vertexBindingsFormat, RHI::InputLayoutHandle inputLayout);
-    void CreateGraphicsPipeline(RHI::ShaderHandle vertexShader, RHI::ShaderHandle pixelShader,
-        RHI::InputLayoutHandle inputLayout, RHI::BindingLayoutHandle bindingLayout,
-        RHI::FramebufferHandle framebuffer, RHI::GraphicsPipelineHandle pipeline);
-    RHI::GraphicsState CreateGraphicsState(RHI::GraphicsPipelineHandle pipeline, RHI::FramebufferHandle framebuffer,
-        RHI::BindingSetHandle bindingSet, RHI::BufferHandle vertexBuffer = nullptr, RHI::BufferHandle indexBuffer = nullptr);
 };

@@ -75,6 +75,14 @@ private:
     RHI::DeviceHandle device_;
     RHI::CommandListHandle commandList_;
     RHI::BufferHandle vertexBuffer_ = nullptr;
+    RHI::InputLayoutHandle inputLayoutHandle_;
+    RHI::BindingLayoutHandle bindingLayoutHandle_;
+    RHI::DescriptorSetInfo dsInfo_;
+    RHI::BindingSetHandle bindingSetHandle_;
+    RHI::ShaderHandle vertexShader_ = nullptr;
+    RHI::ShaderHandle pixelShader_ = nullptr;
+    RHI::SamplerHandle textureSamler_ = nullptr;
+    RHI::GraphicsPipelineHandle graphicsPipeline_ = nullptr;
     RHI::GraphicsState graphicsState_ = {};
 
     float scale_ = 1;
