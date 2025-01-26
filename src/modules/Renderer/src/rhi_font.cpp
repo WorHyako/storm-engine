@@ -171,14 +171,15 @@ bool FONT::Init(const char* font_name, const char* iniName)
     pixelShader_ = device_->createShaderModule("font.frag");
     textureSamler_ = device_->createTextureSampler();
 
-    vertexBuffer_ = renderService_.CreateVertexBuffer(sizeof(FONT_CHAR_VERTEX) * MAX_SYMBOLS * SYM_VERTEXS, RHI::MemoryPropertiesBits::HOST_VISIBLE_BIT | RHI::MemoryPropertiesBits::HOST_COHERENT_BIT);
+    vertexBuffer_ = renderService_.CreateVertexBuffer(sizeof(FONT_CHAR_VERTEX) * MAX_SYMBOLS * SYM_VERTEXS,
+        RHI::MemoryPropertiesBits::HOST_VISIBLE_BIT | RHI::MemoryPropertiesBits::HOST_COHERENT_BIT);
     /*device_.CreateVertexBuffer(sizeof(FONT_CHAR_VERTEX) * MAX_SYMBOLS * SYM_VERTEXS,
         D3DUSAGE_DYNAMIC | D3DUSAGE_WRITEONLY, FONT_CHAR_FVF, D3DPOOL_SYSTEMMEM, &vertexBuffer_,
         nullptr);*/
     if (vertexBuffer_ == nullptr)
         throw std::runtime_error("vbuffer error");
 
-    FONT_CHAR_VERTEX* pVertex = (FONT_CHAR_VERTEX*)device_->mapBufferMemory(vertexBuffer_.get(), 0, sizeof(FONT_CHAR_VERTEX) * MAX_SYMBOLS * SYM_VERTEXS);
+    auto* pVertex = (FONT_CHAR_VERTEX*)device_->mapBufferMemory(vertexBuffer_.get(), 0, sizeof(FONT_CHAR_VERTEX) * MAX_SYMBOLS * SYM_VERTEXS);
     for (codepoint = 0; codepoint < MAX_SYMBOLS * SYM_VERTEXS; codepoint++)
     {
         pVertex[codepoint].pos.z = 0.5f;
@@ -193,11 +194,15 @@ bool FONT::Init(const char* font_name, const char* iniName)
     }
 
     renderService_.TextureSet(textureHandle_, 0, textureSamler_, dsInfo_);
-    renderService_.CreateInputLayout(FONT_CHAR_FVF, inputLayoutHandle_);
-    renderService_.CreateBindingLayout(dsInfo_, bindingLayoutHandle_);
-    renderService_.CreateBindingSet(dsInfo_, 0, bindingLayoutHandle_, bindingSetHandle_);
+    renderService_.CreateInputLayout(FONT_CHAR_FVF, inputLayout_);
+    renderService_.CreateBindingLayout(dsInfo_, bindingLayout_);
+    renderService_.CreateBindingSet(dsInfo_, 0, bindingLayout_, bindingSet_);
 
-    renderService_.CreateGraphicsPipeline(vertexShader_, pixelShader_, inputLayoutHandle_, bindingLayoutHandle_, RHI::RenderState{}, renderService_.GetCurrentFramebuffer(), graphicsPipeline_);
+    RHI::RenderState renderState = {};
+    renderState.srcColorBlendFactor = RHI::BlendState::ZERO;
+    renderState.dstColorBlendFactor = RHI::BlendState::ONE_MINUS_SRC_ALPHA;
+
+    renderService_.CreateGraphicsPipeline(vertexShader_, pixelShader_, inputLayout_, bindingLayout_, renderState, renderService_.GetCurrentFramebuffer(), graphicsPipeline_);
 
     return true;
 }
@@ -361,7 +366,7 @@ std::optional<size_t> FONT::Print(float x, float y, const std::string_view& text
     const uint32_t color = overrides.color.value_or(color_);
 
     graphicsState_.pipeline = graphicsPipeline_.get();
-    graphicsState_.bindingSets = {bindingSetHandle_};
+    graphicsState_.bindingSets = {bindingSet_};
     graphicsState_.vertexBufferBindings = { {vertexBuffer_.get(), 0, 0} };
     graphicsState_.framebuffer = renderService_.GetCurrentFramebuffer().get();
 
@@ -372,6 +377,9 @@ std::optional<size_t> FONT::Print(float x, float y, const std::string_view& text
 
         renderState.srcColorBlendFactor = RHI::BlendState::ZERO;
         renderState.dstColorBlendFactor = RHI::BlendState::ONE_MINUS_SRC_ALPHA;
+
+        graphicsState_ = renderService_.CreateGraphicsState(graphicsPipeline_, renderService_.GetCurrentFramebuffer(), bindingSet_, vertexBuffer_);
+        renderService_.SetGraphicsState(graphicsState_);
 
         renderService_.DrawPrimitive(RHI::PrimitiveType::TriangleList, FONT_CHAR_FVF, s_num * 6,
             1, 0, vertexBuffer_, sizeof(FONT_CHAR_VERTEX));

@@ -579,6 +579,7 @@ public:
         RHI::GraphicsPipelineHandle pipeline);
     RHI::GraphicsState CreateGraphicsState(RHI::GraphicsPipelineHandle pipeline, RHI::FramebufferHandle framebuffer,
         RHI::BindingSetHandle bindingSet, RHI::BufferHandle vertexBuffer = nullptr, RHI::BufferHandle indexBuffer = nullptr);
+    void SetGraphicsState(const RHI::GraphicsState& graphicsState);
 
 private:
     struct RECT_VERTEX

@@ -1907,6 +1907,11 @@ RHI::GraphicsState RENDER::CreateGraphicsState(RHI::GraphicsPipelineHandle pipel
     return state;
 }
 
+void RENDER::SetGraphicsState(const RHI::GraphicsState& graphicsState)
+{
+    commandList->setGraphicsState(graphicsState);
+}
+
 void RENDER::DrawBuffer(RHI::PrimitiveType primitiveType, std::uint32_t vertexBufferIndex, std::int32_t iStride, std::size_t vertexCount,
     std::size_t instanceCount, std::size_t startVertexLocation, const char* cBlockName)
 {
