@@ -169,7 +169,7 @@ bool FONT::Init(const char* font_name, const char* iniName)
 
     vertexShader_ = device_->createShaderModule("font.vert");
     pixelShader_ = device_->createShaderModule("font.frag");
-    textureSamler_ = device_->createTextureSampler();
+    textureSampler_ = device_->createTextureSampler();
 
     vertexBuffer_ = renderService_.CreateVertexBuffer(sizeof(FONT_CHAR_VERTEX) * MAX_SYMBOLS * SYM_VERTEXS,
         RHI::MemoryPropertiesBits::HOST_VISIBLE_BIT | RHI::MemoryPropertiesBits::HOST_COHERENT_BIT);
@@ -193,7 +193,7 @@ bool FONT::Init(const char* font_name, const char* iniName)
         return false;
     }
 
-    renderService_.TextureSet(textureHandle_, 0, textureSamler_, dsInfo_);
+    renderService_.TextureSet(textureHandle_, 0, textureSampler_, dsInfo_);
     renderService_.CreateInputLayout(FONT_CHAR_FVF, inputLayout_);
     renderService_.CreateBindingLayout(dsInfo_, bindingLayout_);
     renderService_.CreateBindingSet(dsInfo_, 0, bindingLayout_, bindingSet_);

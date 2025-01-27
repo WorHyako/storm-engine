@@ -80,7 +80,7 @@ private:
     RHI::BindingSetHandle bindingSet_;
     RHI::ShaderHandle vertexShader_ = nullptr;
     RHI::ShaderHandle pixelShader_ = nullptr;
-    RHI::SamplerHandle textureSamler_ = nullptr;
+    RHI::SamplerHandle textureSampler_ = nullptr;
     RHI::GraphicsPipelineHandle graphicsPipeline_ = nullptr;
     RHI::GraphicsState graphicsState_ = {};
 

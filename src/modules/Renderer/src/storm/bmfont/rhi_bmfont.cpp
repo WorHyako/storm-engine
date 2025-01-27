@@ -56,12 +56,29 @@ BmFont::BmFont(const std::string_view &file_path, RENDER &renderer) : renderer_(
 {
     LoadFromFnt(std::string(file_path));
 
-    vertexShader_ = device_->createShaderModule("font.vert");
-    pixelShader_ = device_->createShaderModule("font.frag");
-    textureSamler_ = device_->createTextureSampler();
+    vertexShader_ = device_->createShaderModule("bmfont.vert");
+    pixelShader_ = device_->createShaderModule("bmfont.frag");
+    textureSampler_ = device_->createTextureSampler();
 
     InitTextures();
     InitVertexBuffer();
+
+    renderer_.TextureSet(textures_[0].textureHandle_, 0, textureSampler_, dsInfo_);
+    if(gradientTexture_ != -1)
+    {
+        renderer_.TextureSet(gradientTexture_, 1, textureSampler_, dsInfo_);
+    }
+    renderer_.CreateInputLayout(FONT_CHAR_FVF, inputLayout_);
+    renderer_.CreateBindingLayout(dsInfo_, bindingLayout_);
+    renderer_.CreateBindingSet(dsInfo_, 0, bindingLayout_, bindingSet_);
+
+    RHI::RenderState renderState = {};
+    renderState.srcColorBlendFactor = RHI::BlendState::ZERO;
+    renderState.dstColorBlendFactor = RHI::BlendState::ONE_MINUS_SRC_ALPHA;
+
+    renderer_.CreateGraphicsPipeline(vertexShader_, pixelShader_, inputLayout_, bindingLayout_, renderState, renderer_.GetCurrentFramebuffer(), graphicsPipeline_);
+
+    graphicsState_ = renderer_.CreateGraphicsState(graphicsPipeline_, renderer_.GetCurrentFramebuffer(), bindingSet_, vertexBuffer_);
 }
 
 BmFont::~BmFont()
@@ -89,15 +106,12 @@ std::optional<size_t> BmFont::Print(float x, float y, const std::string_view &te
         renderer_.TechniqueExecuteStart("BmFont");
     }
 
-    renderer_.TextureSet(0, textures_[0].textureHandle_);
-    renderer_.TextureSet(1, gradientTexture_);
-    renderer_.SetFVF(FONT_CHAR_FVF);
-    renderer_.SetStreamSource(0, renderer_.GetVertexBuffer(vertexBuffer_), sizeof(BMFONT_CHAR_VERTEX));
-
     auto result = UpdateVertexBuffer(x, y, text, scale, color);
-    renderer_.SetRenderState(D3DRS_SRCBLEND, D3DBLEND_SRCALPHA);
-    renderer_.SetRenderState(D3DRS_DESTBLEND, D3DBLEND_INVSRCALPHA);
-    renderer_.DrawPrimitive(D3DPT_TRIANGLELIST, 0, result.characters * 2);
+
+    renderer_.SetGraphicsState(graphicsState_);
+    renderer_.DrawPrimitive(RHI::PrimitiveType::TriangleList, FONT_CHAR_FVF,
+        result.characters * 2, 1,
+        0, vertexBuffer_, sizeof(BMFONT_CHAR_VERTEX));
 
     while(renderer_.TechniqueExecuteNext());
 
@@ -287,7 +301,7 @@ BmFont::UpdateVertexBufferResult BmFont::UpdateVertexBuffer(float x, float y, co
         .xoffset = x,
     };
 
-    auto *vertices = reinterpret_cast<BMFONT_CHAR_VERTEX *>(renderer_.LockVertexBuffer(vertexBuffer_));
+    auto *vertices = reinterpret_cast<BMFONT_CHAR_VERTEX *>(device_->mapBufferMemory(vertexBuffer_.get(), 0, sizeof(BMFONT_CHAR_VERTEX) * MAX_SYMBOLS * SYM_VERTEXS));
 
     char32_t previous = '\0';
 
@@ -373,7 +387,7 @@ BmFont::UpdateVertexBufferResult BmFont::UpdateVertexBuffer(float x, float y, co
         previous = codepoint;
     }
 
-    renderer_.UnLockVertexBuffer(vertexBuffer_);
+    device_->unmapBufferMemory(vertexBuffer_.get());
 
     return result;
 }
