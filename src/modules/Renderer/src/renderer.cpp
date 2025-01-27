@@ -1006,7 +1006,7 @@ std::int32_t RENDER::TextureCreate(const char* fname)
     if (fname == nullptr)
     {
         core.Trace("Can't create texture with null name");
-        return -1L;
+        return -1;
     }
 
     if (!bLoadTextureEnabled)
