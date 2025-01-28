@@ -1749,7 +1749,7 @@ RHI::BufferHandle RENDER::GetVertexBuffer(std::int32_t id)
 }
 
 //################################################################################
-std::int32_t RENDER::CreateIndexBuffer(std::size_t size, std::uint32_t usage)
+std::int32_t RENDER::CreateIndexBuffer(std::size_t size, RHI::MemoryPropertiesBits memoryProperties)
 {
     std::int32_t b;
     for (b = 0; b < MAX_BUFFERS; b++)
@@ -1767,7 +1767,7 @@ std::int32_t RENDER::CreateIndexBuffer(std::size_t size, std::uint32_t usage)
         .setIsTransferDst(true);
     IndexBuffers[b].buff = device->createBuffer(indexBufferDesc);
     IndexBuffers[b].size = size;
-    IndexBuffers[b].dwUsage = usage;
+    IndexBuffers[b].dwUsage = memoryProperties;
 
     return b;
 }
@@ -2113,11 +2113,41 @@ void RENDER::RenderAnimation(std::int32_t ib, void* src, std::int32_t numVrts, s
 }
 
 //################################################################################
+void* RENDER::LockVertexBuffer(int32_t id, uint32_t dwFlags)
+{
+    VertexBuffers[id].dwNumLocks++;
+    void* ptr = device->mapBufferMemory(VertexBuffers[id].buff.get(), 0, VertexBuffers[id].size);
+
+    dwNumLV++;
+    return ptr;
+}
+
+//################################################################################
+void RENDER::UnLockVertexBuffer(int32_t id)
+{
+    VertexBuffers[id].dwNumLocks--;
+    device->unmapBufferMemory(VertexBuffers[id].buff.get());
+}
+
 std::int32_t RENDER::GetVertexBufferSize(std::int32_t id)
 {
     return VertexBuffers[id].size;
 }
 
+void* RENDER::LockIndexBuffer(int32_t id, uint32_t dwFlags)
+{
+    IndexBuffers[id].dwNumLocks++;
+    void* ptr = device->mapBufferMemory(IndexBuffers[id].buff.get(), 0, IndexBuffers[id].size);
+
+    dwNumLI++;
+    return ptr;
+}
+
+void RENDER::UnLockIndexBuffer(int32_t id)
+{
+    IndexBuffers[id].dwNumLocks--;
+    device->unmapBufferMemory(IndexBuffers[id].buff.get());
+}
 
 //################################################################################
 void RENDER::ReleaseVertexBuffer(std::int32_t id)
@@ -2263,7 +2293,7 @@ void RENDER::RestoreRender()
         }
         if (IndexBuffers[b].buff)
         {
-            CHECKERR(CreateIndexBuffer(IndexBuffers[b].size, IndexBuffers[b].dwUsage));
+            CHECKERR(CreateIndexBuffer(IndexBuffers[b].size, (RHI::MemoryPropertiesBits) IndexBuffers[b].dwUsage));
         }
     }
     std::int32_t num_stages;
@@ -2926,7 +2956,7 @@ void RENDER::MakeScreenShot()
 #endif
 }
 
-Plane* RENDER::GetPlanes()
+PLANE* RENDER::GetPlanes()
 {
     FindPlanes();
     return viewplane;
@@ -3312,7 +3342,7 @@ std::int32_t RENDER::Clear(std::vector<RHI::TextureHandle> colorAttachments, RHI
     return 0;
 }
 
-std::int32_t RENDER::CreateTexture(std::uint32_t Width, std::uint32_t Height, std::uint32_t Levels, std::uint32_t Usage, RHI::Format Format, RHI::MemoryPropertiesBits Pool,
+std::int32_t RENDER::CreateTexture(std::uint32_t Width, std::uint32_t Height, std::uint32_t Levels, RHI::ImageUsage Usage, RHI::Format Format, RHI::MemoryPropertiesBits Pool,
     RHI::TextureHandle pTexture)
 {
     RHI::TextureDesc desc = {};
@@ -3320,13 +3350,19 @@ std::int32_t RENDER::CreateTexture(std::uint32_t Width, std::uint32_t Height, st
         .setHeight(Height)
         .setMipLevels(Levels)
         .setFormat(Format)
-        .setMemoryProperties(Pool);
+        .setMemoryProperties(Pool)
+        .setIsTransferSrc(Usage.isTransferSrc)
+        .setIsTransferDst(Usage.isTransferDst)
+        .setIsShaderResource(Usage.isShaderResource)
+        .setIsUAV(Usage.isUAV)
+        .setIsRenderTarget(Usage.isRenderTarget);
+
     pTexture = device->createImage(desc);
 
     return 0;
 }
 
-std::int32_t RENDER::CreateCubeTexture(std::uint32_t EdgeLength, std::uint32_t Levels, std::uint32_t Usage, RHI::Format Format, RHI::MemoryPropertiesBits Pool,
+std::int32_t RENDER::CreateCubeTexture(std::uint32_t EdgeLength, std::uint32_t Levels, RHI::ImageUsage Usage, RHI::Format Format, RHI::MemoryPropertiesBits Pool,
     RHI::TextureHandle pCubeTexture)
 {
     RHI::TextureDesc desc = {};
@@ -3335,7 +3371,13 @@ std::int32_t RENDER::CreateCubeTexture(std::uint32_t EdgeLength, std::uint32_t L
         .setMipLevels(Levels)
         .setFormat(Format)
         .setMemoryProperties(Pool)
-        .setDimension(RHI::TextureDimension::TextureCube);
+        .setDimension(RHI::TextureDimension::TextureCube)
+        .setIsTransferSrc(Usage.isTransferSrc)
+        .setIsTransferDst(Usage.isTransferDst)
+        .setIsShaderResource(Usage.isShaderResource)
+        .setIsUAV(Usage.isUAV)
+        .setIsRenderTarget(Usage.isRenderTarget);
+
     pCubeTexture = device->createImage(desc);
 
     return 0;
@@ -3364,7 +3406,8 @@ std::uint32_t RENDER::CreateDepthStencilSurface(std::uint32_t Width, std::uint32
     desc.setWidth(Width)
         .setHeight(Height)
         .setFormat(Format)
-        .setIsRenderTarget(true);
+        .setIsRenderTarget(true)
+		.setSampleCount(msaaSamples);
     pSurface = device->createImage(desc);
 
     return 0;

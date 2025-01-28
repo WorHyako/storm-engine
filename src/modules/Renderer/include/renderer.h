@@ -3,11 +3,13 @@
 #include <bitset>
 #include <service.h>
 #include <matrix.h>
+
 #include <RHICommon.hpp>
 
 #include "rhi_font.h"
 #include "rhi_video_texture.h"
 #include "script_libriary.h"
+#include "types3d.h"
 #include "utf8.h"
 
 #include <stack>
@@ -106,14 +108,6 @@ typedef struct
     std::uint32_t    right;
     std::uint32_t    bottom;
 } Rect;
-
-typedef struct
-{
-    float Nx;
-    float Ny;
-    float Nz;
-    float D;
-} Plane;
 
 struct FVF_VERTEX
 {
@@ -310,7 +304,7 @@ public:
     void SaveShoot() override;
 
     // Render: Clip Planes Section
-    Plane* GetPlanes() override;
+    PLANE* GetPlanes() override;
 
     // Render: Camera Section
     void SetTransform(std::int32_t type, const CMatrix& mtx) override;
@@ -380,10 +374,14 @@ public:
 
     // Render: Vertex/Index Buffers Section
     std::int32_t CreateVertexBuffer(std::size_t size, std::uint32_t type, RHI::MemoryPropertiesBits memoryProperties = RHI::MemoryPropertiesBits::DEVICE_LOCAL_BIT) override;
-    std::int32_t CreateIndexBuffer(std::size_t size, std::uint32_t usage) override;
+    std::int32_t CreateIndexBuffer(std::size_t size, RHI::MemoryPropertiesBits memoryProperties) override;
 
     RHI::BufferHandle GetVertexBuffer(std::int32_t id);
+    void* LockVertexBuffer(int32_t id, uint32_t dwFlags = 0) override;
+    void UnLockVertexBuffer(int32_t id) override;
     std::int32_t GetVertexBufferSize(std::int32_t id) override;
+    void* LockIndexBuffer(int32_t id, uint32_t dwFlags = 0) override;
+    void UnLockIndexBuffer(int32_t id) override;
     void ReleaseVertexBuffer(std::int32_t id) override;
     void ReleaseIndexBuffer(std::int32_t id) override;
 
@@ -424,9 +422,9 @@ public:
     std::int32_t GetDepthStencilSurface(RHI::TextureHandle pZStencilSurface) override;
     std::int32_t GetCubeMapSurface(RHI::TextureHandle pCubeTexture, CubemapFaces FaceType, std::uint32_t Level,
         RHI::TextureHandle pCubeMapSurface) override;
-    std::int32_t CreateTexture(std::uint32_t Width, std::uint32_t Height, std::uint32_t Levels, std::uint32_t Usage, RHI::Format Format, RHI::MemoryPropertiesBits Pool,
+    std::int32_t CreateTexture(std::uint32_t Width, std::uint32_t Height, std::uint32_t Levels, RHI::ImageUsage Usage, RHI::Format Format, RHI::MemoryPropertiesBits Pool,
         RHI::TextureHandle pTexture) override;
-    std::int32_t CreateCubeTexture(std::uint32_t EdgeLength, std::uint32_t Levels, std::uint32_t Usage, RHI::Format Format, RHI::MemoryPropertiesBits Pool,
+    std::int32_t CreateCubeTexture(std::uint32_t EdgeLength, std::uint32_t Levels, RHI::ImageUsage Usage, RHI::Format Format, RHI::MemoryPropertiesBits Pool,
         RHI::TextureHandle pCubeTexture) override;
     std::int32_t CreateOffscreenPlainSurface(std::uint32_t Width, std::uint32_t Height, RHI::Format Format,
         RHI::TextureHandle pSurface) override;
@@ -625,7 +623,7 @@ private:
     bool bShowFps, bShowExInfo;
     bool bInsideScene;
 
-    Plane viewplane[4];
+    PLANE viewplane[4];
 
     std::array<STEXTURE, MAX_STEXTURES> Textures{};
     std::array<INDEX_BUFFER, MAX_BUFFERS> IndexBuffers{};
