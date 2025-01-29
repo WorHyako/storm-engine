@@ -845,12 +845,12 @@ void RENDER::CopyPostProcessToScreen()
     }
 }
 
-void RENDER::ClearDepthTexture(RHI::TextureHandle texture)
+void RENDER::ClearDepthTexture(RHI::TextureHandle& texture)
 {
     commandList->clearDepthTexture(texture.get(), RHI::TextureSubresourse(), 0.0f, 0x00);
 }
 
-void RENDER::ClearPostProcessTexture(RHI::TextureHandle texture)
+void RENDER::ClearPostProcessTexture(RHI::TextureHandle& texture)
 {
     commandList->clearColorTexture(texture.get(), RHI::TextureSubresourse(), RHI::Color(0.0f, 0.0f, 0.0f, 1.0f));
 }
@@ -1441,7 +1441,7 @@ bool RENDER::TextureLoad(std::int32_t t)
     return true;
 }
 
-std::uint32_t RENDER::LoadCubmapSide(std::fstream& fileS, RHI::TextureHandle tex, CubemapFaces face,
+std::uint32_t RENDER::LoadCubmapSide(std::fstream& fileS, RHI::TextureHandle& tex, CubemapFaces face,
     std::uint32_t numMips, std::uint32_t mipSize, std::uint32_t size, bool isSwizzled)
 {
     std::uint32_t texsize = 0;
@@ -1479,7 +1479,7 @@ std::uint32_t RENDER::LoadCubmapSide(std::fstream& fileS, RHI::TextureHandle tex
 }
 
 //################################################################################
-bool RENDER::TextureSet(std::uint32_t textureIndex, std::uint32_t textureBindingIndex, RHI::SamplerHandle sampler, RHI::DescriptorSetInfo& dsInfos)
+bool RENDER::TextureSet(std::uint32_t textureIndex, std::uint32_t textureBindingIndex, RHI::SamplerHandle& sampler, RHI::DescriptorSetInfo& dsInfos)
 {
     if (textureIndex >= Textures.size())
     {
@@ -1778,7 +1778,7 @@ RHI::FramebufferHandle RENDER::GetCurrentFramebuffer() const
     return m_DynamicRHI->GetFramebuffer(m_DynamicRHI->GetCurrentBackBufferIndex());
 }
 
-void RENDER::CreateInputLayout(const VertexFVFBits vertexBindingsFormat, RHI::InputLayoutHandle inputLayout)
+void RENDER::CreateInputLayout(const VertexFVFBits vertexBindingsFormat, RHI::InputLayoutHandle& inputLayout)
 {
     std::uint32_t attributeOffset = 0;
     std::uint32_t location = 0;
@@ -1832,7 +1832,7 @@ void RENDER::CreateInputLayout(const VertexFVFBits vertexBindingsFormat, RHI::In
 }
 
 void RENDER::CreateBindingLayout(std::vector<RHI::TextureAttachment> texturesAttachments, std::vector<RHI::BufferAttachment> bufferAttachments,
-    std::vector<RHI::TextureArrayAttachment> textureArrayAttachments, RHI::BindingLayoutHandle bindingLayout)
+    std::vector<RHI::TextureArrayAttachment> textureArrayAttachments, RHI::BindingLayoutHandle& bindingLayout)
 {
     RHI::DescriptorSetInfo bindingSetInfo{};
     bindingSetInfo.textures = texturesAttachments;
@@ -1842,17 +1842,17 @@ void RENDER::CreateBindingLayout(std::vector<RHI::TextureAttachment> texturesAtt
     device->createDescriptorSetLayout(bindingSetInfo);
 }
 
-void RENDER::CreateBindingLayout(const RHI::DescriptorSetInfo& dsInfo, RHI::BindingLayoutHandle bindingLayout)
+void RENDER::CreateBindingLayout(const RHI::DescriptorSetInfo& dsInfo, RHI::BindingLayoutHandle& bindingLayout)
 {
     bindingLayout = device->createDescriptorSetLayout(dsInfo);
 }
 
-void RENDER::CreateBindingSet(RHI::DescriptorSetInfo& dsInfo, std::uint32_t dsCount, RHI::BindingLayoutHandle bindingLayout, RHI::BindingSetHandle bindingSet)
+void RENDER::CreateBindingSet(RHI::DescriptorSetInfo& dsInfo, std::uint32_t dsCount, RHI::BindingLayoutHandle& bindingLayout, RHI::BindingSetHandle& bindingSet)
 {
 	bindingSet = device->createDescriptorSet(dsInfo, dsCount, bindingLayout.get());
 }
 
-void RENDER::MakeVertexBindings(RHI::BufferHandle vertexBuffer, const VertexFVFBits vertexBindingsFormat, std::vector<RHI::VertexBufferBinding>& vertexBufferBindings)
+void RENDER::MakeVertexBindings(RHI::BufferHandle& vertexBuffer, const VertexFVFBits vertexBindingsFormat, std::vector<RHI::VertexBufferBinding>& vertexBufferBindings)
 {
     std::uint32_t bindingSlotIndex = 0;
     std::uint32_t bindingSlotOffset = 0;
@@ -1876,10 +1876,10 @@ void RENDER::MakeVertexBindings(RHI::BufferHandle vertexBuffer, const VertexFVFB
     }
 }
 
-void RENDER::CreateGraphicsPipeline(RHI::ShaderHandle vertexShader, RHI::ShaderHandle pixelShader,
-    RHI::InputLayoutHandle inputLayout, RHI::BindingLayoutHandle bindingLayout,
-    const RHI::RenderState& renderState, RHI::FramebufferHandle framebuffer,
-    RHI::GraphicsPipelineHandle pipeline)
+void RENDER::CreateGraphicsPipeline(RHI::ShaderHandle& vertexShader, RHI::ShaderHandle& pixelShader,
+    RHI::InputLayoutHandle& inputLayout, RHI::BindingLayoutHandle& bindingLayout,
+    const RHI::RenderState& renderState, RHI::FramebufferHandle& framebuffer,
+    RHI::GraphicsPipelineHandle& pipeline)
 {
     RHI::GraphicsPipelineDesc pipelineDesc;
     pipelineDesc.VS = vertexShader;
@@ -1892,8 +1892,8 @@ void RENDER::CreateGraphicsPipeline(RHI::ShaderHandle vertexShader, RHI::ShaderH
     pipeline = device->createGraphicsPipeline(pipelineDesc, framebuffer.get());
 }
 
-RHI::GraphicsState RENDER::CreateGraphicsState(RHI::GraphicsPipelineHandle pipeline, RHI::FramebufferHandle framebuffer,
-    RHI::BindingSetHandle bindingSet, RHI::BufferHandle vertexBuffer, RHI::BufferHandle indexBuffer)
+RHI::GraphicsState RENDER::CreateGraphicsState(RHI::GraphicsPipelineHandle& pipeline, RHI::FramebufferHandle& framebuffer,
+    RHI::BindingSetHandle& bindingSet, RHI::BufferHandle& vertexBuffer, RHI::BufferHandle& indexBuffer)
 {
     RHI::GraphicsState state{};
     // Pick the right binding set for this view.
@@ -2008,7 +2008,7 @@ void RENDER::DrawIndexedBufferNoVShader(RHI::PrimitiveType primitiveType, std::u
 
 // TODO: Use as dx09->DrawPrimitiveUP analog with correct vertex buffer or Model matrix
 void RENDER::DrawPrimitive(RHI::PrimitiveType primitiveType, VertexFVFBits vertexBufferFormat, std::size_t vertexCount, std::size_t instanceCount,
-    std::size_t startVertexLocation, RHI::BufferHandle vertexBuffer, std::uint32_t stride, const char* cBlockName)
+    std::size_t startVertexLocation, RHI::BufferHandle& vertexBuffer, std::uint32_t stride, const char* cBlockName)
 {
     bool bDraw = true;
 
@@ -2037,8 +2037,8 @@ void RENDER::DrawPrimitive(RHI::PrimitiveType primitiveType, VertexFVFBits verte
 }
 
 // TODO: Use as dx09->DrawIndexedPrimitiveUP analog with correct vertex buffer or Model matrix
-void RENDER::DrawIndexedPrimitive(RHI::PrimitiveType primitiveType, RHI::BufferHandle vertexBuffer, VertexFVFBits vertexDataFormat,
-    RHI::BufferHandle indexBuffer, RHI::Format indexDataFormat, std::size_t vertexCount, std::size_t instanceCount,
+void RENDER::DrawIndexedPrimitive(RHI::PrimitiveType primitiveType, RHI::BufferHandle& vertexBuffer, VertexFVFBits vertexDataFormat,
+    RHI::BufferHandle& indexBuffer, RHI::Format indexDataFormat, std::size_t vertexCount, std::size_t instanceCount,
     std::size_t startIndexLocation, std::size_t startVertexLocation, const char* cBlockName)
 {
     bool bDraw = true;
@@ -3296,44 +3296,44 @@ RHI::BufferHandle RENDER::CreateVertexBufferAndUpload(std::size_t vertexBufferSi
     return vertexBuffer;
 }
 
-std::int32_t RENDER::Release(IUnknown* pObject)
+std::int32_t RENDER::Release(RHI::IResource* resource)
 {
-    if (pObject)
+    if (resource)
     {
-        const auto result = pObject->Release();
-        pObject = nullptr;
-        return result;
+        delete resource;
+        //Resource = nullptr;
+        return 0;
     }
 
     return 0;
 }
 
-std::int32_t RENDER::GetRenderTarget(RHI::TextureHandle pRenderTarget)
+std::int32_t RENDER::GetRenderTarget(RHI::TextureHandle& pRenderTarget)
 {
     pRenderTarget = currentRenderTarget.pRenderTarget;
     return 0;
 }
 
-std::int32_t RENDER::GetDepthStencilSurface(RHI::TextureHandle pZStencilSurface)
+std::int32_t RENDER::GetDepthStencilSurface(RHI::TextureHandle& pZStencilSurface)
 {
     pZStencilSurface = currentRenderTarget.pDepthSurface;
     return 0;
 }
 
-std::int32_t RENDER::GetCubeMapSurface(RHI::TextureHandle pCubeTexture, CubemapFaces FaceType, std::uint32_t Level,
-    RHI::TextureHandle pCubeMapSurface)
+std::int32_t RENDER::GetCubeMapSurface(RHI::TextureHandle& pCubeTexture, CubemapFaces FaceType, std::uint32_t Level,
+    RHI::TextureHandle& pCubeMapSurface)
 {
     return pCubeTexture->GetCubeMapSurface(FaceType, Level, pCubeMapSurface);
 }
 
-std::int32_t RENDER::SetRenderTarget(RHI::TextureHandle pRenderTarget, RHI::TextureHandle pNewZStencil)
+std::int32_t RENDER::SetRenderTarget(RHI::TextureHandle& pRenderTarget, RHI::TextureHandle& pNewZStencil)
 {
     currentRenderTarget.pRenderTarget = pRenderTarget;
     currentRenderTarget.pDepthSurface = pNewZStencil;
     return 0;
 }
 
-std::int32_t RENDER::Clear(std::vector<RHI::TextureHandle> colorAttachments, RHI::TextureHandle depthAttachment, const std::vector<RHI::Rect> pRects,
+std::int32_t RENDER::Clear(std::vector<RHI::TextureHandle>& colorAttachments, RHI::TextureHandle& depthAttachment, const std::vector<RHI::Rect> pRects,
     Color Color, float Depth, std::uint32_t Stencil)
 {
 
@@ -3343,7 +3343,7 @@ std::int32_t RENDER::Clear(std::vector<RHI::TextureHandle> colorAttachments, RHI
 }
 
 std::int32_t RENDER::CreateTexture(std::uint32_t Width, std::uint32_t Height, std::uint32_t Levels, RHI::ImageUsage Usage, RHI::Format Format, RHI::MemoryPropertiesBits Pool,
-    RHI::TextureHandle pTexture)
+    RHI::TextureHandle& pTexture)
 {
     RHI::TextureDesc desc = {};
     desc.setWidth(Width)
@@ -3363,7 +3363,7 @@ std::int32_t RENDER::CreateTexture(std::uint32_t Width, std::uint32_t Height, st
 }
 
 std::int32_t RENDER::CreateCubeTexture(std::uint32_t EdgeLength, std::uint32_t Levels, RHI::ImageUsage Usage, RHI::Format Format, RHI::MemoryPropertiesBits Pool,
-    RHI::TextureHandle pCubeTexture)
+    RHI::TextureHandle& pCubeTexture)
 {
     RHI::TextureDesc desc = {};
     desc.setWidth(EdgeLength)
@@ -3383,7 +3383,7 @@ std::int32_t RENDER::CreateCubeTexture(std::uint32_t EdgeLength, std::uint32_t L
     return 0;
 }
 
-std::int32_t RENDER::CreateOffscreenPlainSurface(std::uint32_t Width, std::uint32_t Height, RHI::Format Format, RHI::TextureHandle pSurface)
+std::int32_t RENDER::CreateOffscreenPlainSurface(std::uint32_t Width, std::uint32_t Height, RHI::Format Format, RHI::TextureHandle& pSurface)
 {
     RHI::TextureDesc desc = {};
     desc.setWidth(Width)
@@ -3400,7 +3400,7 @@ std::int32_t RENDER::CreateOffscreenPlainSurface(std::uint32_t Width, std::uint3
 }
 
 std::uint32_t RENDER::CreateDepthStencilSurface(std::uint32_t Width, std::uint32_t Height, RHI::Format Format, std::uint32_t msaaSamples,
-    RHI::TextureHandle pSurface)
+    RHI::TextureHandle& pSurface)
 {
     RHI::TextureDesc desc{};
     desc.setWidth(Width)
@@ -3421,7 +3421,7 @@ ID3DXEffect* RENDER::GetEffectPointer(const char* techniqueName)
 }
 #endif
 
-std::int32_t RENDER::SetTexture(RHI::TextureHandle pTexture, RHI::SamplerHandle sampler, std::uint32_t textureBindingIndex, RHI::DescriptorSetInfo& dsInfos)
+std::int32_t RENDER::SetTexture(RHI::TextureHandle& pTexture, RHI::SamplerHandle& sampler, std::uint32_t textureBindingIndex, RHI::DescriptorSetInfo& dsInfos)
 {
     RHI::TextureAttachment textureAttachment = {};
     textureAttachment
@@ -3472,24 +3472,24 @@ std::int32_t RENDER::GetLevelDesc(RHI::TextureHandle pCubeTexture, std::uint32_t
 //    return CHECKERR(pTexture->UnlockRect(Level));
 //}
 
-std::int32_t RENDER::GetSurfaceLevel(RHI::TextureHandle pTexture, std::uint32_t Level, IDirect3DSurface9** ppSurfaceLevel)
+std::int32_t RENDER::GetSurfaceLevel(RHI::TextureHandle& pTexture, std::uint32_t Level, IDirect3DSurface9** ppSurfaceLevel)
 {
     return CHECKERR(pTexture->GetSurfaceLevel(Level, ppSurfaceLevel));
 }
 
-std::int32_t RENDER::UpdateSurface(RHI::TextureHandle pSourceSurface, RHI::TextureHandle pDestinationSurface)
+std::int32_t RENDER::UpdateSurface(RHI::TextureHandle& pSourceSurface, RHI::TextureHandle& pDestinationSurface)
 {
     commandList->copyTexture(pSourceSurface.get(), RHI::TextureSubresourse{}, pDestinationSurface.get(), RHI::TextureSubresourse{});
     return 0;
 }
 
-std::int32_t RENDER::StretchRect(RHI::TextureHandle pSourceSurface, RHI::TextureHandle pDestinationSurface)
+std::int32_t RENDER::StretchRect(RHI::TextureHandle& pSourceSurface, RHI::TextureHandle& pDestinationSurface)
 {
     commandList->resolveTexture(pSourceSurface.get(), RHI::TextureSubresourse{}, pDestinationSurface.get(), RHI::TextureSubresourse{});
     return 0;
 }
 
-std::int32_t RENDER::GetRenderTargetData(RHI::TextureHandle pRenderTarget, RHI::TextureHandle pDestSurface)
+std::int32_t RENDER::GetRenderTargetData(RHI::TextureHandle& pRenderTarget, RHI::TextureHandle& pDestSurface)
 {
     const RHI::TextureDesc& RTDesc = pRenderTarget->getDesc();
 
@@ -4165,8 +4165,8 @@ bool RENDER::PopRenderTarget()
     return true;
 }
 
-bool RENDER::SetRenderTarget(RHI::TextureHandle pCubeRenderTarget, std::uint32_t faceType, std::uint32_t mipLevel,
-    RHI::TextureHandle pZStencil)
+bool RENDER::SetRenderTarget(RHI::TextureHandle& pCubeRenderTarget, std::uint32_t faceType, std::uint32_t mipLevel,
+    RHI::TextureHandle& pZStencil)
 {
     currentRenderTarget.pRenderTarget = pCubeRenderTarget;
     currentRenderTarget.pDepthSurface = pZStencil;
@@ -4211,7 +4211,7 @@ RHI::TextureHandle RENDER::GetTextureFromID(std::int32_t nTextureID)
     return Textures[nTextureID].tex;
 }
 
-bool RENDER::GetRenderTargetAsTexture(RHI::TextureHandle tex)
+bool RENDER::GetRenderTargetAsTexture(RHI::TextureHandle& tex)
 {
     tex = m_DynamicRHI->GetBackBuffer(m_DynamicRHI->GetCurrentBackBufferIndex());
 

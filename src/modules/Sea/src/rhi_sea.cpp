@@ -53,7 +53,7 @@ using storm::Sqr;
 #define GC_FREE 28
 
 SEA *SEA::pSea = nullptr;
-IDirect3DVertexDeclaration9 *SEA::vertexDecl_ = nullptr;
+std::vector<RHI::VertexBufferBinding> SEA::vertexBufferBindings = {};
 
 SEA::SEA()
 {
@@ -132,14 +132,22 @@ SEA::SEA()
 
 SEA::~SEA()
 {
-    rs->Release(pReflection);
+    /*rs->Release(pReflection);
     rs->Release(pReflectionSunroad);
     rs->Release(pEnvMap);
     rs->Release(pSunRoadMap);
     rs->Release(pZStencil);
     rs->Release(pReflectionSurfaceDepth);
     rs->Release(pVolumeTexture);
-    rs->Release(pRenderTargetBumpMap);
+    rs->Release(pRenderTargetBumpMap);*/
+    pReflection = nullptr;
+    pReflectionSunroad = nullptr;
+    pEnvMap = nullptr;
+    pSunRoadMap = nullptr;
+    pZStencil = nullptr;
+    pReflectionSurfaceDepth = nullptr;
+    pVolumeTexture = nullptr;
+    pRenderTargetBumpMap = nullptr;
 
     rs->TextureRelease(iSeaTrashTexture);
     rs->TextureRelease(iSeaLightTexture);
@@ -183,7 +191,7 @@ void SEA::SFLB_CreateBuffers()
 
 void SEA::CreateVertexDeclaration()
 {
-    if (vertexDecl_ != nullptr)
+    if (!vertexBufferBindings.empty())
         return;
 
     const D3DVERTEXELEMENT9 VertexElements[] = {
@@ -192,7 +200,7 @@ void SEA::CreateVertexDeclaration()
         {0, 24, D3DDECLTYPE_FLOAT2, D3DDECLMETHOD_DEFAULT, D3DDECLUSAGE_TEXCOORD, 0},
         D3DDECL_END()};
 
-    rs->CreateVertexDeclaration(VertexElements, &vertexDecl_);
+    rs->MakeVertexBindings(VertexElements, &vertexDecl_);
 }
 
 bool SEA::Init()

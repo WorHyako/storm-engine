@@ -321,7 +321,7 @@ public:
     // Render: Textures Section
     std::int32_t TextureCreate(const char* fname) override;
     std::int32_t TextureCreate(std::uint32_t width, std::uint32_t height, std::uint32_t levels, std::uint32_t usage, RHI::Format format, RHI::MemoryPropertiesBits pool) override;
-    bool TextureSet(std::uint32_t textureIndex, std::uint32_t textureBindingIndex, RHI::SamplerHandle sampler, RHI::DescriptorSetInfo& dsInfos);
+    bool TextureSet(std::uint32_t textureIndex, std::uint32_t textureBindingIndex, RHI::SamplerHandle& sampler, RHI::DescriptorSetInfo& dsInfos);
     bool TextureRelease(std::int32_t texid) override;
     bool TextureIncReference(std::int32_t texid) override;
 
@@ -362,9 +362,9 @@ public:
     void DrawIndexedBufferNoVShader(RHI::PrimitiveType primitiveType, std::uint32_t vertexBufferIndex, std::uint32_t indexBufferIndex, std::size_t vertexCount, std::size_t instanceCount,
         std::size_t startIndexLocation, std::size_t startVertexLocation, const char* cBlockName = nullptr) override;
     void DrawPrimitive(RHI::PrimitiveType primitiveType, VertexFVFBits vertexBufferFormat, std::size_t vertexCount, std::size_t instanceCount,
-        std::size_t startVertexLocation, RHI::BufferHandle vertexBuffer, std::uint32_t stride, const char* cBlockName = nullptr)
-    void DrawIndexedPrimitive(RHI::PrimitiveType primitiveType, RHI::BufferHandle vertexBuffer, VertexFVFBits vertexDataFormat,
-        RHI::BufferHandle indexBuffer, RHI::Format indexDataFormat, std::size_t vertexCount, std::size_t instanceCount,
+        std::size_t startVertexLocation, RHI::BufferHandle& vertexBuffer, std::uint32_t stride, const char* cBlockName = nullptr)
+    void DrawIndexedPrimitive(RHI::PrimitiveType primitiveType, RHI::BufferHandle& vertexBuffer, const VertexFVFBits vertexDataFormat,
+        RHI::BufferHandle& indexBuffer, RHI::Format indexDataFormat, std::size_t vertexCount, std::size_t instanceCount,
         std::size_t startIndexLocation, std::size_t startVertexLocation, const char* cBlockName = nullptr) override;
 
     // Render: Video Section
@@ -412,31 +412,31 @@ public:
     RHI::DeviceParams& GetDeviceParams() const;
 
     // D3D
-    std::int32_t Release(IUnknown* pSurface) override;
+    std::int32_t Release(RHI::IResource* resource) override;
 
     // Vertex/Index Buffers Section
     RHI::BufferHandle CreateVertexBuffer(std::size_t vertexBufferSize, RHI::MemoryPropertiesBits memoryProperties = RHI::MemoryPropertiesBits::DEVICE_LOCAL_BIT);
     RHI::BufferHandle CreateVertexBufferAndUpload(std::size_t vertexBufferSize, const void* pVertexData);
 
     // D3D Textures/Surfaces Section
-    std::int32_t GetDepthStencilSurface(RHI::TextureHandle pZStencilSurface) override;
-    std::int32_t GetCubeMapSurface(RHI::TextureHandle pCubeTexture, CubemapFaces FaceType, std::uint32_t Level,
-        RHI::TextureHandle pCubeMapSurface) override;
+    std::int32_t GetDepthStencilSurface(RHI::TextureHandle& pZStencilSurface) override;
+    std::int32_t GetCubeMapSurface(RHI::TextureHandle& pCubeTexture, CubemapFaces FaceType, std::uint32_t Level,
+        RHI::TextureHandle& pCubeMapSurface) override;
     std::int32_t CreateTexture(std::uint32_t Width, std::uint32_t Height, std::uint32_t Levels, RHI::ImageUsage Usage, RHI::Format Format, RHI::MemoryPropertiesBits Pool,
-        RHI::TextureHandle pTexture) override;
+        RHI::TextureHandle& pTexture) override;
     std::int32_t CreateCubeTexture(std::uint32_t EdgeLength, std::uint32_t Levels, RHI::ImageUsage Usage, RHI::Format Format, RHI::MemoryPropertiesBits Pool,
-        RHI::TextureHandle pCubeTexture) override;
+        RHI::TextureHandle& pCubeTexture) override;
     std::int32_t CreateOffscreenPlainSurface(std::uint32_t Width, std::uint32_t Height, RHI::Format Format,
-        RHI::TextureHandle pSurface) override;
+        RHI::TextureHandle& pSurface) override;
     std::uint32_t CreateDepthStencilSurface(std::uint32_t Width, std::uint32_t Height, RHI::Format Format, std::uint32_t msaaSamples,
-        RHI::TextureHandle pSurface) override;
-    std::int32_t SetTexture(RHI::TextureHandle pTexture, RHI::SamplerHandle sampler, std::uint32_t textureBindingIndex, RHI::DescriptorSetInfo& dsInfos) override;
-    std::int32_t GetLevelDesc(RHI::TextureHandle pTexture, std::uint32_t Level, D3DSURFACE_DESC* pDesc) override;
-    std::int32_t GetLevelDesc(RHI::TextureHandle pCubeTexture, std::uint32_t Level, D3DSURFACE_DESC* pDesc) override;
-    std::int32_t GetSurfaceLevel(RHI::TextureHandle pTexture, std::uint32_t Level, IDirect3DSurface9** ppSurfaceLevel) override;
-    std::int32_t UpdateSurface(RHI::TextureHandle pSourceSurface, RHI::TextureHandle pDestinationSurface) override;
-    std::int32_t StretchRect(RHI::TextureHandle pSourceSurface, RHI::TextureHandle pDestinationSurface) override;
-    std::int32_t GetRenderTargetData(RHI::TextureHandle pRenderTarget, RHI::TextureHandle pDestSurface) override;
+        RHI::TextureHandle& pSurface) override;
+    std::int32_t SetTexture(RHI::TextureHandle& pTexture, RHI::SamplerHandle& sampler, std::uint32_t textureBindingIndex, RHI::DescriptorSetInfo& dsInfos) override;
+    std::int32_t GetLevelDesc(RHI::TextureHandle& pTexture, std::uint32_t Level, D3DSURFACE_DESC* pDesc) override;
+    std::int32_t GetLevelDesc(RHI::TextureHandle& pCubeTexture, std::uint32_t Level, D3DSURFACE_DESC* pDesc) override;
+    std::int32_t GetSurfaceLevel(RHI::TextureHandle& pTexture, std::uint32_t Level, IDirect3DSurface9** ppSurfaceLevel) override;
+    std::int32_t UpdateSurface(RHI::TextureHandle& pSourceSurface, RHI::TextureHandle& pDestinationSurface) override;
+    std::int32_t StretchRect(RHI::TextureHandle& pSourceSurface, RHI::TextureHandle& pDestinationSurface) override;
+    std::int32_t GetRenderTargetData(RHI::TextureHandle& pRenderTarget, RHI::TextureHandle& pDestSurface) override;
 
     // Pixel/Vertex Shaders Section
 #ifdef _WIN32 // Effects
@@ -444,16 +444,16 @@ public:
 #endif
 
     // D3D Render Target/Begin/End/Clear
-    std::int32_t GetRenderTarget(RHI::TextureHandle pRenderTarget) override;
-    std::int32_t SetRenderTarget(RHI::TextureHandle pRenderTarget, RHI::TextureHandle pNewZStencil) override;
-    std::int32_t Clear(std::vector<RHI::TextureHandle> colorAttachments, RHI::TextureHandle depthAttachment, const std::vector<RHI::Rect> pRects,
+    std::int32_t GetRenderTarget(RHI::TextureHandle& pRenderTarget) override;
+    std::int32_t SetRenderTarget(RHI::TextureHandle& pRenderTarget, RHI::TextureHandle& pNewZStencil) override;
+    std::int32_t Clear(std::vector<RHI::TextureHandle>& colorAttachments, RHI::TextureHandle& depthAttachment, const std::vector<RHI::Rect> pRects,
         Color Color, float Depth, std::uint32_t Stencil) override;
 
     std::int32_t ImageBlt(const char* pName, Rect* pDstRect, Rect* pSrcRect);
     std::int32_t ImageBlt(std::int32_t nTextureId, Rect* pDstRect, Rect* pSrcRect) override;
 
     void MakeScreenShot();
-    std::uint32_t LoadCubmapSide(std::fstream& fileS, RHI::TextureHandle tex, CubemapFaces face, std::uint32_t numMips,
+    std::uint32_t LoadCubmapSide(std::fstream& fileS, RHI::TextureHandle& tex, CubemapFaces face, std::uint32_t numMips,
         std::uint32_t mipSize, std::uint32_t size, bool isSwizzled);
 
     // core interface
@@ -540,8 +540,8 @@ public:
 
     bool PushRenderTarget() override;
     bool PopRenderTarget() override;
-    bool SetRenderTarget(RHI::TextureHandle pCubeRenderTarget, std::uint32_t faceType, std::uint32_t mipLevel,
-        RHI::TextureHandle pNewZStencil) override;
+    bool SetRenderTarget(RHI::TextureHandle& pCubeRenderTarget, std::uint32_t faceType, std::uint32_t mipLevel,
+        RHI::TextureHandle& pNewZStencil) override;
     void SetView(const CMatrix& mView);
     void SetWorld(const CMatrix& mView);
     void SetProjection(const CMatrix& mView) override;
@@ -557,7 +557,7 @@ public:
 
     RHI::TextureHandle GetTextureFromID(std::int32_t nTextureID) override;
 
-    bool GetRenderTargetAsTexture(RHI::TextureHandle tex) override;
+    bool GetRenderTargetAsTexture(RHI::TextureHandle& tex) override;
 
     void LostRender();
     void RestoreRender();
@@ -565,18 +565,18 @@ public:
     void RecompileEffects();
 
     RHI::FramebufferHandle GetCurrentFramebuffer() const;
-    void MakeVertexBindings(RHI::BufferHandle vertexBuffer, const VertexFVFBits vertexBindingsFormat, std::vector<RHI::VertexBufferBinding>& vertexBufferBindings);
-    void CreateInputLayout(const VertexFVFBits vertexBindingsFormat, RHI::InputLayoutHandle inputLayout);
+    void MakeVertexBindings(RHI::BufferHandle& vertexBuffer, const VertexFVFBits vertexBindingsFormat, std::vector<RHI::VertexBufferBinding>& vertexBufferBindings);
+    void CreateInputLayout(const VertexFVFBits vertexBindingsFormat, RHI::InputLayoutHandle& inputLayout);
     void CreateBindingLayout(std::vector<RHI::TextureAttachment> texturesAttachments, std::vector<RHI::BufferAttachment> bufferAttachments,
-        std::vector<RHI::TextureArrayAttachment> textureArrayAttachments, RHI::BindingLayoutHandle bindingLayout);
-    void CreateBindingLayout(const RHI::DescriptorSetInfo& dsInfo, RHI::BindingLayoutHandle bindingLayout);
-    void CreateBindingSet(RHI::DescriptorSetInfo& dsInfo, std::uint32_t dsCount, RHI::BindingLayoutHandle bindingLayout, RHI::BindingSetHandle bindingSet);
-    void CreateGraphicsPipeline(RHI::ShaderHandle vertexShader, RHI::ShaderHandle pixelShader,
-        RHI::InputLayoutHandle inputLayout, RHI::BindingLayoutHandle bindingLayout,
-        const RHI::RenderState& renderState, RHI::FramebufferHandle framebuffer,
-        RHI::GraphicsPipelineHandle pipeline);
-    RHI::GraphicsState CreateGraphicsState(RHI::GraphicsPipelineHandle pipeline, RHI::FramebufferHandle framebuffer,
-        RHI::BindingSetHandle bindingSet, RHI::BufferHandle vertexBuffer = nullptr, RHI::BufferHandle indexBuffer = nullptr);
+        std::vector<RHI::TextureArrayAttachment> textureArrayAttachments, RHI::BindingLayoutHandle& bindingLayout);
+    void CreateBindingLayout(const RHI::DescriptorSetInfo& dsInfo, RHI::BindingLayoutHandle& bindingLayout);
+    void CreateBindingSet(RHI::DescriptorSetInfo& dsInfo, std::uint32_t dsCount, RHI::BindingLayoutHandle& bindingLayout, RHI::BindingSetHandle& bindingSet);
+    void CreateGraphicsPipeline(RHI::ShaderHandle& vertexShader, RHI::ShaderHandle& pixelShader,
+        RHI::InputLayoutHandle& inputLayout, RHI::BindingLayoutHandle& bindingLayout,
+        const RHI::RenderState& renderState, RHI::FramebufferHandle& framebuffer,
+        RHI::GraphicsPipelineHandle& pipeline);
+    RHI::GraphicsState CreateGraphicsState(RHI::GraphicsPipelineHandle& pipeline, RHI::FramebufferHandle& framebuffer,
+        RHI::BindingSetHandle& bindingSet, RHI::BufferHandle& vertexBuffer = nullptr, RHI::BufferHandle& indexBuffer = nullptr);
     void SetGraphicsState(const RHI::GraphicsState& graphicsState);
 
 private:
@@ -670,9 +670,9 @@ private:
     RHI::BufferHandle CreateRenderQuad(float fWidth, float fHeight, float fSrcWidth, float fSrcHeight, float fMulU = 1.0f,
         float fMulV = 1.0f);
 
-    void ClearDepthTexture(RHI::TextureHandle texture);
+    void ClearDepthTexture(RHI::TextureHandle& texture);
 
-    void ClearPostProcessTexture(RHI::TextureHandle texture);
+    void ClearPostProcessTexture(RHI::TextureHandle& texture);
     void BlurGlowTexture();
     void CopyGlowToScreen();
     void CopyPostProcessToScreen();

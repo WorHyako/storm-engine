@@ -17,7 +17,7 @@ class SEA final : public SEA_BASE
     uint32_t dwShipCode = MakeHashValue("ship");
     uint32_t dwSailCode = MakeHashValue("sail");
 
-    static IDirect3DVertexDeclaration9 *vertexDecl_;
+    static std::vector<RHI::VertexBufferBinding> vertexBufferBindings;
 
     struct SeaVertex
     {
