@@ -19,6 +19,28 @@
 #define MAX_BUFFERS 10240
 constexpr std::size_t MAX_FONTS = 256;
 
+enum class VertexFVFBits : std::uint8_t
+{
+    XYZ = 0x00000001,
+    Color = 0x00000002,
+    Normal = 0x00000004,
+    UV1 = 0x00000008,
+    UV2 = 0x00000016,
+    UV3 = 0x00000032,
+    UV4 = 0x00000064
+};
+
+ENUM_CLASS_FLAG_OPERATORS(VertexFVFBits)
+
+enum class ClearBits : std::uint8_t
+{
+    Color = 0x00000001,
+    Depth = 0x00000002,
+    Stencil = 0x00000004,
+};
+
+ENUM_CLASS_FLAG_OPERATORS(ClearBits)
+
 struct RS_RECT
 {
     CVECTOR vPos;
@@ -160,7 +182,7 @@ struct STEXTURE
 struct VERTEX_BUFFER
 {
     std::uint32_t dwNumLocks;
-    std::int32_t type;
+    VertexFVFBits& type;
     std::int32_t size;
     RHI::BufferHandle buff;
 };
@@ -219,28 +241,6 @@ struct AlphaTestState
     float alphaRefValue = 0.0f;
     RHI::CompareOp alphaCompareOp = RHI::CompareOp::GREATER;
 };
-
-enum class VertexFVFBits : std::uint8_t
-{
-    XYZ     =   0x00000001,
-    Color   =   0x00000002,
-    Normal  =   0x00000004,
-    UV1     =   0x00000008,
-    UV2     =   0x00000016,
-    UV3     =   0x00000032,
-    UV4     =   0x00000064
-};
-
-ENUM_CLASS_FLAG_OPERATORS(VertexFVFBits)
-
-enum class ClearBits : std::uint8_t
-{
-    Color = 0x00000001,
-    Depth = 0x00000002,
-    Stencil = 0x00000004,
-};
-
-ENUM_CLASS_FLAG_OPERATORS(ClearBits)
 
 struct ShadingState
 {
@@ -359,8 +359,6 @@ public:
         std::size_t instanceCount, std::size_t startVertexLocation, const char* cBlockName = nullptr) override;
     void DrawIndexedBuffer(RHI::PrimitiveType primitiveType, std::uint32_t vertexBufferIndex, std::uint32_t indexBufferIndex, std::size_t vertexCount, std::size_t instanceCount,
         std::size_t startIndexLocation, std::size_t startVertexLocation, const char* cBlockName = nullptr) override;
-    void DrawIndexedBufferNoVShader(RHI::PrimitiveType primitiveType, std::uint32_t vertexBufferIndex, std::uint32_t indexBufferIndex, std::size_t vertexCount, std::size_t instanceCount,
-        std::size_t startIndexLocation, std::size_t startVertexLocation, const char* cBlockName = nullptr) override;
     void DrawPrimitive(RHI::PrimitiveType primitiveType, VertexFVFBits vertexBufferFormat, std::size_t vertexCount, std::size_t instanceCount,
         std::size_t startVertexLocation, RHI::BufferHandle& vertexBuffer, std::uint32_t stride, const char* cBlockName = nullptr)
     void DrawIndexedPrimitive(RHI::PrimitiveType primitiveType, RHI::BufferHandle& vertexBuffer, const VertexFVFBits vertexDataFormat,
@@ -373,7 +371,7 @@ public:
     void ReleaseVideoTexture(CVideoTexture* pVTexture) override;
 
     // Render: Vertex/Index Buffers Section
-    std::int32_t CreateVertexBuffer(std::size_t size, std::uint32_t type, RHI::MemoryPropertiesBits memoryProperties = RHI::MemoryPropertiesBits::DEVICE_LOCAL_BIT) override;
+    std::int32_t CreateVertexBuffer(std::size_t size, const VertexFVFBits& type, RHI::MemoryPropertiesBits memoryProperties = RHI::MemoryPropertiesBits::DEVICE_LOCAL_BIT) override;
     std::int32_t CreateIndexBuffer(std::size_t size, RHI::MemoryPropertiesBits memoryProperties) override;
 
     RHI::BufferHandle GetVertexBuffer(std::int32_t id);
@@ -445,8 +443,8 @@ public:
 
     // D3D Render Target/Begin/End/Clear
     std::int32_t GetRenderTarget(RHI::TextureHandle& pRenderTarget) override;
-    std::int32_t SetRenderTarget(RHI::TextureHandle& pRenderTarget, RHI::TextureHandle& pNewZStencil) override;
-    std::int32_t Clear(std::vector<RHI::TextureHandle>& colorAttachments, RHI::TextureHandle& depthAttachment, const std::vector<RHI::Rect> pRects,
+    std::int32_t SetRenderTarget(RHI::TextureHandle& pRenderTarget, RHI::TextureHandle& pNewZStencil = nullptr) override;
+    std::int32_t Clear(const std::vector<RHI::TextureHandle>& colorAttachments, RHI::TextureHandle& depthAttachment, const std::vector<RHI::Rect>& pRects,
         Color Color, float Depth, std::uint32_t Stencil) override;
 
     std::int32_t ImageBlt(const char* pName, Rect* pDstRect, Rect* pSrcRect);
@@ -579,6 +577,9 @@ public:
         RHI::BindingSetHandle& bindingSet, RHI::BufferHandle& vertexBuffer = nullptr, RHI::BufferHandle& indexBuffer = nullptr);
     void SetGraphicsState(const RHI::GraphicsState& graphicsState);
 
+    void SetTextureFactorColor(const uint32_t value);
+    std::uint32_t GetTextureFactorColor() const;
+
 private:
     struct RECT_VERTEX
     {
@@ -657,10 +658,9 @@ private:
     float fSmallWidth;
     float fSmallHeight;
     RHI::TextureHandle pPostProcessTexture;
-
     RHI::TextureHandle pSmallPostProcessTexture;
-
     RHI::TextureHandle pSmallPostProcessTexture2;
+    RHI::SamplerHandle pPostProcessSampler;
 
     RHI::TextureHandle pOriginalScreenSurface;
     RHI::TextureHandle pOriginalDepthTexture;
@@ -734,6 +734,8 @@ private:
     bool TextureLoad(std::int32_t texid);
 
     RHI::BufferHandle sphereVertexBuffer;
+    RHI::BufferHandle postProcessQuadBuffer;
+    RHI::BufferHandle 
 
     RHI::GraphicsAPI m_GraphicsAPI = RHI::GraphicsAPI::VULKAN;
     RHI::IRHIModule* m_RhiModule;

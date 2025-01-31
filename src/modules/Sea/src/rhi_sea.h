@@ -94,6 +94,8 @@ class SEA final : public SEA_BASE
     RHI::TextureHandle pReflection, pReflectionSunroad;
     RHI::TextureHandle pReflectionSurfaceDepth;
 
+    RHI::SamplerHandle pSampler;
+
     bool bSimpleSea;
 
     SeaVertex *pVSea;
@@ -174,7 +176,7 @@ class SEA final : public SEA_BASE
     bool EnvMap_Render2();
     bool SunRoad_Render();
     bool EnvMap_Render();
-    void EnvMap_GetSideMatrix(D3DCUBEMAP_FACES Face, CMatrix &mView);
+    void EnvMap_GetSideMatrix(CubemapFaces Face, CMatrix &mView);
 
     void SFLB_CreateBuffers();
     void CreateVertexDeclaration();

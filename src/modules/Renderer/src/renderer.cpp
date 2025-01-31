@@ -500,9 +500,10 @@ RENDER::~RENDER()
     pOriginalScreenSurface = nullptr;
     pOriginalDepthTexture = nullptr;
 
-    pSmallPostProcessTexture2 = nullptr;
     pPostProcessTexture = nullptr;
     pSmallPostProcessTexture = nullptr;
+    pSmallPostProcessTexture2 = nullptr;
+    pPostProcessSampler = nullptr;
 
     rectsVBuffer = nullptr;
 
@@ -558,6 +559,9 @@ bool RENDER::InitDevice(bool windowed, std::uint32_t width, std::uint32_t height
         desc.setWidth(static_cast<int>(fSmallWidth * 2))
             .setHeight(static_cast<int>(fSmallHeight * 2));
         pSmallPostProcessTexture2 = device->createImage(desc);
+
+        RHI::SamplerDesc samplerDesc{};
+        pPostProcessSampler = device->createTextureSampler(samplerDesc);
     }
 
     if (!pPostProcessTexture || !pSmallPostProcessTexture || !pSmallPostProcessTexture2)
@@ -574,6 +578,8 @@ bool RENDER::InitDevice(bool windowed, std::uint32_t width, std::uint32_t height
     }
 
     ClearPostProcessTexture(pOriginalScreenSurface);
+
+
 
     OriginalViewPort = RHI::Viewport(0.0f, static_cast<float>(width), 0.0f, static_cast<float>(height), 0.0f, 1.0f);
 
@@ -712,11 +718,11 @@ void RENDER::BlurGlowTexture()
     // Render everything to a small texture
     RHI::BufferHandle postProcessVertexBuffer = CreateRenderQuad(fSmallWidth * 2.0f, fSmallHeight * 2.0f, 1024.0f, 1024.0f);
 
-    SetTexture(0, pPostProcessTexture);
-    SetTexture(1, pPostProcessTexture);
-    SetTexture(2, pPostProcessTexture);
-    SetTexture(3, pPostProcessTexture);
-    SetRenderTarget(pSmallPostProcessTexture2, nullptr);
+    SetTexture(pPostProcessTexture, pPostProcessSampler, 0, );
+    SetTexture(pPostProcessTexture, pPostProcessSampler, 1, );
+    SetTexture(pPostProcessTexture, pPostProcessSampler, 2, );
+    SetTexture(pPostProcessTexture, pPostProcessSampler, 3, );
+    SetRenderTarget(pSmallPostProcessTexture2);
     DrawPrimitive(RHI::PrimitiveType::TriangleStrip, POST_PROCESS_FVF, 4, 1, 0, postProcessVertexBuffer, sizeof(QuadVertex), "PostProcessBlur");
 
     // pre-blur iBlurPasses times
@@ -724,31 +730,31 @@ void RENDER::BlurGlowTexture()
     {
         RHI::BufferHandle postProcessBlurVertexBuffer1 = CreateRenderQuad(fSmallWidth, fSmallHeight, fSmallWidth * 2.0f, fSmallHeight * 2.0f);
 
-        SetTexture(0, pSmallPostProcessTexture2);
-        SetTexture(1, pSmallPostProcessTexture2);
-        SetTexture(2, pSmallPostProcessTexture2);
-        SetTexture(3, pSmallPostProcessTexture2);
-        SetRenderTarget(pSmallPostProcessTexture, nullptr);
+        SetTexture(pSmallPostProcessTexture2, pPostProcessSampler, 0, );
+        SetTexture(pSmallPostProcessTexture2, pPostProcessSampler, 1, );
+        SetTexture(pSmallPostProcessTexture2, pPostProcessSampler, 2, );
+        SetTexture(pSmallPostProcessTexture2, pPostProcessSampler, 3, );
+        SetRenderTarget(pSmallPostProcessTexture);
         DrawPrimitive(RHI::PrimitiveType::TriangleStrip, POST_PROCESS_FVF, 4, 1, 0, postProcessBlurVertexBuffer1, sizeof(QuadVertex),
             "PostProcessBlur");
 
         RHI::BufferHandle postProcessBlurVertexBuffer2 = CreateRenderQuad(fSmallWidth * 2.0f, fSmallHeight * 2.0f, fSmallWidth, fSmallHeight);
 
-        SetTexture(0, pSmallPostProcessTexture);
-        SetTexture(1, pSmallPostProcessTexture);
-        SetTexture(2, pSmallPostProcessTexture);
-        SetTexture(3, pSmallPostProcessTexture);
-        SetRenderTarget(pSmallPostProcessTexture2, nullptr);
+        SetTexture(pSmallPostProcessTexture, pPostProcessSampler, 0, );
+        SetTexture(pSmallPostProcessTexture, pPostProcessSampler, 1, );
+        SetTexture(pSmallPostProcessTexture, pPostProcessSampler, 2, );
+        SetTexture(pSmallPostProcessTexture, pPostProcessSampler, 3, );
+        SetRenderTarget(pSmallPostProcessTexture2);
         DrawPrimitive(RHI::PrimitiveType::TriangleStrip, POST_PROCESS_FVF, 4, 1, 0, postProcessBlurVertexBuffer2, sizeof(QuadVertex),
             "PostProcessBlur");
     }
 
     RHI::BufferHandle postProcessBlurVertexBuffer = CreateRenderQuad(fSmallWidth, fSmallHeight, fSmallWidth * 2.0f, fSmallHeight * 2.0f);
-    SetTexture(0, pSmallPostProcessTexture2);
-    SetTexture(1, pSmallPostProcessTexture2);
-    SetTexture(2, pSmallPostProcessTexture2);
-    SetTexture(3, pSmallPostProcessTexture2);
-    SetRenderTarget(pSmallPostProcessTexture, nullptr);
+    SetTexture(pSmallPostProcessTexture2, pPostProcessSampler, 0, );
+    SetTexture(pSmallPostProcessTexture2, pPostProcessSampler, 1, );
+    SetTexture(pSmallPostProcessTexture2, pPostProcessSampler, 2, );
+    SetTexture(pSmallPostProcessTexture2, pPostProcessSampler, 3, );
+    SetRenderTarget(pSmallPostProcessTexture);
     DrawPrimitive(RHI::PrimitiveType::TriangleStrip, POST_PROCESS_FVF, 4, 1, 0, postProcessBlurVertexBuffer, sizeof(QuadVertex), "PostProcessBlur");
 }
 
@@ -791,10 +797,10 @@ void RENDER::CopyGlowToScreen()
     // Draw the GLOW screen
     textureFactorColor = dwTFactor;
 
-    SetTexture(0, pSmallPostProcessTexture);
-    SetTexture(1, pSmallPostProcessTexture);
-    SetTexture(2, pSmallPostProcessTexture);
-    SetTexture(3, pSmallPostProcessTexture);
+    SetTexture(pSmallPostProcessTexture, pPostProcessSampler, 0, );
+    SetTexture(pSmallPostProcessTexture, pPostProcessSampler, 1, );
+    SetTexture(pSmallPostProcessTexture, pPostProcessSampler, 2, );
+    SetTexture(pSmallPostProcessTexture, pPostProcessSampler, 3, );
 
     DrawPrimitive(RHI::PrimitiveType::TriangleStrip, POST_PROCESS_FVF, 4, 1, 0, postProcessQuadBuffer, sizeof(QuadVertex), "PostProcessGlow");
 }
@@ -828,10 +834,10 @@ void RENDER::CopyPostProcessToScreen()
     SetRenderTarget(pOriginalScreenSurface, pOriginalDepthTexture);
 
     // Draw the original screen
-    SetTexture(0, pPostProcessTexture);
-    SetTexture(1, pPostProcessTexture);
-    SetTexture(2, pPostProcessTexture);
-    SetTexture(3, pPostProcessTexture);
+    SetTexture(pPostProcessTexture, pPostProcessSampler, 0,);
+    SetTexture(pPostProcessTexture, pPostProcessSampler, 1,);
+    SetTexture(pPostProcessTexture, pPostProcessSampler, 2,);
+    SetTexture(pPostProcessTexture, pPostProcessSampler, 3,);
 
     if (bSeaEffect)
     {
@@ -1716,7 +1722,7 @@ bool RENDER::GetLight(std::uint32_t dwIndex, Light* pLight) const
 }
 
 //################################################################################
-std::int32_t RENDER::CreateVertexBuffer(std::size_t size, std::uint32_t type, RHI::MemoryPropertiesBits memoryProperties)
+std::int32_t RENDER::CreateVertexBuffer(std::size_t size, const VertexFVFBits& type, RHI::MemoryPropertiesBits memoryProperties)
 {
     if (size <= 0)
         return -1; // fix
@@ -1973,36 +1979,6 @@ void RENDER::DrawIndexedBuffer(RHI::PrimitiveType primitiveType, std::uint32_t v
             drawArgs.startVertexLocation = startVertexLocation;
             commandList->drawIndexed(drawArgs);
             //CHECKERR(d3d9->DrawIndexedPrimitive(RHI::PrimitiveType::TriangleList, minv, 0, numv, startidx, numtrg));
-        } while (cBlockName && cBlockName[0] && TechniqueExecuteNext());
-}
-
-void RENDER::DrawIndexedBufferNoVShader(RHI::PrimitiveType primitiveType, std::uint32_t vertexBufferIndex, std::uint32_t indexBufferIndex, std::size_t vertexCount, std::size_t instanceCount,
-    std::size_t startIndexLocation, std::size_t startVertexLocation, const char* cBlockName)
-{
-    bool bDraw = true;
-
-    vertexFormat = VertexFVFBits::XYZ;
-
-    RHI::GraphicsState state = CreateGraphicsState(, , , VertexBuffers[vertexBufferIndex].buff, IndexBuffers[indexBufferIndex].buff);
-
-    // Update the pipeline, bindings, and other state.
-    commandList->setGraphicsState(state);
-
-    if (cBlockName && cBlockName[0])
-        bDraw = TechniqueExecuteStart(cBlockName);
-
-    if (bDraw)
-        do
-        {
-            dwNumDrawPrimitive++;
-
-            // Draw the model.
-            RHI::DrawArguments drawArgs = {};
-            drawArgs.vertexCount = vertexCount;
-            drawArgs.instanceCount = instanceCount;
-            drawArgs.startIndexLocation = startIndexLocation;
-            drawArgs.startVertexLocation = startVertexLocation;
-            commandList->drawIndexed(drawArgs);
         } while (cBlockName && cBlockName[0] && TechniqueExecuteNext());
 }
 
@@ -3333,12 +3309,17 @@ std::int32_t RENDER::SetRenderTarget(RHI::TextureHandle& pRenderTarget, RHI::Tex
     return 0;
 }
 
-std::int32_t RENDER::Clear(std::vector<RHI::TextureHandle>& colorAttachments, RHI::TextureHandle& depthAttachment, const std::vector<RHI::Rect> pRects,
+std::int32_t RENDER::Clear(const std::vector<RHI::TextureHandle>& colorAttachments, RHI::TextureHandle& depthAttachment, const std::vector<RHI::Rect>& pRects,
     Color Color, float Depth, std::uint32_t Stencil)
 {
+    std::vector<RHI::ITexture*> textures = {};
+    textures.reserve(colorAttachments.size());
+    for(auto& colorAttachment : colorAttachments)
+    {
+        textures.push_back(colorAttachment.get());
+    }
 
-
-    commandList->clearAttachments(colorAttachments.data(), depthAttachment.get(), pRects);
+    commandList->clearAttachments(textures, depthAttachment.get(), pRects);
     return 0;
 }
 
@@ -4219,3 +4200,13 @@ bool RENDER::GetRenderTargetAsTexture(RHI::TextureHandle& tex)
 
     return true;
 }
+
+void RENDER::SetTextureFactorColor(const uint32_t value)
+{
+    textureFactorColor = value;
+}
+
+std::uint32_t RENDER::GetTextureFactorColor() const
+{
+    return textureFactorColor;
+};

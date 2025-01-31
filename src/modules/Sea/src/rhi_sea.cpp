@@ -27,7 +27,7 @@ using storm::Sqr;
              float((a & 0xFF000000) >> 0x18) / 255.0f);
 #define ARGB(a, r, g, b) (uint32_t(b) | (uint32_t(g) << 8L) | (uint32_t(r) << 16L) | (uint32_t(a) << 24L))
 
-#define NUM_VERTEXS 65500
+#define NUM_VERTECIS 65500
 #define NUM_INDICES 165000
 
 #define FRAMES 64
@@ -52,8 +52,27 @@ using storm::Sqr;
 
 #define GC_FREE 28
 
+struct ConstantBuffer
+{
+    glm::mat4x4 mvp; //16
+    glm::vec4 constant1;
+    glm::vec4 constant2;
+    glm::vec4 shadowConst;
+    glm::vec4 animation;
+    glm::vec4 cameraPos;
+    glm::vec4 seaParameters;
+    glm::vec4 seaColor;
+    glm::vec4 skyColor;
+    glm::vec4 vec6;
+    glm::vec4 vec7;
+    glm::vec4 frenelK;
+    glm::vec4 frenelMax;
+    //float padding[0];
+};
+
 SEA *SEA::pSea = nullptr;
 std::vector<RHI::VertexBufferBinding> SEA::vertexBufferBindings = {};
+const VertexFVFBits format = VertexFVFBits::XYZ | VertexFVFBits::Color | VertexFVFBits::UV1;
 
 SEA::SEA()
 {
@@ -167,7 +186,7 @@ SEA::~SEA()
     STORM_DELETE(pVSea);
 
     for (int32_t i = 0; i < aBumpMaps.size(); i++)
-        rs->Release(aBumpMaps[i]);
+        aBumpMaps[i] = nullptr; //rs->Release(aBumpMaps[i]);
 
     for (int32_t i = 0; i < aBumps.size(); i++)
         STORM_DELETE(aBumps[i]);
@@ -182,11 +201,11 @@ SEA::~SEA()
 
 void SEA::SFLB_CreateBuffers()
 {
-    iVSeaBuffer = rs->CreateVertexBuffer(NUM_VERTEXS * sizeof(SeaVertex), 0, RHI::MemoryPropertiesBits::HOST_VISIBLE_BIT | RHI::MemoryPropertiesBits::HOST_COHERENT_BIT);
+    iVSeaBuffer = rs->CreateVertexBuffer(NUM_VERTECIS * sizeof(SeaVertex), format, RHI::MemoryPropertiesBits::HOST_VISIBLE_BIT | RHI::MemoryPropertiesBits::HOST_COHERENT_BIT);
     iISeaBuffer = rs->CreateIndexBuffer(NUM_INDICES * 3 * sizeof(uint16_t), RHI::MemoryPropertiesBits::HOST_VISIBLE_BIT | RHI::MemoryPropertiesBits::HOST_COHERENT_BIT);
 
-    pIndices = new uint32_t[NUM_VERTEXS * 3];
-    pVSea = new SeaVertex[NUM_VERTEXS];
+    pIndices = new uint32_t[NUM_VERTECIS * 3];
+    pVSea = new SeaVertex[NUM_VERTECIS];
 }
 
 void SEA::CreateVertexDeclaration()
@@ -194,13 +213,11 @@ void SEA::CreateVertexDeclaration()
     if (!vertexBufferBindings.empty())
         return;
 
-    const D3DVERTEXELEMENT9 VertexElements[] = {
-        {0, 0, D3DDECLTYPE_FLOAT3, D3DDECLMETHOD_DEFAULT, D3DDECLUSAGE_POSITION, 0},
-        {0, 12, D3DDECLTYPE_FLOAT3, D3DDECLMETHOD_DEFAULT, D3DDECLUSAGE_NORMAL, 0},
-        {0, 24, D3DDECLTYPE_FLOAT2, D3DDECLMETHOD_DEFAULT, D3DDECLUSAGE_TEXCOORD, 0},
-        D3DDECL_END()};
+    RHI::BufferHandle vertexBuffer = rs->GetVertexBuffer(iVSeaBuffer);
+    if(vertexBuffer.get() == nullptr)
+        return;
 
-    rs->MakeVertexBindings(VertexElements, &vertexDecl_);
+    rs->MakeVertexBindings(vertexBuffer, format, vertexBufferBindings);
 }
 
 bool SEA::Init()
@@ -220,7 +237,8 @@ bool SEA::Init()
 
     SFLB_CreateBuffers();
 
-    pVolumeTexture = rs->CreateVolumeTexture(XWIDTH, YWIDTH, FRAMES, 4, 0, RHI::Format::RGBA8_UNORM, D3DPOOL_MANAGED);
+    pVolumeTexture = rs->CreateVolumeTexture(XWIDTH, YWIDTH, FRAMES, 4, 0, RHI::Format::RGBA8_UNORM,
+        RHI::MemoryPropertiesBits::HOST_VISIBLE_BIT | RHI::MemoryPropertiesBits::HOST_CACHED_BIT /*D3DPOOL_MANAGED*/);
     /*pAnimTexture = rs->CreateAnimationTexture(pVolumeTexture, _FL_);
     pAnimTexture->SetAnimSpeed(20.0f);*/
 
@@ -324,7 +342,7 @@ void SEA::BuildVolumeTexture()
             pVolumeTexture->LockBox(i, &box[i], nullptr, 0);
 
     for (i = 0; i < aBumpMaps.size(); i++)
-        rs->Release(aBumpMaps[i]);
+        aBumpMaps[i] = nullptr; //rs->Release(aBumpMaps[i]);
     aBumpMaps.clear();
 
     uint32_t dwTexelSize = 4;
@@ -1422,7 +1440,7 @@ void SEA::Realize(uint32_t dwDeltaTime)
         uint32_t dw2 = static_cast<int32_t>(fBumpMapFrame + 1.0f) % aBumpMaps.size();
 
         float fAlpha = 255.0f * (fBumpMapFrame - static_cast<float>(static_cast<int32_t>(fBumpMapFrame)));
-        rs->SetRenderState(D3DRS_TEXTUREFACTOR, ARGB(fAlpha, 0, 0, 0));
+        rs->SetTextureFactorColor(ARGB(fAlpha, 0, 0, 0));
 
         rs->SetTexture(0, aBumpMaps[dw1]);
         rs->SetTexture(1, aBumpMaps[dw2]);
@@ -1453,7 +1471,7 @@ void SEA::Realize(uint32_t dwDeltaTime)
         rs->BeginScene();
     }
 
-    memset(pIndices, 0xFF, NUM_VERTEXS * sizeof(pIndices[0]) * 3);
+    memset(pIndices, 0xFF, NUM_VERTECIS * sizeof(pIndices[0]) * 3);
 
     uint64_t dwX;
     RDTSC_B(dwX);
@@ -1476,7 +1494,7 @@ void SEA::Realize(uint32_t dwDeltaTime)
     for (i = 0; i < aBlocks.size(); i++)
     {
         iNumVPoints += aBlocks[i].iSize0 * aBlocks[i].iSize0;
-        if (iNumVPoints >= NUM_VERTEXS)
+        if (iNumVPoints >= NUM_VERTECIS)
         {
             aBlocks.erase(aBlocks.begin() + i, aBlocks.end());
             break;
@@ -1521,8 +1539,6 @@ void SEA::Realize(uint32_t dwDeltaTime)
         while (fTmp >= 1.0f)
             fTmp -= 1.0f;
 
-        rs->SetVertexDeclaration(vertexDecl_);
-
         const auto vec1 = CVECTOR4(0.0f, 1.0f, 0.5f, -0.04f);
         const auto vec2 = CVECTOR4(2.0f, -1.0f, 0.00036621652552071f, (bFogEnable) ? fFogSeaDensity : 0.0f);
         const auto vec3 = CVECTOR4(fFoamV, fFoamK, fFoamUV, 6.0f);
@@ -1533,35 +1549,47 @@ void SEA::Realize(uint32_t dwDeltaTime)
         const auto vec8 = CVECTOR4(1.0f, 0.0f, 0.0f, 1.0f);
         CVECTOR vTmp = !CVECTOR(0.0f, 1.0f, 0.0f);
         const auto vec9 = CVECTOR4(vTmp.x, vTmp.y, vTmp.z, 1.0f);
-        rs->SetVertexShaderConstantF(GC_CONSTANT, (const float *)&vec1, 1);
-        rs->SetVertexShaderConstantF(GC_CONSTANT2, (const float *)&vec2, 1);
-        rs->SetVertexShaderConstantF(GC_SHADOW_CONST1, (const float *)&vec3, 1);
-        rs->SetVertexShaderConstantF(GC_ANIMATION, (const float *)&vec4, 1);
-        rs->SetVertexShaderConstantF(GC_CAMERA_POS, (const float *)&vec5, 1);
-        rs->SetVertexShaderConstantF(GC_MTX_WVP, (const float *)&mWorldViewProj, 4);
+        //rs->SetVertexShaderConstantF(GC_CONSTANT, (const float *)&vec1, 1);
+        //rs->SetVertexShaderConstantF(GC_CONSTANT2, (const float *)&vec2, 1);
+        //rs->SetVertexShaderConstantF(GC_SHADOW_CONST1, (const float *)&vec3, 1);
+        //rs->SetVertexShaderConstantF(GC_ANIMATION, (const float *)&vec4, 1);
+        //rs->SetVertexShaderConstantF(GC_CAMERA_POS, (const float *)&vec5, 1);
+        //rs->SetVertexShaderConstantF(GC_MTX_WVP, (const float *)&mWorldViewProj, 4);
 
-        rs->SetVertexShaderConstantF(GC_FREE, (const float *)&v4SeaParameters, 1);
-        rs->SetVertexShaderConstantF(GC_FREE + 1, (const float *)&v4SeaColor, 1);
-        rs->SetVertexShaderConstantF(GC_FREE + 2, (const float *)&v4SkyColor, 1);
+        //rs->SetVertexShaderConstantF(GC_FREE, (const float *)&v4SeaParameters, 1);
+        //rs->SetVertexShaderConstantF(GC_FREE + 1, (const float *)&v4SeaColor, 1);
+        //rs->SetVertexShaderConstantF(GC_FREE + 2, (const float *)&v4SkyColor, 1);
 
-        rs->SetVertexShaderConstantF(GC_FREE + 5, (const float *)&vec6, 1);
-        rs->SetVertexShaderConstantF(GC_FREE + 6, (const float *)&vec7, 1);
-        // Frenel K, Frenel Max
-        rs->SetVertexShaderConstantF(GC_FREE + 7, (const float *)&vec8, 1);
-        rs->SetVertexShaderConstantF(GC_FREE + 30, (const float *)&vec9, 1);
+        //rs->SetVertexShaderConstantF(GC_FREE + 5, (const float *)&vec6, 1);
+        //rs->SetVertexShaderConstantF(GC_FREE + 6, (const float *)&vec7, 1);
+        //// Frenel K, Frenel Max
+        //rs->SetVertexShaderConstantF(GC_FREE + 7, (const float *)&vec8, 1);
+        //rs->SetVertexShaderConstantF(GC_FREE + 30, (const float *)&vec9, 1);
+        ConstantBuffer constantBuffer = {};
+        constantBuffer.mvp = mWorldViewProj;
+        constantBuffer.constant1 = vec1;
+        constantBuffer.constant2 = vec2;
+        constantBuffer.shadowConst = vec3;
+        constantBuffer.animation = vec4;
+        constantBuffer.cameraPos = vec5;
+        constantBuffer.seaParameters = v4SeaParameters;
+        constantBuffer.seaColor = v4SeaColor;
+        constantBuffer.skyColor = v4SkyColor;
+        constantBuffer.vec6 = vec6;
+        constantBuffer.vec7 = vec7;
+        constantBuffer.frenelK = vec8;
+        constantBuffer.frenelMax = vec9;
 
         if (bSimpleSea)
         {
             rs->SetVertexShaderConstantF(GC_FREE + 8, (const float *)&mTexProjection, 4); // Matrix!!
 
             // rs->SetTexture(0, pVolumeTexture);
-            rs->SetTexture(0, (pVolumeTexture) ? static_cast<IDirect3DBaseTexture9 *>(pVolumeTexture)
-                                               : static_cast<IDirect3DBaseTexture9 *>(pRenderTargetBumpMap));
-            rs->SetTexture(1, pReflection);
+            rs->SetTexture(pVolumeTexture ? pVolumeTexture : pRenderTargetBumpMap, , 0, );
+            rs->SetTexture(pReflection, , 1, );
             // rs->SetTexture(2, pVolumeTexture);
-            rs->SetTexture(2, (pVolumeTexture) ? static_cast<IDirect3DBaseTexture9 *>(pVolumeTexture)
-                                               : static_cast<IDirect3DBaseTexture9 *>(pRenderTargetBumpMap));
-            rs->SetTexture(3, pReflectionSunroad);
+            rs->SetTexture(pVolumeTexture ? pVolumeTexture : pRenderTargetBumpMap, , 2, );
+            rs->SetTexture(pReflectionSunroad, , 3, );
 
             rs->SetTextureStageState(1, D3DTSS_BUMPENVMAT00, F2DW(0.08f));
             rs->SetTextureStageState(1, D3DTSS_BUMPENVMAT10, F2DW(0.0f));
@@ -1573,8 +1601,8 @@ void SEA::Realize(uint32_t dwDeltaTime)
             rs->SetTextureStageState(3, D3DTSS_BUMPENVMAT01, F2DW(0.0f));
             rs->SetTextureStageState(3, D3DTSS_BUMPENVMAT11, F2DW(0.05f));
 
-            rs->DrawIndexedPrimitiveNoVShader(D3DPT_TRIANGLELIST, iVSeaBuffer, sizeof(SeaVertex), iISeaBuffer, 0,
-                                              iVStart, 0, iTStart, "Sea3");
+            rs->DrawIndexedBuffer(RHI::PrimitiveType::TriangleList, iVSeaBuffer, iISeaBuffer,
+                NUM_VERTECIS, 1, 0, 0, "Sea3");
         }
         else
         {
@@ -1583,8 +1611,8 @@ void SEA::Realize(uint32_t dwDeltaTime)
 
             rs->SetTexture(pVolumeTexture ? pVolumeTexture : pRenderTargetBumpMap, , 0, );
             rs->SetTexture(pEnvMap, , 3, );
-            rs->DrawIndexedPrimitiveNoVShader(D3DPT_TRIANGLELIST, iVSeaBuffer, sizeof(SeaVertex), iISeaBuffer, 0,
-                                              iVStart, 0, iTStart, "Sea2");
+            rs->DrawIndexedBuffer(RHI::PrimitiveType::TriangleList, iVSeaBuffer, iISeaBuffer,
+                NUM_VERTECIS, 1, 0, 0, "Sea2");
 
             if (fFoamK > 0.0f && bFoamEnable && bIniFoamEnable)
             {
@@ -1594,14 +1622,14 @@ void SEA::Realize(uint32_t dwDeltaTime)
 
                 rs->TextureSet(iFoamTexture, 0, , );
                 rs->SetTexture(pVolumeTexture ? pVolumeTexture : pRenderTargetBumpMap, , 4, );
-                rs->DrawIndexedPrimitiveNoVShader(D3DPT_TRIANGLELIST, iVSeaBuffer, sizeof(SeaVertex), iISeaBuffer, 0,
-                                                  iVStart, 0, iTStart, "Sea2_Foam");
+                rs->DrawIndexedBuffer(RHI::PrimitiveType::TriangleList, iVSeaBuffer, iISeaBuffer,
+                    NUM_VERTECIS, 1, 0, 0, "Sea2_Foam");
             }
 
             rs->SetTexture(pVolumeTexture ? pVolumeTexture : pRenderTargetBumpMap, , 0, );
             rs->SetTexture(pSunRoadMap, , 3, );
-            rs->DrawIndexedPrimitiveNoVShader(D3DPT_TRIANGLELIST, iVSeaBuffer, sizeof(SeaVertex), iISeaBuffer, 0,
-                                              iVStart, 0, iTStart, "Sea2_SunRoad");
+            rs->DrawIndexedBuffer(RHI::PrimitiveType::TriangleList, iVSeaBuffer, iISeaBuffer,
+                NUM_VERTECIS, 1, 0, 0, "Sea2_SunRoad");
         }
     }
 
